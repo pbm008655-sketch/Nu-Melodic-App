@@ -12,7 +12,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all albums
   app.get("/api/albums", async (_req, res) => {
     const albums = await storage.getAllAlbums();
+    
+    // Log all album IDs to help with debugging
+    console.log("All album IDs:", albums.map(a => a.id));
+    
     res.json(albums);
+  });
+  
+  // Get all sample albums (for debugging)
+  app.get("/api/sample-albums", async (_req, res) => {
+    const allAlbums = await storage.getAllAlbums();
+    // Find albums that contain "Sample" in the title
+    const sampleAlbums = allAlbums.filter(album => album.title.includes("Sample"));
+    
+    console.log("Sample albums found:", sampleAlbums.length);
+    
+    res.json(sampleAlbums);
   });
 
   // Get a specific album with its tracks
@@ -39,7 +54,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get recently added albums
   app.get("/api/recent-albums", async (_req, res) => {
-    const recentAlbums = await storage.getRecentAlbums();
+    const recentAlbums = await storage.getRecentAlbums(10); // Increased limit to 10
+    
+    // Verify in logs that we're getting the expected albums
+    console.log(`Recent albums count: ${recentAlbums.length}`);
+    
     res.json(recentAlbums);
   });
 

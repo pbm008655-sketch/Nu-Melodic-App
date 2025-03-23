@@ -228,9 +228,16 @@ export class MemStorage implements IStorage {
       .slice(0, limit);
   }
   
-  async getRecentAlbums(limit = 5): Promise<Album[]> {
+  async getRecentAlbums(limit = 10): Promise<Album[]> {
     return Array.from(this.albums.values())
-      .sort((a, b) => b.releaseDate!.getTime() - a.releaseDate!.getTime())
+      .sort((a, b) => {
+        // Sort by releaseDate in descending order (newest first)
+        if (a.releaseDate && b.releaseDate) {
+          return b.releaseDate.getTime() - a.releaseDate.getTime();
+        }
+        // If releaseDate is not available, sort by id in descending order
+        return b.id - a.id;
+      })
       .slice(0, limit);
   }
   
