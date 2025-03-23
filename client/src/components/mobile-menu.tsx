@@ -1,0 +1,153 @@
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
+import { X, Home, Search, Library, Heart, Crown, User, Menu } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
+import { Playlist } from "@shared/schema";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+export default function MobileMenu() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [location] = useLocation();
+  const { user } = useAuth();
+  
+  // Close menu on route change
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location]);
+  
+  const { data: playlists } = useQuery<Playlist[]>({
+    queryKey: ["/api/playlists"],
+    enabled: !!user,
+  });
+
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const isActive = (path: string) => {
+    return location === path;
+  };
+
+  return (
+    <>
+      {/* Mobile Header */}
+      <div className="md:hidden bg-zinc-900 p-4 flex justify-between items-center sticky top-0 z-10">
+        <Link href="/">
+          <a className="font-heading font-bold text-xl flex items-center">
+            <span className="text-primary mr-2">♫</span> MeloStream
+          </a>
+        </Link>
+        <button 
+          className="text-white p-2" 
+          onClick={toggleMenu}
+          aria-label="Toggle menu"
+        >
+          <Menu />
+        </button>
+      </div>
+      
+      {/* Mobile Menu Overlay */}
+      <div 
+        className={`fixed inset-0 bg-black bg-opacity-50 z-50 md:hidden transition-opacity duration-300 ${
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={toggleMenu}
+      />
+      
+      {/* Mobile Menu */}
+      <div 
+        className={`fixed inset-y-0 right-0 w-64 bg-zinc-900 z-50 md:hidden transform transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="flex flex-col h-full">
+          <div className="p-6 flex justify-between items-center border-b border-zinc-800">
+            <h2 className="font-heading font-bold text-xl">Menu</h2>
+            <button 
+              className="text-white" 
+              onClick={toggleMenu}
+              aria-label="Close menu"
+            >
+              <X />
+            </button>
+          </div>
+          
+          <ScrollArea className="flex-1 p-6">
+            <nav>
+              <ul className="space-y-6">
+                <li>
+                  <Link href="/">
+                    <a className={`flex items-center text-lg ${isActive("/") ? "text-primary" : "text-white"}`}>
+                      <Home className="w-5 h-5 mr-3" />
+                      <span>Home</span>
+                    </a>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#">
+                    <a className="flex items-center text-zinc-300 text-lg">
+                      <Search className="w-5 h-5 mr-3" />
+                      <span>Search</span>
+                    </a>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#">
+                    <a className="flex items-center text-zinc-300 text-lg">
+                      <Library className="w-5 h-5 mr-3" />
+                      <span>Your Library</span>
+                    </a>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#">
+                    <a className="flex items-center text-zinc-300 text-lg">
+                      <Heart className="w-5 h-5 mr-3" />
+                      <span>Liked Songs</span>
+                    </a>
+                  </Link>
+                </li>
+                <li className="pt-6 border-t border-zinc-800">
+                  <Link href="/subscriptions">
+                    <a className={`flex items-center text-lg ${isActive("/subscriptions") ? "text-primary" : "text-primary"}`}>
+                      <Crown className="w-5 h-5 mr-3" />
+                      <span>{user?.isPremium ? "Manage Subscription" : "Upgrade to Premium"}</span>
+                    </a>
+                  </Link>
+                </li>
+              </ul>
+
+              {playlists && playlists.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-zinc-800">
+                  <h2 className="text-sm uppercase text-zinc-500 tracking-wider mb-4">Your Playlists</h2>
+                  <ul className="space-y-4">
+                    {playlists.map((playlist) => (
+                      <li key={playlist.id}>
+                        <Link href={`/playlist/${playlist.id}`}>
+                          <a className={`text-${isActive(`/playlist/${playlist.id}`) ? "primary" : "zinc-300"}`}>
+                            {playlist.name}
+                          </a>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </nav>
+          </ScrollArea>
+          
+          <div className="p-6 border-t border-zinc-800">
+            <Link href="#">
+              <a className="flex items-center text-zinc-300">
+                <User className="h-5 w-5 mr-2" />
+                <span>Account</span>
+              </a>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
