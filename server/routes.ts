@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { insertPlaylistSchema } from "@shared/schema";
+import { insertPlaylistSchema, insertTrackPlaySchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -288,6 +288,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(500).json({ message: "Failed to cancel subscription" });
     }
+  });
+
+  // ANALYTICS ROUTES
+  // Record a track play
+  app.post("/api/analytics/track-play", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const data = insertTrackPlaySchema.parse(req.body);
+      // Override userId with the authenticated user's ID for security
+      const trackPlay = await storage.recordTrackPlay(req.user!.id, data.trackId);
+      res.status(201).json(trackPlay);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Get play count for a specific track
+  app.get("/api/analytics/tracks/:id/plays", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const trackId = parseInt(req.params.id);
+    if (isNaN(trackId)) {
+      return res.status(400).json({ message: "Invalid track ID" });
+    }
+
+    const plays = await storage.getTrackPlays(trackId);
+    res.json({ trackId, plays });
+  });
+
+  // Get top tracks by play count
+  app.get("/api/analytics/top-tracks", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+    const topTracks = await storage.getTopTracks(limit);
+    
+    // Enhance with album information
+    const topTracksWithAlbums = await Promise.all(
+      topTracks.map(async ({ track, plays }) => {
+        const album = await storage.getAlbum(track.albumId);
+        return { track, album, plays };
+      })
+    );
+    
+    res.json(topTracksWithAlbums);
+  });
+
+  // Get play count for a specific album
+  app.get("/api/analytics/albums/:id/plays", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const albumId = parseInt(req.params.id);
+    if (isNaN(albumId)) {
+      return res.status(400).json({ message: "Invalid album ID" });
+    }
+
+    const album = await storage.getAlbum(albumId);
+    if (!album) {
+      return res.status(404).json({ message: "Album not found" });
+    }
+
+    const plays = await storage.getTrackPlaysByAlbum(albumId);
+    res.json({ album, ...plays });
+  });
+
+  // Get plays by time range (for charts/graphs)
+  app.get("/api/analytics/plays-by-date", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Default to last 30 days if no dates provided
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 30);
+
+    // Override with query params if provided
+    if (req.query.startDate) {
+      startDate.setTime(Date.parse(req.query.startDate as string));
+    }
+    if (req.query.endDate) {
+      endDate.setTime(Date.parse(req.query.endDate as string));
+    }
+
+    const playsByDate = await storage.getPlaysByTimeRange(startDate, endDate);
+    res.json({ startDate, endDate, data: playsByDate });
+  });
+
+  // Get user's listening history (for personalized recommendations)
+  app.get("/api/analytics/listening-history", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+    const history = await storage.getUserListeningHistory(req.user!.id, limit);
+    res.json(history);
   });
 
   const httpServer = createServer(app);

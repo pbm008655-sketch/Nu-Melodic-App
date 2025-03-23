@@ -1,7 +1,9 @@
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useContext, useState, useEffect } from "react";
 import { Track, Album } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface PlayerContextType {
   currentTrack: (Track & { album?: Album }) | null;
@@ -25,9 +27,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [queueIndex, setQueueIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(0.7);
+  const [trackStartTime, setTrackStartTime] = useState<Date | null>(null);
   
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // Record track play mutation
+  const recordPlayMutation = useMutation({
+    mutationFn: async (trackId: number) => {
+      const response = await apiRequest('POST', '/api/analytics/track-play', { trackId });
+      return response.json();
+    },
+    onError: (error) => {
+      console.error('Failed to record track play:', error);
+    }
+  });
   
   const playTrack = (track: Track, album?: Album) => {
     if (!user) {
@@ -160,6 +174,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const clampedVolume = Math.max(0, Math.min(1, newVolume));
     setVolume(clampedVolume);
   };
+  
+  // Effect to handle track play recording
+  useEffect(() => {
+    if (isPlaying && currentTrack && user) {
+      // Record when track starts playing
+      setTrackStartTime(new Date());
+      
+      // Record the play in the database
+      recordPlayMutation.mutate(currentTrack.id);
+    }
+  }, [currentTrack?.id, isPlaying]);
   
   return (
     <PlayerContext.Provider

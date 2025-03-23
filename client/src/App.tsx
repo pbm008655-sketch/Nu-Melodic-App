@@ -12,6 +12,7 @@ import AuthPage from "@/pages/auth-page";
 import AlbumPage from "@/pages/album-page";
 import PlaylistPage from "@/pages/playlist-page";
 import SubscriptionsPage from "@/pages/subscriptions-page";
+import AnalyticsDashboardPage from "@/pages/analytics-dashboard-page";
 
 function Router() {
   return (
@@ -21,6 +22,7 @@ function Router() {
       <ProtectedRoute path="/album/:id" component={AlbumPage} />
       <ProtectedRoute path="/playlist/:id" component={PlaylistPage} />
       <ProtectedRoute path="/subscriptions" component={SubscriptionsPage} />
+      <ProtectedRoute path="/analytics" component={AnalyticsDashboardPage} />
       <Route component={NotFound} />
     </Switch>
   );
