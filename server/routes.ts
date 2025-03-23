@@ -517,7 +517,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         coverUrl: albumCoverUrl || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80"
       } : undefined;
       
-      const result = await importPersonalTracks(customAlbum);
+      const result = await importPersonalTracks({
+        customAlbum: customAlbum
+      });
       
       // If no tracks were created, return a more specific message
       if (result.tracks.length === 0) {
