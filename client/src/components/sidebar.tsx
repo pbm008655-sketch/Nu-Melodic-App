@@ -31,26 +31,26 @@ export default function Sidebar() {
           <ul className="space-y-4">
             <li>
               <Link href="/">
-                <a className={`flex items-center ${isActive("/") ? "text-primary" : "text-zinc-300 hover:text-white"} transition-colors`}>
+                <div className={`flex items-center ${isActive("/") ? "text-primary" : "text-zinc-300 hover:text-white"} transition-colors cursor-pointer`}>
                   <Home className="h-5 w-5 mr-3" />
                   <span>Home</span>
-                </a>
+                </div>
               </Link>
             </li>
             <li>
               <Link href="#">
-                <a className="flex items-center text-zinc-300 hover:text-white transition-colors">
+                <div className="flex items-center text-zinc-300 hover:text-white transition-colors cursor-pointer">
                   <Search className="h-5 w-5 mr-3" />
                   <span>Search</span>
-                </a>
+                </div>
               </Link>
             </li>
             <li>
               <Link href="#">
-                <a className="flex items-center text-zinc-300 hover:text-white transition-colors">
+                <div className="flex items-center text-zinc-300 hover:text-white transition-colors cursor-pointer">
                   <Library className="h-5 w-5 mr-3" />
                   <span>Your Library</span>
-                </a>
+                </div>
               </Link>
             </li>
           </ul>
@@ -68,9 +68,9 @@ export default function Sidebar() {
                 {playlists?.map((playlist) => (
                   <li key={playlist.id}>
                     <Link href={`/playlist/${playlist.id}`}>
-                      <a className={`text-sm ${isActive(`/playlist/${playlist.id}`) ? "text-primary" : "text-zinc-400 hover:text-white"} transition-colors truncate block`}>
+                      <div className={`text-sm ${isActive(`/playlist/${playlist.id}`) ? "text-primary" : "text-zinc-400 hover:text-white"} transition-colors truncate block cursor-pointer`}>
                         {playlist.name}
-                      </a>
+                      </div>
                     </Link>
                   </li>
                 ))}
@@ -92,9 +92,9 @@ export default function Sidebar() {
       
       <div className="mt-auto p-6 border-t border-zinc-800">
         <Link href="/subscriptions">
-          <a className={`text-sm ${isActive("/subscriptions") ? "text-primary font-medium" : "text-zinc-300 hover:text-white"} transition-colors`}>
+          <div className={`text-sm ${isActive("/subscriptions") ? "text-primary font-medium" : "text-zinc-300 hover:text-white"} transition-colors cursor-pointer`}>
             {user?.isPremium ? "Manage Subscription" : "Upgrade to Premium"}
-          </a>
+          </div>
         </Link>
       </div>
     </div>

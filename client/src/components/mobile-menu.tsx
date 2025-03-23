@@ -35,9 +35,9 @@ export default function MobileMenu() {
       {/* Mobile Header */}
       <div className="md:hidden bg-zinc-900 p-4 flex justify-between items-center sticky top-0 z-10">
         <Link href="/">
-          <a className="font-heading font-bold text-xl flex items-center">
+          <div className="font-heading font-bold text-xl flex items-center cursor-pointer">
             <span className="text-primary mr-2">♫</span> MeloStream
-          </a>
+          </div>
         </Link>
         <button 
           className="text-white p-2" 
@@ -79,42 +79,42 @@ export default function MobileMenu() {
               <ul className="space-y-6">
                 <li>
                   <Link href="/">
-                    <a className={`flex items-center text-lg ${isActive("/") ? "text-primary" : "text-white"}`}>
+                    <div className={`flex items-center text-lg ${isActive("/") ? "text-primary" : "text-white"} cursor-pointer`}>
                       <Home className="w-5 h-5 mr-3" />
                       <span>Home</span>
-                    </a>
+                    </div>
                   </Link>
                 </li>
                 <li>
                   <Link href="#">
-                    <a className="flex items-center text-zinc-300 text-lg">
+                    <div className="flex items-center text-zinc-300 text-lg cursor-pointer">
                       <Search className="w-5 h-5 mr-3" />
                       <span>Search</span>
-                    </a>
+                    </div>
                   </Link>
                 </li>
                 <li>
                   <Link href="#">
-                    <a className="flex items-center text-zinc-300 text-lg">
+                    <div className="flex items-center text-zinc-300 text-lg cursor-pointer">
                       <Library className="w-5 h-5 mr-3" />
                       <span>Your Library</span>
-                    </a>
+                    </div>
                   </Link>
                 </li>
                 <li>
                   <Link href="#">
-                    <a className="flex items-center text-zinc-300 text-lg">
+                    <div className="flex items-center text-zinc-300 text-lg cursor-pointer">
                       <Heart className="w-5 h-5 mr-3" />
                       <span>Liked Songs</span>
-                    </a>
+                    </div>
                   </Link>
                 </li>
                 <li className="pt-6 border-t border-zinc-800">
                   <Link href="/subscriptions">
-                    <a className={`flex items-center text-lg ${isActive("/subscriptions") ? "text-primary" : "text-primary"}`}>
+                    <div className={`flex items-center text-lg ${isActive("/subscriptions") ? "text-primary" : "text-primary"} cursor-pointer`}>
                       <Crown className="w-5 h-5 mr-3" />
                       <span>{user?.isPremium ? "Manage Subscription" : "Upgrade to Premium"}</span>
-                    </a>
+                    </div>
                   </Link>
                 </li>
               </ul>
@@ -126,9 +126,9 @@ export default function MobileMenu() {
                     {playlists.map((playlist) => (
                       <li key={playlist.id}>
                         <Link href={`/playlist/${playlist.id}`}>
-                          <a className={`text-${isActive(`/playlist/${playlist.id}`) ? "primary" : "zinc-300"}`}>
+                          <div className={`text-${isActive(`/playlist/${playlist.id}`) ? "primary" : "zinc-300"} cursor-pointer`}>
                             {playlist.name}
-                          </a>
+                          </div>
                         </Link>
                       </li>
                     ))}

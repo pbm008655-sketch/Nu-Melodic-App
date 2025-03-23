@@ -60,17 +60,32 @@ export default function Player() {
     audio.src = currentTrack.audioUrl;
     audio.load();
     
+    // Add error handling for audio loading
+    const handleError = () => {
+      console.error("Error loading audio file:", currentTrack.audioUrl);
+      toast({
+        title: "Playback Error",
+        description: "This is a demo with simulated tracks. Actual audio files aren't available.",
+        variant: "destructive"
+      });
+      // Continue with player state, just don't play the audio
+      setCurrentTime(0);
+      setDuration(180); // Simulate a 3-minute track
+    };
+    
+    audio.addEventListener('error', handleError);
+    
     // Play if needed
     if (isPlaying) {
       audio.play().catch(error => {
         console.error("Error playing audio:", error);
-        toast({
-          title: "Playback Error",
-          description: "There was an error playing this track.",
-          variant: "destructive"
-        });
+        // Don't show another error toast as the error event will trigger
       });
     }
+    
+    return () => {
+      audio.removeEventListener('error', handleError);
+    };
   }, [currentTrack, isPlaying, toast]);
   
   // Handle play/pause
