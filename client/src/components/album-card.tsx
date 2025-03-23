@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Play, Pause } from "lucide-react";
 import { Album } from "@shared/schema";
@@ -11,14 +11,42 @@ interface AlbumCardProps {
   variant?: "default" | "compact";
 }
 
+// Helper function to parse customAlbum JSON if it exists
+function getCustomAlbumData(album: Album): { title: string; artist: string; description: string; coverUrl: string } | null {
+  if (!album.customAlbum) return null;
+  try {
+    return JSON.parse(album.customAlbum);
+  } catch (e) {
+    console.error("Failed to parse customAlbum JSON:", e);
+    return null;
+  }
+}
+
 export function AlbumCard({ album, variant = "default" }: AlbumCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [displayAlbum, setDisplayAlbum] = useState(album);
   const { 
     currentTrack, 
     isPlaying, 
     playAlbum,
     togglePlay
   } = usePlayer();
+  
+  // Process album data to use customAlbum properties if available
+  useEffect(() => {
+    const customData = getCustomAlbumData(album);
+    if (customData) {
+      setDisplayAlbum({
+        ...album,
+        title: customData.title,
+        artist: customData.artist,
+        description: customData.description || album.description,
+        coverUrl: customData.coverUrl || album.coverUrl
+      });
+    } else {
+      setDisplayAlbum(album);
+    }
+  }, [album]);
   
   // Check if this album is currently playing
   const isThisAlbumPlaying = currentTrack?.albumId === album.id && isPlaying;
@@ -40,13 +68,13 @@ export function AlbumCard({ album, variant = "default" }: AlbumCardProps) {
     
     // If this album isn't playing, start playing it
     if (albumData?.tracks) {
-      playAlbum(albumData.tracks, album);
+      playAlbum(albumData.tracks, displayAlbum);
     } else {
       // Fetch tracks first then play
       fetch(`/api/albums/${album.id}`)
         .then(res => res.json())
         .then(data => {
-          playAlbum(data.tracks, album);
+          playAlbum(data.tracks, displayAlbum);
         });
     }
   };
@@ -56,13 +84,13 @@ export function AlbumCard({ album, variant = "default" }: AlbumCardProps) {
       <Link href={`/album/${album.id}`}>
         <a className="flex items-center bg-zinc-800/40 rounded-md overflow-hidden hover:bg-zinc-800 transition-colors p-2 group">
           <img 
-            src={album.coverUrl} 
-            alt={album.title} 
+            src={displayAlbum.coverUrl} 
+            alt={displayAlbum.title} 
             className="w-16 h-16 object-cover rounded-md" 
           />
           <div className="ml-4 flex-1">
-            <h3 className="font-medium text-white">{album.title}</h3>
-            <p className="text-zinc-400 text-sm">{album.artist}</p>
+            <h3 className="font-medium text-white">{displayAlbum.title}</h3>
+            <p className="text-zinc-400 text-sm">{displayAlbum.artist}</p>
           </div>
           <button 
             className={`w-8 h-8 flex items-center justify-center rounded-full ${isThisAlbumPlaying ? 'bg-primary text-black' : 'bg-white/10 text-white opacity-0 group-hover:opacity-100'} transition-all`}
@@ -84,8 +112,8 @@ export function AlbumCard({ album, variant = "default" }: AlbumCardProps) {
       >
         <div className="relative">
           <img 
-            src={album.coverUrl} 
-            alt={album.title} 
+            src={displayAlbum.coverUrl} 
+            alt={displayAlbum.title} 
             className="w-full aspect-square object-cover rounded-md mb-3 shadow-md" 
           />
           <button 
@@ -96,8 +124,8 @@ export function AlbumCard({ album, variant = "default" }: AlbumCardProps) {
             {isThisAlbumPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
           </button>
         </div>
-        <h3 className="font-medium text-white truncate">{album.title}</h3>
-        <p className="text-zinc-400 text-sm truncate">{album.artist}</p>
+        <h3 className="font-medium text-white truncate">{displayAlbum.title}</h3>
+        <p className="text-zinc-400 text-sm truncate">{displayAlbum.artist}</p>
       </a>
     </Link>
   );

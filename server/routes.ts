@@ -445,7 +445,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         artist,
         coverUrl: coverUrl || "",
         description: description || "",
-        releaseDate: new Date()
+        releaseDate: new Date(),
+        customAlbum: null
       });
       
       res.status(201).json(album);

@@ -102,6 +102,7 @@ export class MemStorage implements IStorage {
       coverUrl: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
       description: "An immersive journey through late night soundscapes",
       releaseDate: new Date("2023-05-15"),
+      customAlbum: null,
     };
     
     const album2: Album = {
@@ -111,6 +112,7 @@ export class MemStorage implements IStorage {
       coverUrl: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
       description: "Electronic fusion with urban influences",
       releaseDate: new Date("2023-08-20"),
+      customAlbum: null,
     };
     
     const album3: Album = {
@@ -120,6 +122,7 @@ export class MemStorage implements IStorage {
       coverUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
       description: "Ambient collection for relaxation",
       releaseDate: new Date("2023-02-10"),
+      customAlbum: null,
     };
     
     const album4: Album = {
@@ -129,6 +132,7 @@ export class MemStorage implements IStorage {
       coverUrl: "https://images.unsplash.com/photo-1593697972672-b1c1356e32f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
       description: "Synthwave inspired by 80s nostalgia",
       releaseDate: new Date("2023-09-05"),
+      customAlbum: null,
     };
     
     const album5: Album = {
@@ -138,6 +142,7 @@ export class MemStorage implements IStorage {
       coverUrl: "https://images.unsplash.com/photo-1602848597941-0d3f3415bfa9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
       description: "Peaceful instrumental acoustic melodies",
       releaseDate: new Date("2023-06-30"),
+      customAlbum: null,
     };
     
     this.albums.set(album1.id, album1);

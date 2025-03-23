@@ -19,7 +19,8 @@ const defaultAlbum: Omit<Album, 'id'> = {
   artist: "Demo Artist",
   coverUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
   description: "A sample demo album with test tracks",
-  releaseDate: new Date()
+  releaseDate: new Date(),
+  customAlbum: null
 };
 
 // Default track details
