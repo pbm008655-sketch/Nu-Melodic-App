@@ -15,17 +15,16 @@ import * as path from 'path';
 
 // Personal Album Configuration
 const myAlbum: Omit<Album, 'id'> = {
-  title: "My Personal Album",
-  artist: "Your Artist Name",
+  title: "Sample Demo Album",
+  artist: "Demo Artist",
   coverUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80", // Replace with your album cover URL
-  description: "My personal collection of music",
+  description: "A sample demo album with test tracks",
   releaseDate: new Date()
 };
 
 // Customize track details if needed
 const trackDetails: Array<{ title: string; duration: number; sourceFile: string }> = [
-  // Example: { title: "My Amazing Song", duration: 180, sourceFile: "my-track-1.wav" }
-  // Add your track details here
+  { title: "Sample Tone", duration: 5, sourceFile: "my-track-1.wav" }
 ];
 
 /**
