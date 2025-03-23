@@ -264,6 +264,17 @@ export class MemStorage implements IStorage {
       .filter(track => track.isFeatured)
       .slice(0, limit);
   }
+  
+  async createTrack(track: Omit<Track, 'id'>): Promise<Track> {
+    const id = this.trackId++;
+    const newTrack: Track = {
+      id,
+      ...track
+    };
+    
+    this.tracks.set(id, newTrack);
+    return newTrack;
+  }
 
   async getUserPlaylists(userId: number): Promise<Playlist[]> {
     return Array.from(this.playlists.values())

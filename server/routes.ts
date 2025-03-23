@@ -398,6 +398,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const history = await storage.getUserListeningHistory(req.user!.id, limit);
     res.json(history);
   });
+  
+  // ADMIN ROUTES - For adding personal albums and tracks
+  app.post("/api/admin/add-album", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    // Only allow admin users to add albums
+    // In a real app, you would check for admin role
+    // For this demo, we'll just check if the user is the demo user
+    if (req.user!.id !== 1) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    
+    try {
+      const { title, artist, coverUrl, description } = req.body;
+      
+      // Validate required fields
+      if (!title || !artist) {
+        return res.status(400).json({ message: "Title and artist are required" });
+      }
+      
+      const album = await storage.createAlbum({
+        title,
+        artist,
+        coverUrl: coverUrl || "",
+        description: description || "",
+        releaseDate: new Date()
+      });
+      
+      res.status(201).json(album);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create album" });
+    }
+  });
+  
+  app.post("/api/admin/add-track", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    // Only allow admin users to add tracks
+    if (req.user!.id !== 1) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    
+    try {
+      const { title, albumId, trackNumber, duration, audioUrl, isFeatured = false } = req.body;
+      
+      // Validate required fields
+      if (!title || !albumId || !trackNumber || !audioUrl) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Check if album exists
+      const album = await storage.getAlbum(albumId);
+      if (!album) {
+        return res.status(404).json({ message: "Album not found" });
+      }
+      
+      const track = await storage.createTrack({
+        title,
+        albumId,
+        trackNumber,
+        duration: duration || 180,
+        audioUrl,
+        isFeatured
+      });
+      
+      res.status(201).json(track);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create track" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
