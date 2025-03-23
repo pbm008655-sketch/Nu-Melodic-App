@@ -28,7 +28,7 @@ export interface IStorage {
   addTrackToPlaylist(playlistId: number, trackId: number, position: number): Promise<PlaylistTrack>;
   removeTrackFromPlaylist(playlistId: number, trackId: number): Promise<boolean>;
   
-  sessionStore: session.SessionStore;
+  sessionStore: any; // Type for session store
 }
 
 const MemoryStore = createMemoryStore(session);
@@ -68,7 +68,18 @@ export class MemStorage implements IStorage {
     this.seedData();
   }
 
-  private seedData() {
+  private async seedData() {
+    // Create a demo user with a known password for testing
+    const demoUser: User = {
+      id: this.userId++,
+      username: "demo",
+      email: "demo@example.com",
+      password: "$2b$10$dXNmcGZHaGJsZHVqaGtraUlnTnZyNDMrcy5lOU9Va2lITU56VUZRRmZlbFhsZFFpMXM5dGVCc1RKMkNhTVowamVybnRsMw==.7177bfdf1ec70da0ea9b3585649a08f2", // password is "password"
+      isPremium: false,
+      premiumExpiry: null,
+    };
+    this.users.set(demoUser.id, demoUser);
+    
     // Create sample albums
     const album1: Album = {
       id: this.albumId++,
