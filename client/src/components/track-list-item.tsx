@@ -1,18 +1,20 @@
 import { useState } from "react";
-import { Play, Pause, Heart, Plus, MoreHorizontal } from "lucide-react";
+import { Play, Pause, Heart, Plus, MoreHorizontal, Sliders } from "lucide-react";
 import { Track, Album } from "@shared/schema";
 import { usePlayer } from "@/hooks/use-player";
 import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 
 interface TrackListItemProps {
   track: Track;
@@ -27,6 +29,7 @@ export function TrackListItem({ track, album, index, showAlbum = false, playlist
   const { currentTrack, isPlaying, playTrack, togglePlay } = usePlayer();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   
   const isCurrentTrack = currentTrack?.id === track.id;
   
@@ -142,6 +145,16 @@ export function TrackListItem({ track, album, index, showAlbum = false, playlist
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-zinc-800 border-zinc-700 text-white">
+              <DropdownMenuItem
+                onClick={() => navigate(`/mixer/${track.id}`)}
+                className="cursor-pointer flex items-center gap-2"
+              >
+                <Sliders className="h-4 w-4" />
+                <span>Open in Audio Mixer</span>
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+              
               {playlistId ? (
                 <DropdownMenuItem 
                   onClick={() => removeFromPlaylistMutation.mutate({ playlistId, trackId: track.id })}
