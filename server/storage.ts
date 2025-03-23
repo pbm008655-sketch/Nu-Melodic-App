@@ -142,7 +142,7 @@ export class MemStorage implements IStorage {
           albumId,
           trackNumber: i,
           duration: 180 + Math.floor(Math.random() * 120), // 3-5 minutes
-          audioUrl: `/audio/track-${albumId}-${i}.mp3`,
+          audioUrl: `/audio/track-${albumId}-${i}.wav`,
           isFeatured: featured && i <= 2, // First two tracks of featured albums are featured
         };
         tracks.push(track);
