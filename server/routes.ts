@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
+import { importPersonalTracks } from "./add-personal-tracks";
 import { insertPlaylistSchema, insertTrackPlaySchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -489,6 +490,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(track);
     } catch (error) {
       res.status(500).json({ message: "Failed to create track" });
+    }
+  });
+  
+  // Use imported personal tracks function
+  
+  // Endpoint to import personal tracks (WAV files)
+  app.post("/api/admin/import-personal-tracks", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    // Only allow admin users to import tracks
+    if (req.user!.id !== 1) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    
+    try {
+      const { albumTitle, albumArtist, albumDescription, albumCoverUrl } = req.body;
+      
+      // Import tracks with custom album details if provided
+      const customAlbum = albumTitle ? {
+        title: albumTitle,
+        artist: albumArtist || "Demo Artist",
+        description: albumDescription || "",
+        coverUrl: albumCoverUrl || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80"
+      } : undefined;
+      
+      const result = await importPersonalTracks(customAlbum);
+      
+      // If no tracks were created, return a more specific message
+      if (result.tracks.length === 0) {
+        return res.status(400).json({ 
+          message: "No tracks were imported. Please ensure WAV files exist in public/audio with names like my-track-1.wav",
+          album: result.album
+        });
+      }
+      
+      res.status(201).json({ 
+        message: `Successfully imported ${result.tracks.length} tracks`,
+        album: result.album,
+        tracks: result.tracks
+      });
+    } catch (error) {
+      console.error("Error importing personal tracks:", error);
+      res.status(500).json({ message: "Failed to import personal tracks" });
     }
   });
 

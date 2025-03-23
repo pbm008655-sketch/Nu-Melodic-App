@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Album } from "@shared/schema";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle, Upload, Music, FileAudio } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export function AdminPanel() {
   const { toast } = useToast();
@@ -27,6 +29,12 @@ export function AdminPanel() {
   const [trackDuration, setTrackDuration] = useState("180");
   const [trackAudioUrl, setTrackAudioUrl] = useState("");
   const [trackIsFeatured, setTrackIsFeatured] = useState(false);
+  
+  // State for import tracks form
+  const [importAlbumTitle, setImportAlbumTitle] = useState("Sample Album");
+  const [importAlbumArtist, setImportAlbumArtist] = useState("Demo Artist");
+  const [importAlbumDescription, setImportAlbumDescription] = useState("A collection of imported tracks");
+  const [importAlbumCoverUrl, setImportAlbumCoverUrl] = useState("");
   
   // Mutation for adding an album
   const addAlbumMutation = useMutation({
@@ -105,6 +113,45 @@ export function AdminPanel() {
     },
   });
   
+  // Mutation for importing tracks (batch operation)
+  const importTracksMutation = useMutation({
+    mutationFn: async (albumData: {
+      albumTitle?: string;
+      albumArtist?: string;
+      albumDescription?: string;
+      albumCoverUrl?: string;
+    }) => {
+      const res = await apiRequest("POST", "/api/admin/import-personal-tracks", albumData);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Tracks imported successfully",
+        description: `Created album "${data.album.title}" with ${data.tracks.length} tracks`,
+      });
+      
+      // Reset form
+      setImportAlbumTitle("Sample Album");
+      setImportAlbumArtist("Demo Artist");
+      setImportAlbumDescription("A collection of imported tracks");
+      setImportAlbumCoverUrl("");
+      
+      // Invalidate all relevant queries
+      queryClient.invalidateQueries({ queryKey: ["/api/albums"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/featured-albums"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/recent-albums"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/featured-tracks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sample-albums"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to import tracks",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
   const handleAddAlbum = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -147,6 +194,18 @@ export function AdminPanel() {
     });
   };
   
+  const handleImportTracks = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // All fields are optional but we'll use them if provided
+    importTracksMutation.mutate({
+      albumTitle: importAlbumTitle || undefined,
+      albumArtist: importAlbumArtist || undefined,
+      albumDescription: importAlbumDescription || undefined,
+      albumCoverUrl: importAlbumCoverUrl || undefined,
+    });
+  };
+  
   return (
     <Card className="w-full">
       <CardHeader>
@@ -155,9 +214,10 @@ export function AdminPanel() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="album" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="album">Add Album</TabsTrigger>
             <TabsTrigger value="track">Add Track</TabsTrigger>
+            <TabsTrigger value="import">Import Tracks</TabsTrigger>
           </TabsList>
           
           <TabsContent value="album">
@@ -309,6 +369,80 @@ export function AdminPanel() {
               </Button>
             </form>
           </TabsContent>
+          
+          <TabsContent value="import">
+            <div className="pt-4">
+              <Alert className="mb-6">
+                <FileAudio className="h-4 w-4" />
+                <AlertTitle>Bulk Import Tracks</AlertTitle>
+                <AlertDescription>
+                  This feature automatically imports all WAV files from the <code>/public/audio</code> directory 
+                  that follow the naming pattern <code>track-<i>number</i>-<i>number</i>.wav</code>. 
+                  The files will be organized into a new album.
+                </AlertDescription>
+              </Alert>
+              
+              <form onSubmit={handleImportTracks} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="importAlbumTitle">Album Title</Label>
+                  <Input
+                    id="importAlbumTitle"
+                    value={importAlbumTitle}
+                    onChange={(e) => setImportAlbumTitle(e.target.value)}
+                    placeholder="Enter album title for imported tracks"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Leave blank to use default ("Sample Album")
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="importAlbumArtist">Artist</Label>
+                  <Input
+                    id="importAlbumArtist"
+                    value={importAlbumArtist}
+                    onChange={(e) => setImportAlbumArtist(e.target.value)}
+                    placeholder="Enter artist name"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Leave blank to use default ("Demo Artist")
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="importAlbumCoverUrl">Cover Image URL</Label>
+                  <Input
+                    id="importAlbumCoverUrl"
+                    value={importAlbumCoverUrl}
+                    onChange={(e) => setImportAlbumCoverUrl(e.target.value)}
+                    placeholder="https://example.com/album-cover.jpg"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Leave blank to use default cover
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="importAlbumDescription">Description</Label>
+                  <Textarea
+                    id="importAlbumDescription"
+                    value={importAlbumDescription}
+                    onChange={(e) => setImportAlbumDescription(e.target.value)}
+                    placeholder="Enter album description"
+                    rows={3}
+                  />
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={importTracksMutation.isPending}
+                >
+                  {importTracksMutation.isPending ? "Importing..." : "Import Tracks"}
+                </Button>
+              </form>
+            </div>
+          </TabsContent>
         </Tabs>
         
         <div className="mt-6 rounded-md bg-muted p-4">
@@ -317,7 +451,8 @@ export function AdminPanel() {
             1. Upload your WAV files to the <code className="text-primary">/public/audio</code> directory<br />
             2. Name them in the format <code className="text-primary">track-{'{albumId}'}-{'{trackNumber}'}.wav</code><br />
             3. For a new album, create the album first to get its ID<br />
-            4. Then add tracks, matching the filename pattern
+            4. Then add tracks, matching the filename pattern<br />
+            5. Or use the "Import Tracks" tab to bulk import all matching files
           </p>
         </div>
       </CardContent>

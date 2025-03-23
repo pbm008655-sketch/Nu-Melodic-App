@@ -4,26 +4,26 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 /**
- * This script adds personal WAV files to the application.
+ * This module adds personal WAV files to the application.
  * 
  * Instructions:
  * 1. Upload your WAV files to public/audio directory
  * 2. Name them following this pattern: my-track-1.wav, my-track-2.wav, etc.
- * 3. Update the album details and track details below
- * 4. Run the script with: npx tsx server/add-personal-tracks.ts
+ * 3. Update the album details and track details below if needed
+ * 4. Call the importPersonalTracks function from the routes.ts
  */
 
-// Personal Album Configuration
-const myAlbum: Omit<Album, 'id'> = {
-  title: "Sample Demo Album 2",
+// Default album configuration
+const defaultAlbum: Omit<Album, 'id'> = {
+  title: "Sample Demo Album",
   artist: "Demo Artist",
-  coverUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80", // Replace with your album cover URL
+  coverUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
   description: "A sample demo album with test tracks",
   releaseDate: new Date()
 };
 
-// Customize track details if needed
-const trackDetails: Array<{ title: string; duration: number; sourceFile: string }> = [
+// Default track details
+const defaultTrackDetails: Array<{ title: string; duration: number; sourceFile: string }> = [
   { title: "Sample Tone 440Hz", duration: 5, sourceFile: "my-track-1.wav" },
   { title: "Sample Tone 880Hz", duration: 3, sourceFile: "my-track-2.wav" }
 ];
@@ -31,10 +31,27 @@ const trackDetails: Array<{ title: string; duration: number; sourceFile: string 
 /**
  * Creates a new album and adds tracks for the WAV files in the public/audio directory
  * that match the specified prefix pattern.
+ * 
+ * @param customAlbum Optional album details to override defaults
+ * @param customTrackDetails Optional track details to override defaults
+ * @returns Promise with the created album and tracks
  */
-async function addPersonalTracks() {
+export async function importPersonalTracks(
+  customAlbum?: Partial<Omit<Album, 'id'>>,
+  customTrackDetails?: Array<{ title: string; duration: number; sourceFile: string }>
+) {
+  // Use custom album details or defaults
+  const albumData = {
+    ...defaultAlbum,
+    ...customAlbum,
+    releaseDate: new Date() // Always use current date
+  };
+  
+  // Use custom track details or defaults
+  const trackDetails = customTrackDetails || defaultTrackDetails;
+  
   // Create a new album
-  const album = await storage.createAlbum(myAlbum);
+  const album = await storage.createAlbum(albumData);
   console.log(`Created album: ${album.title} (ID: ${album.id})`);
   
   // Find all matching audio files
@@ -44,7 +61,7 @@ async function addPersonalTracks() {
   
   if (matchingFiles.length === 0) {
     console.log('No matching audio files found. Please upload your WAV files to public/audio with names like my-track-1.wav');
-    return;
+    return { album, tracks: [] };
   }
   
   // Sort files by track number
@@ -53,6 +70,8 @@ async function addPersonalTracks() {
     const numB = parseInt(b.replace('my-track-', '').replace('.wav', ''));
     return numA - numB;
   });
+  
+  const createdTracks = [];
   
   // Create tracks for each file
   for (let i = 0; i < matchingFiles.length; i++) {
@@ -89,20 +108,26 @@ async function addPersonalTracks() {
     
     const newTrack = await storage.createTrack(track);
     console.log(`Created track: ${newTrack.title} (ID: ${newTrack.id})`);
+    createdTracks.push(newTrack);
   }
   
   console.log('Finished adding personal tracks!');
+  return { album, tracks: createdTracks };
 }
 
-// Execute the function
-addPersonalTracks().then(async () => {
-  // Verify that the album and tracks were created
-  const album = await storage.getAlbum(6);
-  console.log('Verification - Album:', album);
-  
-  const tracks = await storage.getTracksByAlbumId(6);
-  console.log('Verification - Tracks:', tracks);
-  
-}).catch(err => {
-  console.error('Error adding personal tracks:', err);
-});
+// This section runs only when this file is executed directly with `npx tsx`
+// Check if this file is being executed directly (not imported)
+// We'll use a different approach for ES modules
+if (import.meta.url === `file://${process.cwd()}/server/add-personal-tracks.ts`) {
+  console.log('Running add-personal-tracks.ts directly...');
+  importPersonalTracks().then(async ({ album }) => {
+    // Verify that the album and tracks were created
+    const verifiedAlbum = await storage.getAlbum(album.id);
+    console.log('Verification - Album:', verifiedAlbum);
+    
+    const tracks = await storage.getTracksByAlbumId(album.id);
+    console.log('Verification - Tracks:', tracks);
+  }).catch(err => {
+    console.error('Error adding personal tracks:', err);
+  });
+}
