@@ -15,7 +15,7 @@ import * as path from 'path';
 
 // Personal Album Configuration
 const myAlbum: Omit<Album, 'id'> = {
-  title: "Sample Demo Album",
+  title: "Sample Demo Album 2",
   artist: "Demo Artist",
   coverUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80", // Replace with your album cover URL
   description: "A sample demo album with test tracks",
@@ -24,7 +24,8 @@ const myAlbum: Omit<Album, 'id'> = {
 
 // Customize track details if needed
 const trackDetails: Array<{ title: string; duration: number; sourceFile: string }> = [
-  { title: "Sample Tone", duration: 5, sourceFile: "my-track-1.wav" }
+  { title: "Sample Tone 440Hz", duration: 5, sourceFile: "my-track-1.wav" },
+  { title: "Sample Tone 880Hz", duration: 3, sourceFile: "my-track-2.wav" }
 ];
 
 /**
@@ -94,6 +95,14 @@ async function addPersonalTracks() {
 }
 
 // Execute the function
-addPersonalTracks().catch(err => {
+addPersonalTracks().then(async () => {
+  // Verify that the album and tracks were created
+  const album = await storage.getAlbum(6);
+  console.log('Verification - Album:', album);
+  
+  const tracks = await storage.getTracksByAlbumId(6);
+  console.log('Verification - Tracks:', tracks);
+  
+}).catch(err => {
   console.error('Error adding personal tracks:', err);
 });
