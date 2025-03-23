@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Album } from "@shared/schema";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Upload, Music, FileAudio } from "lucide-react";
+import { AlertCircle, Upload, Music, FileAudio, File } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 
 export function AdminPanel() {
   const { toast } = useToast();
@@ -35,6 +36,12 @@ export function AdminPanel() {
   const [importAlbumArtist, setImportAlbumArtist] = useState("Demo Artist");
   const [importAlbumDescription, setImportAlbumDescription] = useState("A collection of imported tracks");
   const [importAlbumCoverUrl, setImportAlbumCoverUrl] = useState("");
+  
+  // State for file upload
+  const [files, setFiles] = useState<File[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Mutation for adding an album
   const addAlbumMutation = useMutation({

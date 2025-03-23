@@ -5,6 +5,9 @@ import { setupAuth } from "./auth";
 import { importPersonalTracks } from "./add-personal-tracks";
 import { insertPlaylistSchema, insertTrackPlaySchema } from "@shared/schema";
 import { z } from "zod";
+import multer from "multer";
+import fs from "fs";
+import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
@@ -495,6 +498,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Use imported personal tracks function
+  
+  // Configure multer for file uploads
+  const audioDir = path.join(process.cwd(), 'public', 'audio');
+  
+  // Make sure the directory exists
+  if (!fs.existsSync(audioDir)) {
+    fs.mkdirSync(audioDir, { recursive: true });
+  }
+  
+  const multerStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, audioDir);
+    },
+    filename: function (req, file, cb) {
+      // Rename files to match the expected pattern for importPersonalTracks
+      const filename = 'my-track-' + Date.now() + path.extname(file.originalname);
+      cb(null, filename);
+    }
+  });
+  
+  const upload = multer({ 
+    storage: multerStorage,
+    fileFilter: function(req, file, cb) {
+      // Accept only WAV files
+      if (file.mimetype !== 'audio/wav' && !file.originalname.endsWith('.wav')) {
+        return cb(new Error('Only WAV files are allowed'));
+      }
+      cb(null, true);
+    },
+    limits: {
+      fileSize: 50 * 1024 * 1024 // 50MB limit
+    }
+  });
+  
+  // Handle file uploads
+  app.post('/api/admin/upload-tracks', upload.array('tracks', 10), async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    // Only allow admin users to upload tracks
+    if (req.user!.id !== 1) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    
+    try {
+      const files = req.files as Express.Multer.File[];
+      
+      if (!files || files.length === 0) {
+        return res.status(400).json({ message: "No files uploaded" });
+      }
+      
+      // Return the list of uploaded files
+      const uploadedFiles = files.map(file => ({
+        filename: file.filename,
+        originalname: file.originalname,
+        size: file.size
+      }));
+      
+      res.status(201).json({ 
+        message: `Successfully uploaded ${files.length} files`,
+        files: uploadedFiles
+      });
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      res.status(500).json({ message: "Failed to upload files" });
+    }
+  });
   
   // Endpoint to import personal tracks (WAV files)
   app.post("/api/admin/import-personal-tracks", async (req, res) => {
