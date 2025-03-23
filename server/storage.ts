@@ -45,7 +45,7 @@ export class MemStorage implements IStorage {
   trackId: number;
   playlistId: number;
   playlistTrackId: number;
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 
   constructor() {
     this.users = new Map();
@@ -180,7 +180,7 @@ export class MemStorage implements IStorage {
       ...insertUser, 
       id,
       isPremium: false,
-      premiumExpiry: undefined
+      premiumExpiry: null
     };
     this.users.set(id, user);
     return user;
@@ -193,7 +193,7 @@ export class MemStorage implements IStorage {
     const updatedUser: User = {
       ...user,
       isPremium,
-      premiumExpiry: expiryDate
+      premiumExpiry: expiryDate || null
     };
     
     this.users.set(userId, updatedUser);

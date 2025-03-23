@@ -8,7 +8,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
   isPremium: boolean("is_premium").notNull().default(false),
-  premiumExpiry: timestamp("premium_expiry"),
+  premiumExpiry: timestamp("premium_expiry", { mode: 'date' }),
 });
 
 export const albums = pgTable("albums", {
