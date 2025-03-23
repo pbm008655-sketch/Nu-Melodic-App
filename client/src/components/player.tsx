@@ -63,26 +63,15 @@ export default function Player() {
     // Add error handling for audio loading
     const handleError = () => {
       console.error("Error loading audio file:", currentTrack.audioUrl);
-      toast({
-        title: "Playback Error",
-        description: "This is a demo with simulated tracks. Actual audio files aren't available.",
-        variant: "destructive"
-      });
       // Continue with player state, just don't play the audio
       setCurrentTime(0);
       setDuration(180); // Simulate a 3-minute track
     };
     
-    // Notify user about silent tracks (demo mode)
+    // Handle play event
     const handlePlay = () => {
-      // Only show this message the first time a track starts playing
-      if (currentTime === 0) {
-        toast({
-          title: "Demo Mode",
-          description: "This is a demo track with no audio content. In the full version, actual music would play here.",
-          variant: "default"
-        });
-      }
+      // You can add custom behavior here if needed
+      console.log("Playing track:", currentTrack.title);
     };
     
     audio.addEventListener('error', handleError);
