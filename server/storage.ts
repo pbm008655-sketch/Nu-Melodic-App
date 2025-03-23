@@ -1,4 +1,4 @@
-import { albums, tracks, playlists, playlistTracks, users, type User, type InsertUser, type Album, type Track, type Playlist, type PlaylistTrack } from "@shared/schema";
+import { albums, tracks, playlists, playlistTracks, users, trackPlays, type User, type InsertUser, type Album, type Track, type Playlist, type PlaylistTrack, type TrackPlay } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
 
@@ -28,6 +28,14 @@ export interface IStorage {
   addTrackToPlaylist(playlistId: number, trackId: number, position: number): Promise<PlaylistTrack>;
   removeTrackFromPlaylist(playlistId: number, trackId: number): Promise<boolean>;
   
+  // Analytics related methods
+  recordTrackPlay(userId: number, trackId: number): Promise<TrackPlay>;
+  getTrackPlays(trackId: number): Promise<number>;
+  getTopTracks(limit?: number): Promise<{track: Track; plays: number}[]>;
+  getTrackPlaysByAlbum(albumId: number): Promise<{albumId: number; plays: number}>;
+  getPlaysByTimeRange(startDate: Date, endDate: Date): Promise<{date: string; plays: number}[]>;
+  getUserListeningHistory(userId: number, limit?: number): Promise<{track: Track; album: Album; playedAt: Date}[]>;
+  
   sessionStore: any; // Type for session store
 }
 
@@ -39,12 +47,14 @@ export class MemStorage implements IStorage {
   private tracks: Map<number, Track>;
   private playlists: Map<number, Playlist>;
   private playlistTracks: Map<number, PlaylistTrack>;
+  private trackPlays: Map<number, TrackPlay>;
   
   userId: number;
   albumId: number;
   trackId: number;
   playlistId: number;
   playlistTrackId: number;
+  trackPlayId: number;
   sessionStore: any;
 
   constructor() {
@@ -53,12 +63,14 @@ export class MemStorage implements IStorage {
     this.tracks = new Map();
     this.playlists = new Map();
     this.playlistTracks = new Map();
+    this.trackPlays = new Map();
     
     this.userId = 1;
     this.albumId = 1;
     this.trackId = 1;
     this.playlistId = 1;
     this.playlistTrackId = 1;
+    this.trackPlayId = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
@@ -316,6 +328,113 @@ export class MemStorage implements IStorage {
     }
     
     return this.playlistTracks.delete(playlistTrack.id);
+  }
+
+  // Analytics methods
+  async recordTrackPlay(userId: number, trackId: number): Promise<TrackPlay> {
+    const id = this.trackPlayId++;
+    const trackPlay: TrackPlay = {
+      id,
+      trackId,
+      userId,
+      playedAt: new Date()
+    };
+    
+    this.trackPlays.set(id, trackPlay);
+    return trackPlay;
+  }
+
+  async getTrackPlays(trackId: number): Promise<number> {
+    return Array.from(this.trackPlays.values())
+      .filter(play => play.trackId === trackId)
+      .length;
+  }
+
+  async getTopTracks(limit = 10): Promise<{track: Track; plays: number}[]> {
+    // Count plays for each track
+    const playCounts = new Map<number, number>();
+    
+    Array.from(this.trackPlays.values()).forEach(play => {
+      const count = playCounts.get(play.trackId) || 0;
+      playCounts.set(play.trackId, count + 1);
+    });
+    
+    // Convert to array and sort by play count
+    const trackCounts = Array.from(playCounts.entries())
+      .map(([trackId, count]) => ({
+        track: this.tracks.get(trackId)!,
+        plays: count
+      }))
+      .sort((a, b) => b.plays - a.plays)
+      .slice(0, limit);
+    
+    return trackCounts;
+  }
+
+  async getTrackPlaysByAlbum(albumId: number): Promise<{albumId: number; plays: number}> {
+    // Get all tracks for this album
+    const albumTracks = await this.getTracksByAlbumId(albumId);
+    const trackIds = albumTracks.map(track => track.id);
+    
+    // Count plays for each track in this album
+    const plays = Array.from(this.trackPlays.values())
+      .filter(play => trackIds.includes(play.trackId))
+      .length;
+    
+    return {
+      albumId,
+      plays
+    };
+  }
+
+  async getPlaysByTimeRange(startDate: Date, endDate: Date): Promise<{date: string; plays: number}[]> {
+    // Filter plays within the given time range
+    const playsInRange = Array.from(this.trackPlays.values())
+      .filter(play => play.playedAt >= startDate && play.playedAt <= endDate);
+    
+    // Group plays by date
+    const playsByDate = new Map<string, number>();
+    
+    playsInRange.forEach(play => {
+      const dateStr = play.playedAt.toISOString().split('T')[0]; // YYYY-MM-DD
+      const count = playsByDate.get(dateStr) || 0;
+      playsByDate.set(dateStr, count + 1);
+    });
+    
+    // Convert to array and sort by date
+    return Array.from(playsByDate.entries())
+      .map(([date, count]) => ({
+        date,
+        plays: count
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  async getUserListeningHistory(userId: number, limit = 20): Promise<{track: Track; album: Album; playedAt: Date}[]> {
+    // Get plays for this user and sort by date (newest first)
+    const userPlays = Array.from(this.trackPlays.values())
+      .filter(play => play.userId === userId)
+      .sort((a, b) => b.playedAt.getTime() - a.playedAt.getTime())
+      .slice(0, limit);
+    
+    // Map plays to track and album info
+    const history = await Promise.all(
+      userPlays.map(async play => {
+        const track = await this.getTrack(play.trackId);
+        if (!track) throw new Error(`Track not found: ${play.trackId}`);
+        
+        const album = await this.getAlbum(track.albumId);
+        if (!album) throw new Error(`Album not found: ${track.albumId}`);
+        
+        return {
+          track,
+          album,
+          playedAt: play.playedAt
+        };
+      })
+    );
+    
+    return history;
   }
 }
 
