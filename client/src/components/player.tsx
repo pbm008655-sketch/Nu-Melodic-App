@@ -73,7 +73,20 @@ export default function Player() {
       setDuration(180); // Simulate a 3-minute track
     };
     
+    // Notify user about silent tracks (demo mode)
+    const handlePlay = () => {
+      // Only show this message the first time a track starts playing
+      if (currentTime === 0) {
+        toast({
+          title: "Demo Mode",
+          description: "This is a demo track with no audio content. In the full version, actual music would play here.",
+          variant: "default"
+        });
+      }
+    };
+    
     audio.addEventListener('error', handleError);
+    audio.addEventListener('play', handlePlay);
     
     // Play if needed
     if (isPlaying) {
@@ -85,6 +98,7 @@ export default function Player() {
     
     return () => {
       audio.removeEventListener('error', handleError);
+      audio.removeEventListener('play', handlePlay);
     };
   }, [currentTrack, isPlaying, toast]);
   
