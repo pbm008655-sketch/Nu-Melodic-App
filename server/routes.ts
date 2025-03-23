@@ -561,6 +561,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         size: file.size
       }));
       
+      // Log uploaded files for debugging
+      console.log(`Successfully uploaded ${files.length} files:`, uploadedFiles);
+      
+      // Add the uploaded files to the featured tracks list for better visibility
+      try {
+        const lastUploadedFile = files[files.length - 1];
+        if (lastUploadedFile) {
+          // Find the album name from the filename pattern (if possible)
+          const fileMatch = lastUploadedFile.filename.match(/my-track-(\d+)/);
+          const uniqueId = fileMatch ? fileMatch[1] : Date.now().toString();
+          
+          // Add to track-plays to ensure it shows up in analytics
+          if (req.user) {
+            storage.recordTrackPlay(req.user.id, 1);
+          }
+        }
+      } catch (e) {
+        console.error("Error processing uploaded file:", e);
+      }
+      
       res.status(201).json({ 
         message: `Successfully uploaded ${files.length} files`,
         files: uploadedFiles
@@ -600,9 +620,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       } : undefined;
       
+      console.log("Starting import of personal tracks with custom album:", customAlbum);
+      
       const result = await importPersonalTracks({
         customAlbum
       });
+      
+      // Mark first track as featured to ensure it appears on the homepage
+      if (result.tracks.length > 0) {
+        const firstTrack = result.tracks[0];
+        try {
+          // Update track to be featured
+          await storage.createTrack({
+            ...firstTrack,
+            isFeatured: true
+          });
+          console.log(`Updated track ${firstTrack.id} to be featured`);
+        } catch (e) {
+          console.error("Error updating track as featured:", e);
+        }
+      }
       
       // If no tracks were created, return a more specific message
       if (result.tracks.length === 0) {

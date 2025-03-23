@@ -153,6 +153,12 @@ export function AdminPanel() {
           albumDescription: importAlbumDescription || undefined,
           albumCoverUrl: importAlbumCoverUrl || undefined,
         });
+        
+        // Pre-emptively invalidate queries for better UX
+        queryClient.invalidateQueries({ queryKey: ["/api/albums"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/featured-albums"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/recent-albums"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/featured-tracks"] });
       }
     },
     onError: (error) => {
