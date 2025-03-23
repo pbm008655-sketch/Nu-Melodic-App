@@ -140,10 +140,10 @@ export default function MobileMenu() {
           
           <div className="p-6 border-t border-zinc-800">
             <Link href="#">
-              <a className="flex items-center text-zinc-300">
+              <div className="flex items-center text-zinc-300 cursor-pointer">
                 <User className="h-5 w-5 mr-2" />
                 <span>Account</span>
-              </a>
+              </div>
             </Link>
           </div>
         </div>
