@@ -66,7 +66,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(recentAlbums);
   });
 
-  // Get track details
+  // Get track details with album information for audio mixer
   app.get("/api/tracks/:id", async (req, res) => {
     const trackId = parseInt(req.params.id);
     if (isNaN(trackId)) {
@@ -80,7 +80,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Get the album info for this track
     const album = await storage.getAlbum(track.albumId);
-    res.json({ ...track, album });
+    
+    // Return in a format suitable for the mixer
+    res.json({ track, album });
   });
 
   // Get featured tracks

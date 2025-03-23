@@ -14,6 +14,7 @@ import PlaylistPage from "./pages/playlist-page";
 import SubscriptionsPage from "./pages/subscriptions-page";
 import AnalyticsDashboardPage from "./pages/analytics-dashboard-page";
 import AdminPage from "./pages/admin-page";
+import MixerPage from "./pages/mixer-page";
 
 function Router() {
   return (
