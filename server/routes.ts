@@ -513,7 +513,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
     filename: function (req, file, cb) {
       // Rename files to match the expected pattern for importPersonalTracks
-      const filename = 'my-track-' + Date.now() + path.extname(file.originalname);
+      // Create a timestamp-based unique identifier
+      const timestamp = Date.now();
+      const uniqueId = Math.floor(Math.random() * 1000);
+      // Format: my-track-{timestamp}-{position}.wav
+      const filename = `my-track-${timestamp}-${uniqueId}${path.extname(file.originalname)}`;
       cb(null, filename);
     }
   });

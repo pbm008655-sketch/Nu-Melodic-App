@@ -120,6 +120,51 @@ export function AdminPanel() {
     },
   });
   
+  // Mutation for file upload
+  const uploadTracksMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await fetch('/api/admin/upload-tracks', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to upload files');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Files uploaded successfully",
+        description: `Uploaded ${data.files.length} files to the server`,
+      });
+      
+      setFiles([]);
+      setUploadProgress(0);
+      
+      // Import tracks after uploading files
+      if (data.files.length > 0) {
+        importTracksMutation.mutate({
+          albumTitle: importAlbumTitle || undefined,
+          albumArtist: importAlbumArtist || undefined,
+          albumDescription: importAlbumDescription || undefined,
+          albumCoverUrl: importAlbumCoverUrl || undefined,
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      setUploadProgress(0);
+    }
+  });
+  
   // Mutation for importing tracks (batch operation)
   const importTracksMutation = useMutation({
     mutationFn: async (albumData: {
@@ -210,6 +255,109 @@ export function AdminPanel() {
       albumArtist: importAlbumArtist || undefined,
       albumDescription: importAlbumDescription || undefined,
       albumCoverUrl: importAlbumCoverUrl || undefined,
+    });
+  };
+  
+  // Handle drag and drop events
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+  
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+    setIsDragging(true);
+  }, []);
+  
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+  
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      // Filter only WAV files
+      const wavFiles = Array.from(e.dataTransfer.files).filter(
+        file => file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')
+      );
+      
+      if (wavFiles.length === 0) {
+        toast({
+          title: "Invalid files",
+          description: "Only WAV audio files are accepted",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setFiles(wavFiles);
+      handleUpload(wavFiles);
+    }
+  }, []);
+  
+  const handleSelectFiles = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      // Filter only WAV files
+      const wavFiles = Array.from(e.target.files).filter(
+        file => file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')
+      );
+      
+      if (wavFiles.length === 0) {
+        toast({
+          title: "Invalid files",
+          description: "Only WAV audio files are accepted",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setFiles(wavFiles);
+      handleUpload(wavFiles);
+    }
+  };
+  
+  const handleUpload = (filesToUpload: File[]) => {
+    if (filesToUpload.length === 0) return;
+    
+    const formData = new FormData();
+    filesToUpload.forEach(file => {
+      formData.append('tracks', file);
+    });
+    
+    setUploadProgress(10);
+    
+    // Simulate progress during upload (in a real app, you could use XHR with progress events)
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return prev;
+        }
+        return prev + 10;
+      });
+    }, 300);
+    
+    uploadTracksMutation.mutate(formData, {
+      onSettled: () => {
+        clearInterval(progressInterval);
+        setUploadProgress(100);
+      }
     });
   };
   
@@ -390,7 +538,7 @@ export function AdminPanel() {
               </Alert>
               
               <form onSubmit={handleImportTracks} className="space-y-4">
-                <div className="space-y-2">
+                <div className="space-y-2 mb-6">
                   <Label htmlFor="importAlbumTitle">Album Title</Label>
                   <Input
                     id="importAlbumTitle"
@@ -440,13 +588,98 @@ export function AdminPanel() {
                   />
                 </div>
                 
-                <Button 
-                  type="submit" 
-                  className="w-full"
-                  disabled={importTracksMutation.isPending}
+                <div 
+                  className={`mt-8 border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-colors ${
+                    isDragging 
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-muted-foreground/25 hover:border-primary/50'
+                  }`}
+                  onDragEnter={handleDragEnter}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
                 >
-                  {importTracksMutation.isPending ? "Importing..." : "Import Tracks"}
-                </Button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileInputChange}
+                    className="hidden"
+                    multiple
+                    accept=".wav,audio/wav"
+                  />
+                  
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                    <h3 className="text-lg font-medium">Drag &amp; Drop WAV Files</h3>
+                    <p className="text-sm text-muted-foreground text-center mb-2">
+                      Or click to browse your files
+                    </p>
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleSelectFiles}
+                      disabled={uploadTracksMutation.isPending}
+                    >
+                      Select WAV Files
+                    </Button>
+                  </div>
+                  
+                  {files.length > 0 && (
+                    <div className="mt-4 w-full">
+                      <p className="text-sm font-medium mb-2">Selected Files ({files.length})</p>
+                      <div className="space-y-2 mb-4">
+                        {files.slice(0, 5).map((file, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <File className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm truncate">{file.name}</span>
+                            <span className="text-xs text-muted-foreground ml-auto">
+                              {Math.round(file.size / 1024)} KB
+                            </span>
+                          </div>
+                        ))}
+                        {files.length > 5 && (
+                          <p className="text-xs text-muted-foreground">
+                            and {files.length - 5} more...
+                          </p>
+                        )}
+                      </div>
+                      
+                      {uploadProgress > 0 && uploadProgress < 100 && (
+                        <div className="w-full space-y-1">
+                          <Progress value={uploadProgress} className="h-2 w-full" />
+                          <p className="text-xs text-right text-muted-foreground">
+                            {uploadProgress}%
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex flex-col gap-4 mt-6">
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={importTracksMutation.isPending}
+                  >
+                    {importTracksMutation.isPending ? "Importing..." : "Import Existing Tracks"}
+                  </Button>
+                  
+                  <div className="text-center text-sm text-muted-foreground">
+                    - or -
+                  </div>
+                  
+                  <Button 
+                    type="button" 
+                    className="w-full"
+                    variant="outline"
+                    onClick={handleSelectFiles}
+                    disabled={uploadTracksMutation.isPending}
+                  >
+                    {uploadTracksMutation.isPending ? "Uploading..." : "Upload New Tracks"}
+                  </Button>
+                </div>
               </form>
             </div>
           </TabsContent>
