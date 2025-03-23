@@ -13,11 +13,13 @@ export interface IStorage {
   getAlbum(id: number): Promise<Album | undefined>;
   getFeaturedAlbums(limit?: number): Promise<Album[]>;
   getRecentAlbums(limit?: number): Promise<Album[]>;
+  createAlbum(album: Omit<Album, 'id'>): Promise<Album>;
   
   getAllTracks(): Promise<Track[]>;
   getTrack(id: number): Promise<Track | undefined>;
   getTracksByAlbumId(albumId: number): Promise<Track[]>;
   getFeaturedTracks(limit?: number): Promise<Track[]>;
+  createTrack(track: Omit<Track, 'id'>): Promise<Track>;
   
   getUserPlaylists(userId: number): Promise<Playlist[]>;
   getPlaylist(id: number): Promise<Playlist | undefined>;
@@ -230,6 +232,17 @@ export class MemStorage implements IStorage {
     return Array.from(this.albums.values())
       .sort((a, b) => b.releaseDate!.getTime() - a.releaseDate!.getTime())
       .slice(0, limit);
+  }
+  
+  async createAlbum(album: Omit<Album, 'id'>): Promise<Album> {
+    const id = this.albumId++;
+    const newAlbum: Album = {
+      id,
+      ...album
+    };
+    
+    this.albums.set(id, newAlbum);
+    return newAlbum;
   }
 
   async getAllTracks(): Promise<Track[]> {
