@@ -514,11 +514,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title: albumTitle,
         artist: albumArtist || "Demo Artist",
         description: albumDescription || "",
-        coverUrl: albumCoverUrl || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80"
+        coverUrl: albumCoverUrl || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
+        // Store the custom album info in the customAlbum field as a JSON string
+        customAlbum: JSON.stringify({
+          title: albumTitle,
+          artist: albumArtist || "Demo Artist",
+          description: albumDescription || "A collection of imported tracks",
+          coverUrl: albumCoverUrl || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80"
+        })
       } : undefined;
       
       const result = await importPersonalTracks({
-        customAlbum: customAlbum
+        customAlbum
       });
       
       // If no tracks were created, return a more specific message

@@ -36,14 +36,17 @@ const defaultTrackDetails: Array<{ title: string; duration: number; sourceFile: 
  * @param customTrackDetails Optional track details to override defaults
  * @returns Promise with the created album and tracks
  */
-export async function importPersonalTracks(
-  customAlbum?: Partial<Omit<Album, 'id'>>,
-  customTrackDetails?: Array<{ title: string; duration: number; sourceFile: string }>
-) {
+export async function importPersonalTracks({
+  customAlbum,
+  customTrackDetails
+}: {
+  customAlbum?: Partial<Omit<Album, 'id'>>;
+  customTrackDetails?: Array<{ title: string; duration: number; sourceFile: string }>;
+} = {}) {
   // Use custom album details or defaults
   const albumData = {
     ...defaultAlbum,
-    ...customAlbum,
+    ...(customAlbum || {}),
     releaseDate: new Date() // Always use current date
   };
   

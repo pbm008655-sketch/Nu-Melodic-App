@@ -18,6 +18,8 @@ export const albums = pgTable("albums", {
   coverUrl: text("cover_url").notNull(),
   description: text("description"),
   releaseDate: timestamp("release_date"),
+  // We'll store customAlbum as JSON in the database for imported tracks
+  customAlbum: text("custom_album"),
 });
 
 export const tracks = pgTable("tracks", {
