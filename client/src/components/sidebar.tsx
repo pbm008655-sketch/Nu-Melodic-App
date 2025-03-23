@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Home, Search, Library, PlusCircle, Music, BarChart } from "lucide-react";
+import { Home, Search, Library, PlusCircle, Music, BarChart, Settings } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,16 @@ export default function Sidebar() {
                 </div>
               </Link>
             </li>
+            {user?.id === 1 && (
+              <li>
+                <Link href="/admin">
+                  <div className={`flex items-center ${isActive("/admin") ? "text-primary" : "text-zinc-300 hover:text-white"} transition-colors cursor-pointer`}>
+                    <Settings className="h-5 w-5 mr-3" />
+                    <span>Admin</span>
+                  </div>
+                </Link>
+              </li>
+            )}
           </ul>
 
           <div className="mt-8 pt-8 border-t border-zinc-800">

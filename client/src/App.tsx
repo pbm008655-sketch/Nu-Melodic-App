@@ -6,14 +6,14 @@ import { AuthProvider } from "./hooks/use-auth";
 import { PlayerProvider } from "./hooks/use-player";
 import { ProtectedRoute } from "./lib/protected-route";
 
-import HomePage from "@/pages/home-page";
-import NotFound from "@/pages/not-found";
-import AuthPage from "@/pages/auth-page";
-import AlbumPage from "@/pages/album-page";
-import PlaylistPage from "@/pages/playlist-page";
-import SubscriptionsPage from "@/pages/subscriptions-page";
-import AnalyticsDashboardPage from "@/pages/analytics-dashboard-page";
-import AdminPage from "@/pages/admin-page";
+import HomePage from "./pages/home-page";
+import NotFound from "./pages/not-found";
+import AuthPage from "./pages/auth-page";
+import AlbumPage from "./pages/album-page";
+import PlaylistPage from "./pages/playlist-page";
+import SubscriptionsPage from "./pages/subscriptions-page";
+import AnalyticsDashboardPage from "./pages/analytics-dashboard-page";
+import AdminPage from "./pages/admin-page";
 
 function Router() {
   return (
