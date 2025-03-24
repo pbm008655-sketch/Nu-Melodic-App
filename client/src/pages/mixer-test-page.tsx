@@ -6,7 +6,8 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Info, AlertTriangle } from 'lucide-react';
 
 export default function MixerTestPage() {
-  const [audioUrl, setAudioUrl] = useState('/audio/track-6-1.wav');
+  // Ensure we have a valid URL initialized
+  const [audioUrl, setAudioUrl] = useState<string>('/audio/track-6-1.wav?t=' + Date.now());
   const [isLoaded, setIsLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -41,8 +42,8 @@ export default function MixerTestPage() {
   useEffect(() => {
     if (loadingMethod !== 'native') return;
     
-    // Force a direct URL to test with
-    const testUrl = '/test-audio';
+    // Use the selected audio URL directly
+    const testUrl = audioUrl;
     addDebugMessage(`📱 Creating native Audio element for ${testUrl}...`);
     
     const audio = new Audio();
@@ -126,8 +127,8 @@ export default function MixerTestPage() {
   useEffect(() => {
     if (loadingMethod !== 'web-audio') return;
     
-    // Force a direct URL to test with
-    const testUrl = '/test-audio';
+    // Use the selected audio URL directly
+    const testUrl = audioUrl;
     addDebugMessage(`🎛️ Using Web Audio API to load ${testUrl}...`);
     
     // Create audio context
@@ -201,8 +202,8 @@ export default function MixerTestPage() {
   useEffect(() => {
     if (loadingMethod !== 'fetch') return;
     
-    // Force a direct URL to test with
-    const testUrl = '/test-audio';
+    // Use the selected audio URL directly
+    const testUrl = audioUrl;
     addDebugMessage(`🔍 Testing direct fetch for ${testUrl}...`);
     
     fetch(testUrl, {
@@ -335,32 +336,32 @@ export default function MixerTestPage() {
             <h3 className="text-lg font-medium mb-2">Test with different audio files</h3>
             <div className="flex flex-wrap gap-2 mb-4">
               <Button 
-                onClick={() => setAudioUrl('/audio/track-6-1.wav')}
-                variant={audioUrl === '/audio/track-6-1.wav' ? 'default' : 'outline'}
+                onClick={() => setAudioUrl('/audio/track-6-1.wav?t=' + Date.now())}
+                variant={audioUrl.startsWith('/audio/track-6-1.wav') ? 'default' : 'outline'}
                 size="sm"
               >
                 440Hz Test
               </Button>
               
               <Button 
-                onClick={() => setAudioUrl('/audio/track-6-2.wav')}
-                variant={audioUrl === '/audio/track-6-2.wav' ? 'default' : 'outline'}
+                onClick={() => setAudioUrl('/audio/track-6-2.wav?t=' + Date.now())}
+                variant={audioUrl.startsWith('/audio/track-6-2.wav') ? 'default' : 'outline'}
                 size="sm"
               >
                 880Hz Test
               </Button>
               
               <Button 
-                onClick={() => setAudioUrl('/audio/track-6-3.wav')}
-                variant={audioUrl === '/audio/track-6-3.wav' ? 'default' : 'outline'}
+                onClick={() => setAudioUrl('/audio/track-6-3.wav?t=' + Date.now())}
+                variant={audioUrl.startsWith('/audio/track-6-3.wav') ? 'default' : 'outline'}
                 size="sm"
               >
                 Track 3
               </Button>
               
               <Button 
-                onClick={() => setAudioUrl('/test-audio')}
-                variant={audioUrl === '/test-audio' ? 'default' : 'outline'}
+                onClick={() => setAudioUrl('/test-audio?t=' + Date.now())}
+                variant={audioUrl.startsWith('/test-audio') ? 'default' : 'outline'}
                 size="sm"
               >
                 Static Test Audio
