@@ -32,7 +32,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  // Record track play mutation with enhanced error handling
+  // Record track play mutation with enhanced error handling and retry logic
   const recordPlayMutation = useMutation({
     mutationFn: async (trackId: number) => {
       try {
@@ -48,11 +48,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           return null;
         }
         
-        console.log(`Recording play for track ID: ${trackId}`);
+        console.log(`Recording play for track ID: ${trackId} from Player hook`);
         
         // Make the API request with better error handling
+        // Try string format first as that's been more reliable
         try {
-          const response = await apiRequest('POST', '/api/analytics/track-play', { trackId });
+          const response = await apiRequest('POST', '/api/analytics/track-play', { 
+            trackId: trackId.toString() 
+          });
+          
           if (!response.ok) {
             const errorText = await response.text();
             let errorData;
@@ -62,8 +66,23 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
               errorData = { message: errorText };
             }
             console.error(`Track play API error (${response.status}):`, errorData);
-            return null;
+            
+            // If first attempt failed, try with numeric trackId
+            console.log("Retrying with numeric trackId...");
+            const retryResponse = await apiRequest('POST', '/api/analytics/track-play', { 
+              trackId: trackId 
+            });
+            
+            if (!retryResponse.ok) {
+              console.error("Retry failed as well");
+              return null;
+            }
+            
+            console.log("Retry succeeded with numeric trackId");
+            return retryResponse.json();
           }
+          
+          console.log("Successfully recorded play from Player hook");
           return response.json();
         } catch (apiError) {
           console.error('API request failed:', apiError);

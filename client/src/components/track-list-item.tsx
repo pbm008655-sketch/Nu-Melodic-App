@@ -83,11 +83,46 @@ export function TrackListItem({ track, album, index, showAlbum = false, playlist
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
   
+  // Record play directly from track list item
+  const recordPlayMutation = useMutation({
+    mutationFn: async (trackId: number) => {
+      try {
+        // Only proceed if user is authenticated
+        if (!user) {
+          console.log("Cannot record play: No authenticated user");
+          return;
+        }
+        
+        // Make direct API call with stringified trackId to avoid type issues
+        console.log(`Recording play for track ${trackId} from TrackListItem`);
+        const response = await apiRequest('POST', '/api/analytics/track-play', { 
+          trackId: trackId.toString() 
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Failed to record play: ${response.status}`, errorText);
+        } else {
+          console.log("Successfully recorded play from TrackListItem");
+        }
+      } catch (error) {
+        console.error("Error recording track play:", error);
+      }
+    }
+  });
+
   const handlePlayClick = () => {
+    // Play logic
     if (isCurrentTrack) {
       togglePlay();
     } else {
       playTrack(track, album);
+      
+      // Record play as a backup to the player hook's recording
+      if (user && track.id) {
+        console.log("Triggering play recording from TrackListItem component");
+        recordPlayMutation.mutate(track.id);
+      }
     }
   };
   
