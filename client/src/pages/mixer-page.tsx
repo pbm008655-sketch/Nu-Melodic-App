@@ -482,8 +482,16 @@ export default function MixerPage() {
     return () => {
       // Clean up audio context when component unmounts
       stopAudio();
+      
+      // Close Web Audio API context
       if (audioContextRef.current) {
         audioContextRef.current.close();
+      }
+      
+      // Clean up Native Audio element
+      if (nativeAudioRef.current) {
+        nativeAudioRef.current.src = '';
+        nativeAudioRef.current.load();
       }
     };
   }, [data, isLoaded, toast]);
@@ -683,11 +691,18 @@ export default function MixerPage() {
   
   // Stop audio playback
   const stopAudio = () => {
+    // Stop Web Audio API playback if active
     if (audioSourceRef.current) {
       audioSourceRef.current.stop();
       audioSourceRef.current.disconnect();
       audioSourceRef.current = null;
     }
+    
+    // Stop Native Audio element if active
+    if (nativeAudioRef.current) {
+      nativeAudioRef.current.pause();
+    }
+    
     setIsPlaying(false);
   };
   
@@ -696,7 +711,59 @@ export default function MixerPage() {
     if (isPlaying) {
       stopAudio();
     } else {
-      playAudio();
+      // Try to play using WebAudio API, fallback to Native Audio if needed
+      if (audioBufferRef.current) {
+        playAudio();
+      } else if (nativeAudioRef.current) {
+        // Play using Native Audio element (fallback)
+        try {
+          nativeAudioRef.current.currentTime = audioProgress;
+          nativeAudioRef.current.play()
+            .then(() => {
+              console.log("Native Audio playback started");
+              setIsPlaying(true);
+              
+              // Set up progress tracking for Native Audio
+              const progressInterval = setInterval(() => {
+                if (nativeAudioRef.current) {
+                  setAudioProgress(nativeAudioRef.current.currentTime);
+                  
+                  // Check if playback has ended
+                  if (nativeAudioRef.current.ended) {
+                    setIsPlaying(false);
+                    setAudioProgress(0);
+                    clearInterval(progressInterval);
+                  }
+                }
+              }, 100);
+              
+              // Clear interval when playback ends
+              const audioEl = nativeAudioRef.current;
+              if (audioEl) {
+                audioEl.onended = () => {
+                  setIsPlaying(false);
+                  clearInterval(progressInterval);
+                };
+              }
+            })
+            .catch(error => {
+              console.error("Native Audio playback failed:", error);
+              toast({
+                title: "Playback Error",
+                description: "Failed to start audio playback.",
+                variant: "destructive",
+              });
+            });
+        } catch (error) {
+          console.error("Error playing with Native Audio:", error);
+        }
+      } else {
+        toast({
+          title: "Audio not loaded",
+          description: "Please wait for the audio to load or try another track.",
+          variant: "destructive",
+        });
+      }
     }
   };
   
@@ -704,6 +771,11 @@ export default function MixerPage() {
   const resetProgress = () => {
     stopAudio();
     setAudioProgress(0);
+    
+    // Reset Native Audio element position if it's being used
+    if (nativeAudioRef.current) {
+      nativeAudioRef.current.currentTime = 0;
+    }
   };
   
   // Update effect value
@@ -716,20 +788,29 @@ export default function MixerPage() {
         if (gainNodeRef.current) {
           gainNodeRef.current.gain.value = value;
         }
+        
+        // Also update volume for Native Audio element if it's being used
+        if (nativeAudioRef.current && !isMuted) {
+          nativeAudioRef.current.volume = value;
+        }
         break;
+        
       case "lowpass":
         if (lowpassNodeRef.current) {
           lowpassNodeRef.current.frequency.value = value;
         }
         break;
+        
       case "highpass":
         if (highpassNodeRef.current) {
           highpassNodeRef.current.frequency.value = value;
         }
         break;
+        
       case "distortion":
         createDistortionCurve(value * 400);
         break;
+        
       case "reverb":
       case "delay":
         // For these effects, we need to reconnect nodes for wet/dry mix
@@ -773,16 +854,31 @@ export default function MixerPage() {
   
   // Toggle mute
   const toggleMute = () => {
-    if (!gainNodeRef.current) return;
-    
     if (isMuted) {
       // Unmute
-      updateEffect("gain", volumeBeforeMute);
+      if (gainNodeRef.current) {
+        updateEffect("gain", volumeBeforeMute);
+      }
+      
+      // Also handle Native Audio element if it's being used
+      if (nativeAudioRef.current) {
+        nativeAudioRef.current.volume = volumeBeforeMute;
+      }
+      
       setIsMuted(false);
     } else {
       // Mute
       setVolumeBeforeMute(effectValues.gain);
-      updateEffect("gain", 0);
+      
+      if (gainNodeRef.current) {
+        updateEffect("gain", 0);
+      }
+      
+      // Also handle Native Audio element if it's being used
+      if (nativeAudioRef.current) {
+        nativeAudioRef.current.volume = 0;
+      }
+      
       setIsMuted(true);
     }
   };
