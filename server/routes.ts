@@ -611,23 +611,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Use imported personal tracks function
   
-  // Configure directories for file uploads
-  const audioDir = path.join(process.cwd(), 'public', 'audio');
-  const coverDir = path.join(process.cwd(), 'public', 'covers');
-  
   // Make sure the directories exist
-  if (!fs.existsSync(audioDir)) {
-    fs.mkdirSync(audioDir, { recursive: true });
+  if (!fs.existsSync(audioUploadDir)) {
+    fs.mkdirSync(audioUploadDir, { recursive: true });
   }
   
-  if (!fs.existsSync(coverDir)) {
-    fs.mkdirSync(coverDir, { recursive: true });
+  if (!fs.existsSync(coverUploadDir)) {
+    fs.mkdirSync(coverUploadDir, { recursive: true });
   }
   
   // Storage for audio files
   const audioStorage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, audioDir);
+      cb(null, audioUploadDir);
     },
     filename: function (req, file, cb) {
       // Rename files to match the expected pattern for importPersonalTracks
@@ -687,7 +683,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Special multer configuration just for the album creation endpoint
   const albumUpload = multer({
-    storage: audioStorage,
+    storage: multer.diskStorage({
+      destination: function(req, file, cb) {
+        // Send track files to audio directory and cover files to cover directory
+        if (file.fieldname.startsWith('track-')) {
+          cb(null, audioUploadDir);
+        } else if (file.fieldname === 'cover') {
+          cb(null, coverUploadDir);
+        } else {
+          cb(new Error(`Unknown field type: ${file.fieldname}`), '');
+        }
+      },
+      filename: function(req, file, cb) {
+        if (file.fieldname.startsWith('track-')) {
+          // Tracks will be renamed later in the request handler once we have the album ID
+          const timestamp = Date.now();
+          const uniqueId = Math.floor(Math.random() * 1000);
+          const filename = `temp-track-${timestamp}-${uniqueId}${path.extname(file.originalname)}`;
+          cb(null, filename);
+        } else if (file.fieldname === 'cover') {
+          // Create a unique filename for the cover image
+          const timestamp = Date.now();
+          const filename = `cover-${timestamp}${path.extname(file.originalname)}`;
+          cb(null, filename);
+        } else {
+          cb(new Error(`Unknown field type: ${file.fieldname}`), '');
+        }
+      }
+    }),
     fileFilter: function(req, file, cb) {
       // Accept wav files from the track fields
       if (file.fieldname.startsWith('track-') && (file.mimetype !== 'audio/wav' && !file.originalname.endsWith('.wav'))) {
@@ -755,7 +778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const timestamp = Date.now();
           const imageExt = '.jpg'; // Default to jpg
           const filename = `cover-${timestamp}${imageExt}`;
-          const imagePath = path.join(coverDir, filename);
+          const imagePath = path.join(coverUploadDir, filename);
           
           // Write the file
           fs.writeFileSync(imagePath, imageBuffer);
@@ -797,7 +820,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Generate a filename based on album ID and track number
             const filename = `track-${album.id}-${trackNumber}.wav`;
-            const filePath = path.join(path.join(process.cwd(), 'public', 'audio'), filename);
+            const filePath = path.join(audioUploadDir, filename);
             
             // Rename the uploaded file if needed
             if (file.path !== filePath) {
