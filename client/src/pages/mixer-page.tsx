@@ -342,43 +342,57 @@ export default function MixerPage() {
           console.log("Original audio path:", originalUrl);
           console.log("Using audio URL:", audioUrl);
           
-          // Use native browser fetch with simple parameters
-          const response = await fetch(audioUrl);
+          // First try using XMLHttpRequest for better compatibility
+          console.log("Attempting to load audio using XMLHttpRequest...");
           
-          // Detailed error logging
-          if (!response.ok) {
-            const errorMessage = `Audio fetch failed with status: ${response.status} ${response.statusText}`;
-            console.error(errorMessage);
-            console.error("Response headers:", 
-              Array.from(response.headers.entries())
-                .map(([key, value]) => `${key}: ${value}`)
-                .join(', ')
-            );
+          // Using a Promise to wrap XHR
+          const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', audioUrl, true);
+            xhr.responseType = 'arraybuffer';
             
-            // Try to read response body for more error details
-            try {
-              const errorBody = await response.text();
-              console.error("Error response body:", errorBody);
-            } catch (e) {
-              console.error("Could not read error response body");
-            }
+            // Add detailed logging
+            xhr.onprogress = (event) => {
+              if (event.lengthComputable) {
+                console.log(`Audio loading progress: ${Math.round((event.loaded / event.total) * 100)}%`);
+              }
+            };
             
-            throw new Error(`Failed to load audio file: ${response.status} ${response.statusText}`);
-          }
-          
-          console.log("Audio fetch successful, parsing array buffer...");
-          const arrayBuffer = await response.arrayBuffer();
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                console.log("XHR successful, received response with status:", xhr.status);
+                if (xhr.response) {
+                  console.log("XHR data received, size:", xhr.response.byteLength, "bytes");
+                  resolve(xhr.response);
+                } else {
+                  reject(new Error("Empty response received"));
+                }
+              } else {
+                console.error(`XHR failed with status: ${xhr.status}`);
+                reject(new Error(`Failed to load audio file: HTTP ${xhr.status}`));
+              }
+            };
+            
+            xhr.onerror = () => {
+              console.error("XHR network error occurred");
+              reject(new Error("Network error while loading audio"));
+            };
+            
+            xhr.send();
+          });
           
           if (!arrayBuffer || arrayBuffer.byteLength === 0) {
             throw new Error("Audio file is empty (0 bytes)");
           }
           
-          console.log("Array buffer received, size:", arrayBuffer.byteLength, "bytes");
+          console.log("Audio data received, size:", arrayBuffer.byteLength, "bytes");
           
           try {
-            console.log("Decoding audio data...");
+            console.log("Decoding audio data using Web Audio API...");
             const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
-            console.log("Audio successfully decoded, duration:", audioBuffer.duration, "seconds");
+            console.log("Audio successfully decoded, duration:", audioBuffer.duration, "seconds, " +
+                       "channels:", audioBuffer.numberOfChannels, 
+                       "sample rate:", audioBuffer.sampleRate);
             
             audioBufferRef.current = audioBuffer;
             setAudioDuration(audioBuffer.duration);
