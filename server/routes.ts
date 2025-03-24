@@ -24,19 +24,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).send('Audio file not found');
     }
     
-    // Log access
-    console.log(`Audio file accessed: ${req.params.filename}`);
+    // Log access for debugging
+    console.log(`Audio file accessed: ${req.params.filename}, file size: ${fs.statSync(audioFilePath).size} bytes`);
     
-    // Set appropriate headers for audio streaming
+    // Set appropriate headers for browser compatibility
     res.set({
       'Content-Type': 'audio/wav',
       'Accept-Ranges': 'bytes',
-      'Cache-Control': 'public, max-age=0', // Allow browser caching but validate each time
-      'X-Content-Type-Options': 'nosniff'    // Prevent MIME type sniffing
+      'Cache-Control': 'no-cache',
+      'Access-Control-Allow-Origin': '*'
     });
     
-    // Use static file serving for better performance and range requests
-    res.sendFile(audioFilePath);
+    // Use simple file streaming for maximum compatibility
+    fs.createReadStream(audioFilePath).pipe(res);
+  });
+  
+  // For testing: simple audio test endpoint that delivers a static file
+  app.get('/test-audio', (req, res) => {
+    const testFilePath = path.join(process.cwd(), 'public', 'audio', 'track-6-1.wav');
+    
+    if (!fs.existsSync(testFilePath)) {
+      return res.status(404).send('Test audio file not found');
+    }
+    
+    console.log('Test audio endpoint accessed');
+    res.set('Content-Type', 'audio/wav');
+    fs.createReadStream(testFilePath).pipe(res);
   });
 
   // Get all albums
