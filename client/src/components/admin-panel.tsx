@@ -23,6 +23,12 @@ export function AdminPanel() {
   const [albumCoverUrl, setAlbumCoverUrl] = useState("");
   const [albumDescription, setAlbumDescription] = useState("");
   
+  // Album cover image state
+  const [coverImage, setCoverImage] = useState<File | null>(null);
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  const [isDraggingCover, setIsDraggingCover] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  
   // Track form state
   const [trackTitle, setTrackTitle] = useState("");
   const [trackAlbumId, setTrackAlbumId] = useState("");
@@ -120,6 +126,44 @@ export function AdminPanel() {
     },
   });
   
+  // Mutation for uploading album cover
+  const uploadCoverMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await fetch('/api/admin/upload-cover', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to upload album cover');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Cover image uploaded",
+        description: "Album cover has been uploaded successfully",
+      });
+      
+      // Set the cover URL to use the uploaded image
+      setAlbumCoverUrl(data.coverUrl);
+    },
+    onError: (error) => {
+      toast({
+        title: "Cover upload failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      
+      // Clear the cover image
+      setCoverImage(null);
+      setCoverImagePreview(null);
+    }
+  });
+
   // Mutation for file upload
   const uploadTracksMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -210,6 +254,108 @@ export function AdminPanel() {
     },
   });
   
+  // Handle cover image selection
+  const handleCoverSelect = () => {
+    if (coverInputRef.current) {
+      coverInputRef.current.click();
+    }
+  };
+  
+  // Handle cover image file input change
+  const handleCoverInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      
+      // Check if file is an image
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file for the album cover",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setCoverImage(file);
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target && typeof event.target.result === 'string') {
+          setCoverImagePreview(event.target.result);
+        }
+      };
+      reader.readAsDataURL(file);
+      
+      // Upload the image
+      handleCoverUpload(file);
+    }
+  };
+  
+  // Handle cover image drop
+  const handleCoverDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingCover(true);
+  };
+  
+  const handleCoverDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+    setIsDraggingCover(true);
+  };
+  
+  const handleCoverDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingCover(false);
+  };
+  
+  const handleCoverDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingCover(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      
+      // Check if file is an image
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please drop an image file for the album cover",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setCoverImage(file);
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target && typeof event.target.result === 'string') {
+          setCoverImagePreview(event.target.result);
+        }
+      };
+      reader.readAsDataURL(file);
+      
+      // Upload the image
+      handleCoverUpload(file);
+    }
+  };
+  
+  // Handle cover image upload
+  const handleCoverUpload = (file: File) => {
+    const formData = new FormData();
+    formData.append('cover', file);
+    
+    uploadCoverMutation.mutate(formData);
+  };
+
   const handleAddAlbum = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -405,8 +551,64 @@ export function AdminPanel() {
                 />
               </div>
               
+              {/* Cover Image Upload Area */}
               <div className="space-y-2">
-                <Label htmlFor="albumCoverUrl">Cover Image URL</Label>
+                <Label>Album Cover</Label>
+                
+                <div 
+                  className={`border-2 border-dashed rounded-md p-4 hover:bg-gray-50 transition-colors cursor-pointer
+                    ${isDraggingCover ? 'border-primary bg-primary/10' : 'border-gray-300'}
+                    ${coverImagePreview ? 'bg-gray-50' : ''}
+                  `}
+                  onDragEnter={handleCoverDragEnter}
+                  onDragOver={handleCoverDragOver}
+                  onDragLeave={handleCoverDragLeave}
+                  onDrop={handleCoverDrop}
+                  onClick={handleCoverSelect}
+                >
+                  <input
+                    type="file"
+                    ref={coverInputRef}
+                    onChange={handleCoverInputChange}
+                    className="hidden"
+                    accept="image/*"
+                  />
+                  
+                  {coverImagePreview ? (
+                    <div className="flex flex-col items-center space-y-2">
+                      <img
+                        src={coverImagePreview}
+                        alt="Album cover preview"
+                        className="w-full max-w-[200px] h-auto object-cover rounded-md"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        {coverImage?.name} ({(coverImage?.size / 1024).toFixed(1)} KB)
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="text-center p-6">
+                      <Upload className="mx-auto h-10 w-10 text-gray-400 mb-2" />
+                      <p className="text-sm font-medium">
+                        Drag &amp; drop an image here, or click to select
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Supports JPG, PNG, GIF files
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                {uploadCoverMutation.isPending && (
+                  <div className="mt-2">
+                    <p className="text-sm text-primary font-medium mb-1">Uploading...</p>
+                    <Progress value={50} className="h-2" />
+                  </div>
+                )}
+              </div>
+              
+              {/* Keeping the URL option for manual entry */}
+              <div className="space-y-2">
+                <Label htmlFor="albumCoverUrl">Or Enter Cover Image URL</Label>
                 <Input
                   id="albumCoverUrl"
                   value={albumCoverUrl}
