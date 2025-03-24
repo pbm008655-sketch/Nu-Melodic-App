@@ -681,7 +681,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Handle file uploads
+  // Album creation endpoint - matches client-side expectation
+  app.post('/api/albums', upload.array('track', 10), async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      // Extract album data from request body
+      const { title, artist, description, releaseDate } = req.body;
+      let { coverUrl } = req.body;
+      
+      // Validate required fields
+      if (!title || !artist) {
+        return res.status(400).json({ message: "Title and artist are required" });
+      }
+      
+      // Process base64 cover image if provided
+      if (req.body.cover && typeof req.body.cover === 'string' && req.body.cover.startsWith('data:image')) {
+        try {
+          // Extract the base64 data
+          const base64Data = req.body.cover.split(';base64,').pop();
+          const imageBuffer = Buffer.from(base64Data, 'base64');
+          
+          // Generate a unique filename
+          const timestamp = Date.now();
+          const imageExt = '.jpg'; // Default to jpg
+          const filename = `cover-${timestamp}${imageExt}`;
+          const imagePath = path.join(coverDir, filename);
+          
+          // Write the file
+          fs.writeFileSync(imagePath, imageBuffer);
+          coverUrl = `/covers/${filename}`;
+          console.log(`Saved cover image to: ${imagePath}`);
+        } catch (error) {
+          console.error('Error processing base64 image:', error);
+        }
+      }
+      
+      // Create the album
+      const album = await storage.createAlbum({
+        title,
+        artist,
+        description: description || "",
+        releaseDate: releaseDate ? new Date(releaseDate) : new Date(),
+        coverUrl: coverUrl || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
+        customAlbum: null
+      });
+      
+      // Process uploaded track files if any
+      const files = req.files as Express.Multer.File[] | undefined;
+      if (files && files.length > 0) {
+        console.log(`Processing ${files.length} track files for album ${album.id}`);
+        
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const trackNumber = i + 1;
+          
+          // Generate a filename based on album ID and track number
+          const filename = `track-${album.id}-${trackNumber}.wav`;
+          const filePath = path.join(uploadDir, filename);
+          
+          // Rename the uploaded file
+          fs.renameSync(path.join(uploadDir, file.filename), filePath);
+          
+          // Extract track title from file name or use default
+          let trackTitle = req.body[`trackTitle-${i}`];
+          if (!trackTitle && file.originalname) {
+            // Extract title from filename (remove extension and clean up)
+            trackTitle = file.originalname.replace(/\.wav$/i, '').replace(/_/g, ' ');
+          }
+          if (!trackTitle) {
+            trackTitle = `Track ${trackNumber}`;
+          }
+          
+          // Create the track in storage
+          await storage.createTrack({
+            title: trackTitle,
+            albumId: album.id,
+            trackNumber,
+            duration: 180, // Default duration
+            audioUrl: `/audio/${filename}`,
+            isFeatured: false
+          });
+        }
+      }
+      
+      res.status(200).json(album);
+    } catch (error) {
+      console.error("Error creating album:", error);
+      res.status(500).json({ 
+        message: "Failed to create album", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Album import endpoint
+  app.post('/api/albums/import', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const { title, artist, description } = req.body;
+      
+      // Validate required fields
+      if (!title || !artist) {
+        return res.status(400).json({ message: "Title and artist are required" });
+      }
+      
+      // Import personal tracks
+      const result = await importPersonalTracks({
+        customAlbum: {
+          title,
+          artist,
+          description: description || "",
+        }
+      });
+      
+      res.status(200).json({ album: result.album, trackCount: result.tracks.length });
+    } catch (error) {
+      console.error("Error importing personal tracks:", error);
+      res.status(500).json({ message: "Failed to import tracks" });
+    }
+  });
+  
+  // Handle file uploads (legacy endpoint)
   app.post('/api/admin/upload-tracks', upload.array('tracks', 10), async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
