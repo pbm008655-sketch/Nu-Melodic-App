@@ -9,6 +9,10 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 
+// Define common directory paths
+const audioUploadDir = path.join(process.cwd(), 'public', 'audio');
+const coverUploadDir = path.join(process.cwd(), 'public', 'covers');
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
@@ -681,13 +685,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Special multer configuration just for the album creation endpoint
+  const albumUpload = multer({
+    storage: audioStorage,
+    fileFilter: function(req, file, cb) {
+      // Accept wav files from the track fields
+      if (file.fieldname.startsWith('track-') && (file.mimetype !== 'audio/wav' && !file.originalname.endsWith('.wav'))) {
+        return cb(new Error('Only WAV files are allowed for tracks'));
+      }
+      // Accept image files from the cover field
+      if (file.fieldname === 'cover' && !file.mimetype.startsWith('image/')) {
+        return cb(new Error('Only image files are allowed for cover'));
+      }
+      cb(null, true);
+    },
+    limits: {
+      fileSize: 50 * 1024 * 1024 // 50MB limit
+    }
+  }).fields([
+    { name: 'cover', maxCount: 1 },
+    { name: 'track-0', maxCount: 1 },
+    { name: 'track-1', maxCount: 1 },
+    { name: 'track-2', maxCount: 1 },
+    { name: 'track-3', maxCount: 1 },
+    { name: 'track-4', maxCount: 1 },
+    { name: 'track-5', maxCount: 1 },
+    { name: 'track-6', maxCount: 1 },
+    { name: 'track-7', maxCount: 1 },
+    { name: 'track-8', maxCount: 1 },
+    { name: 'track-9', maxCount: 1 }
+  ]);
+
   // Album creation endpoint - matches client-side expectation
-  app.post('/api/albums', upload.array('track', 10), async (req, res) => {
+  app.post('/api/albums', albumUpload, async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     
     try {
+      console.log("Album creation request body keys:", Object.keys(req.body));
+      console.log("Album creation request files:", req.files ? Object.keys(req.files) : "No files");
+      
       // Extract album data from request body
       const { title, artist, description, releaseDate } = req.body;
       let { coverUrl } = req.body;
@@ -697,8 +735,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Title and artist are required" });
       }
       
+      // Process cover file if uploaded
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+      
+      if (files && files['cover'] && files['cover'].length > 0) {
+        const coverFile = files['cover'][0];
+        // Generate cover URL
+        coverUrl = `/covers/${coverFile.filename}`;
+        console.log(`Using uploaded cover image: ${coverUrl}`);
+      }
       // Process base64 cover image if provided
-      if (req.body.cover && typeof req.body.cover === 'string' && req.body.cover.startsWith('data:image')) {
+      else if (req.body.cover && typeof req.body.cover === 'string' && req.body.cover.startsWith('data:image')) {
         try {
           // Extract the base64 data
           const base64Data = req.body.cover.split(';base64,').pop();
@@ -729,41 +776,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         customAlbum: null
       });
       
-      // Process uploaded track files if any
-      const files = req.files as Express.Multer.File[] | undefined;
-      if (files && files.length > 0) {
-        console.log(`Processing ${files.length} track files for album ${album.id}`);
+      // Process track files if any were uploaded
+      if (files) {
+        const trackFiles: Array<{ index: number, file: Express.Multer.File }> = [];
         
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          const trackNumber = i + 1;
-          
-          // Generate a filename based on album ID and track number
-          const filename = `track-${album.id}-${trackNumber}.wav`;
-          const filePath = path.join(uploadDir, filename);
-          
-          // Rename the uploaded file
-          fs.renameSync(path.join(uploadDir, file.filename), filePath);
-          
-          // Extract track title from file name or use default
-          let trackTitle = req.body[`trackTitle-${i}`];
-          if (!trackTitle && file.originalname) {
-            // Extract title from filename (remove extension and clean up)
-            trackTitle = file.originalname.replace(/\.wav$/i, '').replace(/_/g, ' ');
+        // Collect all track files from the request
+        for (let i = 0; i < 10; i++) {
+          const fieldName = `track-${i}`;
+          if (files[fieldName] && files[fieldName].length > 0) {
+            trackFiles.push({ index: i, file: files[fieldName][0] });
           }
-          if (!trackTitle) {
-            trackTitle = `Track ${trackNumber}`;
-          }
+        }
+        
+        // Process each track file
+        if (trackFiles.length > 0) {
+          console.log(`Processing ${trackFiles.length} track files for album ${album.id}`);
           
-          // Create the track in storage
-          await storage.createTrack({
-            title: trackTitle,
-            albumId: album.id,
-            trackNumber,
-            duration: 180, // Default duration
-            audioUrl: `/audio/${filename}`,
-            isFeatured: false
-          });
+          for (const { index, file } of trackFiles) {
+            const trackNumber = parseInt(req.body[`trackNumber-${index}`]) || index + 1;
+            
+            // Generate a filename based on album ID and track number
+            const filename = `track-${album.id}-${trackNumber}.wav`;
+            const filePath = path.join(path.join(process.cwd(), 'public', 'audio'), filename);
+            
+            // Rename the uploaded file if needed
+            if (file.path !== filePath) {
+              fs.renameSync(file.path, filePath);
+            }
+            
+            // Extract track title from request body or use defaults
+            let trackTitle = req.body[`trackTitle-${index}`];
+            if (!trackTitle && file.originalname) {
+              // Extract title from filename (remove extension and clean up)
+              trackTitle = file.originalname.replace(/\.wav$/i, '').replace(/_/g, ' ');
+            }
+            if (!trackTitle) {
+              trackTitle = `Track ${trackNumber}`;
+            }
+            
+            console.log(`Creating track ${trackNumber}: ${trackTitle} for album ${album.id}`);
+            
+            // Create the track in storage
+            await storage.createTrack({
+              title: trackTitle,
+              albumId: album.id,
+              trackNumber,
+              duration: 180, // Default duration
+              audioUrl: `/audio/${filename}`,
+              isFeatured: false
+            });
+          }
         }
       }
       
