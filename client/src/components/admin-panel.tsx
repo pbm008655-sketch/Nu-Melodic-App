@@ -22,12 +22,19 @@ export function AdminPanel() {
   const [albumArtist, setAlbumArtist] = useState("MeloStream Artist");
   const [albumCoverUrl, setAlbumCoverUrl] = useState("");
   const [albumDescription, setAlbumDescription] = useState("");
+  const [createdAlbumId, setCreatedAlbumId] = useState<number | null>(null);
   
   // Album cover image state
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
   const [isDraggingCover, setIsDraggingCover] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  
+  // Album track files state
+  const [albumTracks, setAlbumTracks] = useState<File[]>([]);
+  const [isDraggingTracks, setIsDraggingTracks] = useState(false);
+  const trackInputRef = useRef<HTMLInputElement>(null);
+  const [uploadTrackProgress, setUploadTrackProgress] = useState(0);
   
   // Track form state
   const [trackTitle, setTrackTitle] = useState("");
@@ -61,17 +68,29 @@ export function AdminPanel() {
       const data = await res.json();
       return data as Album;
     },
-    onSuccess: () => {
+    onSuccess: (album) => {
       toast({
         title: "Album created successfully",
-        description: "Your new album has been added to the library",
+        description: albumTracks.length > 0 
+          ? "Album created. Now uploading tracks..." 
+          : "Your new album has been added to the library",
       });
       
-      // Reset form
-      setAlbumTitle("");
-      setAlbumArtist("MeloStream Artist");
-      setAlbumCoverUrl("");
-      setAlbumDescription("");
+      // Store the created album ID for track uploads
+      setCreatedAlbumId(album.id);
+      
+      // If there are tracks waiting to be uploaded to this album
+      if (albumTracks.length > 0) {
+        handleAlbumTracksUpload(album.id, albumTracks);
+      } else {
+        // Reset form only if no tracks to upload
+        setAlbumTitle("");
+        setAlbumArtist("MeloStream Artist");
+        setAlbumCoverUrl("");
+        setAlbumDescription("");
+        setCoverImage(null);
+        setCoverImagePreview(null);
+      }
       
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ["/api/albums"] });
@@ -484,6 +503,185 @@ export function AdminPanel() {
     }
   };
   
+  // Handle track selection for new album
+  const handleTrackSelect = () => {
+    if (trackInputRef.current) {
+      trackInputRef.current.click();
+    }
+  };
+  
+  // Handle track file input change for new album
+  const handleTrackInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      // Filter only WAV files
+      const wavFiles = Array.from(e.target.files).filter(
+        file => file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')
+      );
+      
+      if (wavFiles.length === 0) {
+        toast({
+          title: "Invalid files",
+          description: "Only WAV audio files are accepted",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Store tracks for later upload when the album is created
+      setAlbumTracks(wavFiles);
+      
+      toast({
+        title: `${wavFiles.length} tracks selected`,
+        description: "These tracks will be uploaded when you create the album",
+      });
+    }
+  };
+  
+  // Handle track drag events for new album
+  const handleTrackDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingTracks(true);
+  };
+  
+  const handleTrackDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+    setIsDraggingTracks(true);
+  };
+  
+  const handleTrackDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingTracks(false);
+  };
+  
+  const handleTrackDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingTracks(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      // Filter only WAV files
+      const wavFiles = Array.from(e.dataTransfer.files).filter(
+        file => file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')
+      );
+      
+      if (wavFiles.length === 0) {
+        toast({
+          title: "Invalid files",
+          description: "Only WAV audio files are accepted",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Store tracks for later upload when the album is created
+      setAlbumTracks(wavFiles);
+      
+      toast({
+        title: `${wavFiles.length} tracks selected`,
+        description: "These tracks will be uploaded when you create the album",
+      });
+    }
+  };
+  
+  // Handle upload of track files for a newly created album
+  const handleAlbumTracksUpload = async (albumId: number, trackFiles: File[]) => {
+    if (trackFiles.length === 0) return;
+    
+    setUploadTrackProgress(10);
+    
+    // Track progress
+    const progressInterval = setInterval(() => {
+      setUploadTrackProgress(prev => {
+        if (prev >= 80) {
+          clearInterval(progressInterval);
+          return prev;
+        }
+        return prev + 5;
+      });
+    }, 200);
+    
+    try {
+      // First upload the tracks to the server
+      const formData = new FormData();
+      trackFiles.forEach(file => {
+        formData.append('tracks', file);
+      });
+      
+      // Upload the tracks
+      const uploadResponse = await fetch('/api/admin/upload-tracks', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload track files');
+      }
+      
+      const uploadResult = await uploadResponse.json();
+      setUploadTrackProgress(85);
+      
+      // Now add each track to the album
+      for (let i = 0; i < trackFiles.length; i++) {
+        const file = trackFiles[i];
+        const trackNumber = i + 1;
+        
+        // Extract track name from filename (remove extension)
+        const trackName = file.name.replace(/\.[^/.]+$/, "");
+        
+        // Add the track to the album
+        await addTrackMutation.mutateAsync({
+          title: trackName,
+          albumId: albumId,
+          trackNumber: trackNumber,
+          duration: 180, // Default duration
+          audioUrl: `/audio/${uploadResult.files[i].filename}`,
+          isFeatured: i === 0 // Make the first track featured
+        });
+        
+        // Update progress
+        setUploadTrackProgress(85 + (15 * (i + 1) / trackFiles.length));
+      }
+      
+      // Show success message
+      toast({
+        title: "Tracks added to album",
+        description: `Successfully added ${trackFiles.length} tracks to the album`,
+      });
+      
+      // Reset state
+      setAlbumTracks([]);
+      setUploadTrackProgress(0);
+      setAlbumTitle("");
+      setAlbumArtist("MeloStream Artist");
+      setAlbumCoverUrl("");
+      setAlbumDescription("");
+      setCoverImage(null);
+      setCoverImagePreview(null);
+      setCreatedAlbumId(null);
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/albums", albumId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/featured-tracks"] });
+      
+    } catch (error) {
+      toast({
+        title: "Failed to add tracks to album",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      clearInterval(progressInterval);
+      setUploadTrackProgress(0);
+    }
+  };
+  
   const handleUpload = (filesToUpload: File[]) => {
     if (filesToUpload.length === 0) return;
     
@@ -629,6 +827,78 @@ export function AdminPanel() {
                   placeholder="Enter album description"
                   rows={3}
                 />
+              </div>
+              
+              {/* Track Upload Area */}
+              <div className="space-y-2">
+                <Label>Album Tracks (WAV Files)</Label>
+                
+                <div 
+                  className={`border-2 border-dashed rounded-md p-4 hover:bg-gray-50 transition-colors cursor-pointer
+                    ${isDraggingTracks ? 'border-primary bg-primary/10' : 'border-gray-300'}
+                    ${albumTracks.length > 0 ? 'bg-gray-50' : ''}
+                  `}
+                  onDragEnter={handleTrackDragEnter}
+                  onDragOver={handleTrackDragOver}
+                  onDragLeave={handleTrackDragLeave}
+                  onDrop={handleTrackDrop}
+                  onClick={handleTrackSelect}
+                >
+                  <input
+                    type="file"
+                    ref={trackInputRef}
+                    onChange={handleTrackInputChange}
+                    className="hidden"
+                    accept=".wav,audio/wav"
+                    multiple
+                  />
+                  
+                  {albumTracks.length > 0 ? (
+                    <div className="w-full">
+                      <div className="flex flex-col items-center space-y-2 mb-4">
+                        <Music className="h-10 w-10 text-gray-400 mb-2" />
+                        <p className="text-sm font-medium text-center">
+                          {albumTracks.length} tracks selected for upload
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        {albumTracks.slice(0, 5).map((file, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <FileAudio className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm truncate">{file.name}</span>
+                            <span className="text-xs text-muted-foreground ml-auto">
+                              {Math.round(file.size / 1024)} KB
+                            </span>
+                          </div>
+                        ))}
+                        {albumTracks.length > 5 && (
+                          <p className="text-xs text-muted-foreground">
+                            and {albumTracks.length - 5} more...
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center p-6">
+                      <Music className="mx-auto h-10 w-10 text-gray-400 mb-2" />
+                      <p className="text-sm font-medium">
+                        Drag &amp; drop WAV files here, or click to select
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Track titles will be extracted from filenames
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                {uploadTrackProgress > 0 && (
+                  <div className="mt-2">
+                    <p className="text-sm text-primary font-medium mb-1">
+                      {uploadTrackProgress < 100 ? "Uploading tracks..." : "Processing completed"}
+                    </p>
+                    <Progress value={uploadTrackProgress} className="h-2" />
+                  </div>
+                )}
               </div>
               
               <Button 
