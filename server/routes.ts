@@ -323,19 +323,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Record a track play
   app.post("/api/analytics/track-play", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: "Unauthorized: User must be logged in to record track plays" });
     }
 
     try {
-      const data = insertTrackPlaySchema.parse(req.body);
-      // Override userId with the authenticated user's ID for security
-      const trackPlay = await storage.recordTrackPlay(req.user!.id, data.trackId);
-      res.status(201).json(trackPlay);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      console.log("Track play request body:", req.body);
+      
+      if (!req.body || typeof req.body.trackId === 'undefined') {
+        return res.status(400).json({ message: "Missing trackId in request body" });
       }
-      res.status(500).json({ message: "Server error" });
+      
+      // Validate that trackId is present and is a number
+      if (typeof req.body.trackId !== 'number') {
+        // Try to parse it as a number if it's a string
+        if (typeof req.body.trackId === 'string') {
+          req.body.trackId = parseInt(req.body.trackId);
+          
+          if (isNaN(req.body.trackId)) {
+            return res.status(400).json({ message: "trackId must be a valid number" });
+          }
+        } else {
+          return res.status(400).json({ message: "trackId must be a number" });
+        }
+      }
+      
+      try {
+        const data = insertTrackPlaySchema.parse(req.body);
+        // Verify track exists
+        const track = await storage.getTrack(data.trackId);
+        if (!track) {
+          return res.status(404).json({ message: `Track with ID ${data.trackId} not found` });
+        }
+        
+        // Override userId with the authenticated user's ID for security
+        const trackPlay = await storage.recordTrackPlay(req.user!.id, data.trackId);
+        console.log(`Successfully recorded play of track ${data.trackId} by user ${req.user!.id}`);
+        res.status(201).json(trackPlay);
+      } catch (zodError) {
+        if (zodError instanceof z.ZodError) {
+          console.error("Validation error in track play request:", zodError.errors);
+          return res.status(400).json({ 
+            message: "Invalid data format", 
+            errors: zodError.errors 
+          });
+        }
+        throw zodError; // re-throw if it's not a ZodError
+      }
+    } catch (error) {
+      console.error("Error recording track play:", error);
+      res.status(500).json({ 
+        message: "Server error while recording track play",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
