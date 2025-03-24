@@ -639,7 +639,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Storage for cover images
   const coverStorage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, coverDir);
+      cb(null, coverUploadDir);
     },
     filename: function (req, file, cb) {
       // Create a timestamp-based unique identifier
