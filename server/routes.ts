@@ -44,11 +44,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const testFilePath = path.join(process.cwd(), 'public', 'audio', 'track-6-1.wav');
     
     if (!fs.existsSync(testFilePath)) {
+      console.error(`Test audio file not found: ${testFilePath}`);
       return res.status(404).send('Test audio file not found');
     }
     
-    console.log('Test audio endpoint accessed');
-    res.set('Content-Type', 'audio/wav');
+    // Log access for debugging
+    console.log(`Test audio endpoint accessed, file size: ${fs.statSync(testFilePath).size} bytes`);
+    
+    // Set appropriate headers for browser compatibility
+    res.set({
+      'Content-Type': 'audio/wav',
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'no-cache',
+      'Access-Control-Allow-Origin': '*'
+    });
+    
+    // Use simple file streaming for maximum compatibility
     fs.createReadStream(testFilePath).pipe(res);
   });
 
