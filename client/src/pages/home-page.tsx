@@ -8,12 +8,14 @@ import Player from "@/components/player";
 import { AlbumCard } from "@/components/album-card";
 import { TrackListItem } from "@/components/track-list-item";
 import { useAuth } from "@/hooks/use-auth";
-import { ChevronLeft, ChevronRight, Bell, User, Play, Crown } from "lucide-react";
+import { usePlayer } from "@/hooks/use-player";
+import { ChevronLeft, ChevronRight, Bell, User, Play, Pause, Crown, Shuffle, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HomePage() {
   const { user } = useAuth();
+  const { currentTrack, isPlaying, togglePlay, playAlbum, playAll, playRandom } = usePlayer();
 
   const { 
     data: featuredAlbums,
@@ -86,12 +88,55 @@ export default function HomePage() {
                     <span className="uppercase text-xs font-bold tracking-wider mb-1 block text-zinc-300">Featured Album</span>
                     <h3 className="text-2xl md:text-4xl font-heading font-bold mb-2">{featuredAlbums[0].title}</h3>
                     <p className="text-zinc-300 mb-4">{featuredAlbums[0].description}</p>
-                    <div className="flex space-x-4 justify-center md:justify-start">
-                      <Button className="bg-primary hover:bg-primary/90 text-black">
+                    <div className="flex flex-wrap space-x-2 gap-y-2 justify-center md:justify-start">
+                      <Button 
+                        className="bg-primary hover:bg-primary/90 text-black"
+                        onClick={async () => {
+                          // We need to fetch the tracks for this album first
+                          const response = await fetch(`/api/albums/${featuredAlbums[0].id}`);
+                          const data = await response.json();
+                          if (data.tracks && data.tracks.length > 0) {
+                            playAlbum(data.tracks, featuredAlbums[0]);
+                          }
+                        }}
+                      >
                         <Play className="h-4 w-4 mr-2" /> Play
                       </Button>
-                      <Button variant="outline" className="border-white hover:bg-white/10">
-                        Save
+                      
+                      <Button 
+                        variant="outline"
+                        className="border-zinc-700 hover:bg-zinc-800 text-white"
+                        onClick={async () => {
+                          // We need to fetch the tracks for this album first
+                          const response = await fetch(`/api/albums/${featuredAlbums[0].id}`);
+                          const data = await response.json();
+                          if (data.tracks && data.tracks.length > 0) {
+                            // Convert tracks to enhanced tracks with album info
+                            const enhancedTracks = data.tracks.map((track: Track) => ({ ...track, album: featuredAlbums[0] }));
+                            playAll(enhancedTracks);
+                          }
+                        }}
+                        title="Play all tracks in order"
+                      >
+                        <PlayCircle className="h-4 w-4 mr-2" /> Play All
+                      </Button>
+                      
+                      <Button 
+                        variant="outline"
+                        className="border-zinc-700 hover:bg-zinc-800 text-white"
+                        onClick={async () => {
+                          // We need to fetch the tracks for this album first
+                          const response = await fetch(`/api/albums/${featuredAlbums[0].id}`);
+                          const data = await response.json();
+                          if (data.tracks && data.tracks.length > 0) {
+                            // Convert tracks to enhanced tracks with album info
+                            const enhancedTracks = data.tracks.map((track: Track) => ({ ...track, album: featuredAlbums[0] }));
+                            playRandom(enhancedTracks);
+                          }
+                        }}
+                        title="Play a random track"
+                      >
+                        <Shuffle className="h-4 w-4 mr-2" /> Random
                       </Button>
                     </div>
                   </div>
@@ -171,7 +216,40 @@ export default function HomePage() {
 
             {/* New Releases - Track List */}
             <section className="mb-10">
-              <h2 className="text-xl md:text-2xl font-heading font-bold mb-4">Featured Tracks</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl md:text-2xl font-heading font-bold">Featured Tracks</h2>
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="border-zinc-700 hover:bg-zinc-800 text-white"
+                    onClick={() => {
+                      if (featuredTracks?.length) {
+                        playAll(featuredTracks);
+                      }
+                    }}
+                    disabled={!featuredTracks?.length}
+                    title="Play all tracks in order"
+                  >
+                    <PlayCircle className="h-3 w-3 mr-1" /> Play All
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="border-zinc-700 hover:bg-zinc-800 text-white"
+                    onClick={() => {
+                      if (featuredTracks?.length) {
+                        playRandom(featuredTracks);
+                      }
+                    }}
+                    disabled={!featuredTracks?.length}
+                    title="Play a random track"
+                  >
+                    <Shuffle className="h-3 w-3 mr-1" /> Shuffle
+                  </Button>
+                </div>
+              </div>
               
               {isLoadingTracks ? (
                 <div className="space-y-3">
