@@ -8,12 +8,16 @@ import { Heart, Repeat, Shuffle, SkipBack, SkipForward, Pause, Play, Volume2, Vo
 export default function Player() {
   const { 
     currentTrack, 
-    isPlaying, 
+    isPlaying,
+    isShuffleMode,
+    isRepeatMode,
     togglePlay, 
     nextTrack, 
     previousTrack,
     setVolume,
-    volume
+    volume,
+    toggleShuffle,
+    toggleRepeat
   } = usePlayer();
   
   const { toast } = useToast();
@@ -190,7 +194,13 @@ export default function Player() {
         {/* Playback Controls - Desktop */}
         <div className="hidden md:flex flex-col items-center flex-1 px-4 max-w-lg">
           <div className="flex items-center justify-center space-x-4 mb-2 w-full">
-            <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white transition-colors">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={`hover:text-white transition-colors ${isShuffleMode ? 'text-primary' : 'text-zinc-400'}`}
+              onClick={toggleShuffle}
+              title="Shuffle"
+            >
               <Shuffle className="h-4 w-4" />
             </Button>
             <Button 
@@ -198,12 +208,14 @@ export default function Player() {
               size="icon" 
               className="text-zinc-400 hover:text-white transition-colors"
               onClick={previousTrack}
+              title="Previous track"
             >
               <SkipBack className="h-5 w-5" />
             </Button>
             <Button 
               className="bg-white text-black rounded-full w-8 h-8 flex items-center justify-center hover:scale-105 transition-transform p-0 min-w-0"
               onClick={togglePlay}
+              title={isPlaying ? "Pause" : "Play"}
             >
               {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
             </Button>
@@ -212,10 +224,17 @@ export default function Player() {
               size="icon" 
               className="text-zinc-400 hover:text-white transition-colors"
               onClick={nextTrack}
+              title="Next track"
             >
               <SkipForward className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white transition-colors">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={`hover:text-white transition-colors ${isRepeatMode ? 'text-primary' : 'text-zinc-400'}`}
+              onClick={toggleRepeat}
+              title="Repeat"
+            >
               <Repeat className="h-4 w-4" />
             </Button>
           </div>

@@ -10,6 +10,8 @@ interface PlayerContextType {
   queue: (Track & { album?: Album })[];
   isPlaying: boolean;
   volume: number;
+  isShuffleMode: boolean;
+  isRepeatMode: boolean;
   playTrack: (track: Track, album?: Album) => void;
   playAlbum: (tracks: Track[], album: Album) => void;
   playPlaylist: (tracks: (Track & { album?: Album })[]) => void;
@@ -17,6 +19,10 @@ interface PlayerContextType {
   nextTrack: () => void;
   previousTrack: () => void;
   setVolume: (volume: number) => void;
+  toggleShuffle: () => void;
+  toggleRepeat: () => void;
+  playAll: (tracks: (Track & { album?: Album })[]) => void;
+  playRandom: (tracks: (Track & { album?: Album })[]) => void;
 }
 
 const PlayerContext = createContext<PlayerContextType | null>(null);
@@ -28,6 +34,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(0.7);
   const [trackStartTime, setTrackStartTime] = useState<Date | null>(null);
+  const [isShuffleMode, setIsShuffleMode] = useState<boolean>(false);
+  const [isRepeatMode, setIsRepeatMode] = useState<boolean>(false);
+  const [originalQueue, setOriginalQueue] = useState<(Track & { album?: Album })[]>([]);
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -231,6 +240,130 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setVolume(clampedVolume);
   };
   
+  // Shuffle the track order randomly
+  const toggleShuffle = () => {
+    if (!queue.length) return;
+    
+    // If entering shuffle mode
+    if (!isShuffleMode) {
+      // Store the original queue
+      setOriginalQueue([...queue]);
+      
+      // Create a shuffled version of the queue while preserving the current track
+      const currentTrackIndex = queueIndex;
+      const currentTrackItem = queue[currentTrackIndex];
+      
+      // Remove current track from the queue copy
+      const queueWithoutCurrent = queue.filter((_, i) => i !== currentTrackIndex);
+      
+      // Shuffle the remaining tracks
+      const shuffledQueue = shuffleArray([...queueWithoutCurrent]);
+      
+      // Put the current track back at its original index
+      shuffledQueue.splice(currentTrackIndex, 0, currentTrackItem);
+      
+      // Update the queue with the shuffled version
+      setQueue(shuffledQueue);
+    } else {
+      // If exiting shuffle mode, restore the original queue
+      setQueue(originalQueue);
+      
+      // Find the current track in the original queue
+      const currentId = currentTrack?.id;
+      const newIndex = originalQueue.findIndex(t => t.id === currentId);
+      
+      // Update the index
+      if (newIndex !== -1) {
+        setQueueIndex(newIndex);
+      }
+    }
+    
+    // Toggle shuffle mode
+    setIsShuffleMode(!isShuffleMode);
+  };
+  
+  // Toggle repeat mode (which makes the player repeat the queue)
+  const toggleRepeat = () => {
+    setIsRepeatMode(!isRepeatMode);
+  };
+  
+  // Play all tracks provided in order
+  const playAll = (tracks: (Track & { album?: Album })[]) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to play tracks",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!tracks.length) {
+      toast({
+        title: "Playback Error",
+        description: "No tracks available to play",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Set the queue
+    setQueue(tracks);
+    setOriginalQueue(tracks);
+    setQueueIndex(0);
+    
+    // Start with the first track
+    setCurrentTrack(tracks[0]);
+    
+    // Start playing
+    setIsPlaying(true);
+  };
+  
+  // Play a random track from the provided tracks
+  const playRandom = (tracks: (Track & { album?: Album })[]) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to play tracks",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!tracks.length) {
+      toast({
+        title: "Playback Error",
+        description: "No tracks available to play",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Pick a random track index
+    const randomIndex = Math.floor(Math.random() * tracks.length);
+    
+    // Set the queue
+    setQueue(tracks);
+    setOriginalQueue(tracks);
+    setQueueIndex(randomIndex);
+    
+    // Start with the random track
+    setCurrentTrack(tracks[randomIndex]);
+    
+    // Start playing
+    setIsPlaying(true);
+  };
+  
+  // Helper function to shuffle an array
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+  };
+  
   // Effect to handle track play recording
   useEffect(() => {
     if (isPlaying && currentTrack && user) {
@@ -249,6 +382,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         queue,
         isPlaying,
         volume,
+        isShuffleMode,
+        isRepeatMode,
         playTrack,
         playAlbum,
         playPlaylist,
@@ -256,6 +391,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         nextTrack,
         previousTrack,
         setVolume: updateVolume,
+        toggleShuffle,
+        toggleRepeat,
+        playAll,
+        playRandom,
       }}
     >
       {children}
