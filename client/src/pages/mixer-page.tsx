@@ -275,15 +275,36 @@ export default function MixerPage() {
           
           console.log("Attempting to load audio from:", data.track.audioUrl);
           
+          // Check if URL is valid
+          if (!data.track.audioUrl) {
+            throw new Error("Track audio URL is missing");
+          }
+          
+          // Ensure URL is properly formatted
+          const audioUrl = data.track.audioUrl.startsWith('/') 
+            ? data.track.audioUrl 
+            : `/${data.track.audioUrl}`;
+            
           // Fetch audio file
-          const response = await fetch(data.track.audioUrl);
+          const response = await fetch(audioUrl);
           if (!response.ok) {
-            console.error("Audio fetch failed with status:", response.status, response.statusText);
+            const errorMessage = `Audio fetch failed with status: ${response.status} ${response.statusText}`;
+            console.error(errorMessage);
+            console.error("Response headers:", 
+              Array.from(response.headers.entries())
+                .map(([key, value]) => `${key}: ${value}`)
+                .join(', ')
+            );
             throw new Error(`Failed to load audio file: ${response.status} ${response.statusText}`);
           }
           
           console.log("Audio fetch successful, parsing array buffer...");
           const arrayBuffer = await response.arrayBuffer();
+          
+          if (arrayBuffer.byteLength === 0) {
+            throw new Error("Audio file is empty (0 bytes)");
+          }
+          
           console.log("Array buffer received, size:", arrayBuffer.byteLength, "bytes");
           
           try {
@@ -304,6 +325,7 @@ export default function MixerPage() {
             });
           } catch (decodeError) {
             console.error("Error decoding audio data:", decodeError);
+            console.error("Audio format may be unsupported or file may be corrupted");
             toast({
               title: "Error decoding audio",
               description: "The audio file could not be processed. It may be corrupted or in an unsupported format.",

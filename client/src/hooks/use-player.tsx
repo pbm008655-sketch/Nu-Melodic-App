@@ -35,11 +35,26 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   // Record track play mutation
   const recordPlayMutation = useMutation({
     mutationFn: async (trackId: number) => {
-      const response = await apiRequest('POST', '/api/analytics/track-play', { trackId });
-      return response.json();
+      try {
+        // Check if user is authenticated
+        if (!user) {
+          throw new Error('User not authenticated');
+        }
+        
+        const response = await apiRequest('POST', '/api/analytics/track-play', { trackId });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`Failed to record track play: ${errorData.message || response.status}`);
+        }
+        return response.json();
+      } catch (err) {
+        console.error('Track play recording error:', err);
+        throw err;
+      }
     },
     onError: (error) => {
       console.error('Failed to record track play:', error);
+      // Don't show toast to user, as this is a background operation
     }
   });
   

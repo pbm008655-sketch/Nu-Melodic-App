@@ -68,6 +68,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get track details with album information for audio mixer
   app.get("/api/tracks/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
     const trackId = parseInt(req.params.id);
     if (isNaN(trackId)) {
       return res.status(400).json({ message: "Invalid track ID" });
