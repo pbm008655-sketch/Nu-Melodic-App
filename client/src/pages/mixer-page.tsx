@@ -273,30 +273,48 @@ export default function MixerPage() {
             audioContextRef.current = new AudioContext();
           }
           
+          console.log("Attempting to load audio from:", data.track.audioUrl);
+          
           // Fetch audio file
           const response = await fetch(data.track.audioUrl);
           if (!response.ok) {
-            throw new Error("Failed to load audio file");
+            console.error("Audio fetch failed with status:", response.status, response.statusText);
+            throw new Error(`Failed to load audio file: ${response.status} ${response.statusText}`);
           }
           
+          console.log("Audio fetch successful, parsing array buffer...");
           const arrayBuffer = await response.arrayBuffer();
-          const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
-          audioBufferRef.current = audioBuffer;
-          setAudioDuration(audioBuffer.duration);
-          setIsLoaded(true);
+          console.log("Array buffer received, size:", arrayBuffer.byteLength, "bytes");
           
-          // Create audio nodes
-          createAudioNodes();
-          
-          toast({
-            title: "Audio loaded",
-            description: `${data.track.title} is ready for mixing`,
-          });
+          try {
+            console.log("Decoding audio data...");
+            const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+            console.log("Audio successfully decoded, duration:", audioBuffer.duration, "seconds");
+            
+            audioBufferRef.current = audioBuffer;
+            setAudioDuration(audioBuffer.duration);
+            setIsLoaded(true);
+            
+            // Create audio nodes
+            createAudioNodes();
+            
+            toast({
+              title: "Audio loaded",
+              description: `${data.track.title} is ready for mixing`,
+            });
+          } catch (decodeError) {
+            console.error("Error decoding audio data:", decodeError);
+            toast({
+              title: "Error decoding audio",
+              description: "The audio file could not be processed. It may be corrupted or in an unsupported format.",
+              variant: "destructive",
+            });
+          }
         } catch (error) {
           console.error("Error loading audio:", error);
           toast({
             title: "Error loading audio",
-            description: "Failed to load the audio file. Please try again.",
+            description: error instanceof Error ? error.message : "Failed to load the audio file. Please try again.",
             variant: "destructive",
           });
         }
