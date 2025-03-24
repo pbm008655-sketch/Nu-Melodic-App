@@ -14,6 +14,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
   
   // Add specific route for audio files with proper headers
+  // This endpoint does NOT require authentication to allow for direct audio streaming
   app.get('/audio/:filename', (req, res) => {
     const audioFilePath = path.join(process.cwd(), 'public', 'audio', req.params.filename);
     
@@ -26,18 +27,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Log access
     console.log(`Audio file accessed: ${req.params.filename}`);
     
-    // Set appropriate headers
+    // Set appropriate headers for audio streaming
     res.set({
       'Content-Type': 'audio/wav',
       'Accept-Ranges': 'bytes',
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
+      'Cache-Control': 'public, max-age=0', // Allow browser caching but validate each time
+      'X-Content-Type-Options': 'nosniff'    // Prevent MIME type sniffing
     });
     
-    // Stream the file
-    const fileStream = fs.createReadStream(audioFilePath);
-    fileStream.pipe(res);
+    // Use static file serving for better performance and range requests
+    res.sendFile(audioFilePath);
   });
 
   // Get all albums
