@@ -582,7 +582,7 @@ export function AdminPanel() {
                         className="w-full max-w-[200px] h-auto object-cover rounded-md"
                       />
                       <p className="text-sm text-muted-foreground">
-                        {coverImage?.name} ({(coverImage?.size / 1024).toFixed(1)} KB)
+                        {coverImage?.name} ({coverImage && coverImage.size ? (coverImage.size / 1024).toFixed(1) : '0'} KB)
                       </p>
                     </div>
                   ) : (

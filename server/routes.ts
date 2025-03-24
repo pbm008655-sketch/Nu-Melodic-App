@@ -607,15 +607,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Use imported personal tracks function
   
-  // Configure multer for file uploads
+  // Configure directories for file uploads
   const audioDir = path.join(process.cwd(), 'public', 'audio');
+  const coverDir = path.join(process.cwd(), 'public', 'covers');
   
-  // Make sure the directory exists
+  // Make sure the directories exist
   if (!fs.existsSync(audioDir)) {
     fs.mkdirSync(audioDir, { recursive: true });
   }
   
-  const multerStorage = multer.diskStorage({
+  if (!fs.existsSync(coverDir)) {
+    fs.mkdirSync(coverDir, { recursive: true });
+  }
+  
+  // Storage for audio files
+  const audioStorage = multer.diskStorage({
     destination: function (req, file, cb) {
       cb(null, audioDir);
     },
@@ -630,8 +636,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Storage for cover images
+  const coverStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, coverDir);
+    },
+    filename: function (req, file, cb) {
+      // Create a timestamp-based unique identifier
+      const timestamp = Date.now();
+      const uniqueId = Math.floor(Math.random() * 1000);
+      // Format: album-cover-{timestamp}-{uniqueId}.{ext}
+      const filename = `album-cover-${timestamp}-${uniqueId}${path.extname(file.originalname)}`;
+      cb(null, filename);
+    }
+  });
+  
+  // Audio upload configuration
   const upload = multer({ 
-    storage: multerStorage,
+    storage: audioStorage,
     fileFilter: function(req, file, cb) {
       // Accept only WAV files
       if (file.mimetype !== 'audio/wav' && !file.originalname.endsWith('.wav')) {
@@ -641,6 +663,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
     limits: {
       fileSize: 100 * 1024 * 1024 // 100MB limit
+    }
+  });
+  
+  // Cover image upload configuration
+  const uploadCover = multer({
+    storage: coverStorage,
+    fileFilter: function(req, file, cb) {
+      // Accept only image files
+      if (!file.mimetype.startsWith('image/')) {
+        return cb(new Error('Only image files are allowed'));
+      }
+      cb(null, true);
+    },
+    limits: {
+      fileSize: 5 * 1024 * 1024 // 5MB limit
     }
   });
   
@@ -765,6 +802,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error importing personal tracks:", error);
       res.status(500).json({ message: "Failed to import personal tracks" });
+    }
+  });
+
+  // Handle album cover uploads
+  app.post('/api/admin/upload-cover', uploadCover.single('cover'), async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    // Only allow admin users to upload covers
+    if (req.user!.id !== 1) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    
+    try {
+      const file = req.file as Express.Multer.File;
+      
+      if (!file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      // Generate the URL path for the uploaded cover
+      const coverUrl = `/covers/${file.filename}`;
+      
+      // Log uploaded file for debugging
+      console.log(`Successfully uploaded album cover:`, {
+        filename: file.filename,
+        originalname: file.originalname,
+        size: file.size,
+        coverUrl
+      });
+      
+      res.status(201).json({ 
+        message: "Successfully uploaded album cover",
+        coverUrl: coverUrl,
+        filename: file.filename,
+        originalname: file.originalname,
+        size: file.size
+      });
+    } catch (error) {
+      console.error('Error uploading album cover:', error);
+      res.status(500).json({ message: "Failed to upload album cover" });
     }
   });
 
