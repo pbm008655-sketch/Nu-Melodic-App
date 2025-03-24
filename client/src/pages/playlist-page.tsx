@@ -102,7 +102,7 @@ export default function PlaylistPage() {
     );
   }
   
-  const { playlist, tracks } = playlistData;
+  const { playlist, tracks } = playlistData || { playlist: {} as Playlist, tracks: [] as (Track & { album?: Album })[] };
   
   return (
     <div className="flex flex-col h-screen bg-zinc-950 text-white">
@@ -197,7 +197,7 @@ export default function PlaylistPage() {
                 </div>
                 
                 <div className="space-y-1">
-                  {tracks.map((track, index) => (
+                  {tracks.map((track: Track & { album?: Album }, index: number) => (
                     <TrackListItem 
                       key={track.id} 
                       track={track} 

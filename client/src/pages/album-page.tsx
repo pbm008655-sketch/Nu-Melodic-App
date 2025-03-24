@@ -100,7 +100,7 @@ export default function AlbumPage() {
     );
   }
   
-  const { album, tracks } = albumData;
+  const { album, tracks } = albumData || { album: {} as Album, tracks: [] as Track[] };
   
   return (
     <div className="flex flex-col h-screen bg-zinc-950 text-white">
@@ -153,7 +153,7 @@ export default function AlbumPage() {
                     onClick={() => {
                       if (tracks.length === 0) return;
                       // Convert tracks to enhanced tracks with album info
-                      const enhancedTracks = tracks.map(track => ({ ...track, album }));
+                      const enhancedTracks = tracks.map((track: Track) => ({ ...track, album }));
                       playAll(enhancedTracks);
                     }}
                     title="Play all tracks in order"
@@ -167,7 +167,7 @@ export default function AlbumPage() {
                     onClick={() => {
                       if (tracks.length === 0) return;
                       // Convert tracks to enhanced tracks with album info
-                      const enhancedTracks = tracks.map(track => ({ ...track, album }));
+                      const enhancedTracks = tracks.map((track: Track) => ({ ...track, album }));
                       playRandom(enhancedTracks);
                     }}
                     title="Play a random track"
@@ -188,7 +188,7 @@ export default function AlbumPage() {
             </div>
             
             <div className="space-y-1">
-              {tracks.map((track, index) => (
+              {tracks.map((track: Track, index: number) => (
                 <TrackListItem 
                   key={track.id} 
                   track={track} 
