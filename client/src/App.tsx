@@ -27,7 +27,7 @@ function Router() {
       <ProtectedRoute path="/subscriptions" component={SubscriptionsPage} />
       <ProtectedRoute path="/analytics" component={AnalyticsDashboardPage} />
       <ProtectedRoute path="/admin" component={AdminPage} />
-      <ProtectedRoute path="/mixer/:id" component={MixerPage} />
+      <Route path="/mixer/:id" component={MixerPage} />
       <Route path="/mixer-test" component={MixerTestPage} />
       <Route component={NotFound} />
     </Switch>

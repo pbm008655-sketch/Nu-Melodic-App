@@ -116,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(recentAlbums);
   });
 
-  // Get track details with album information for audio mixer
+  // Get track details with album information for audio mixer (authenticated version)
   app.get("/api/tracks/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -134,6 +134,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Get the album info for this track
     const album = await storage.getAlbum(track.albumId);
+    
+    // Return in a format suitable for the mixer
+    res.json({ track, album });
+  });
+  
+  // Public version of track API that doesn't require authentication (for mixer)
+  app.get("/api/track/:id", async (req, res) => {
+    const trackId = parseInt(req.params.id);
+    if (isNaN(trackId)) {
+      return res.status(400).json({ message: "Invalid track ID" });
+    }
+
+    const track = await storage.getTrack(trackId);
+    if (!track) {
+      return res.status(404).json({ message: "Track not found" });
+    }
+
+    // Get the album info for this track
+    const album = await storage.getAlbum(track.albumId);
+    
+    // Log access for debugging
+    console.log(`Public track API accessed for track ${trackId} (${track.title})`);
     
     // Return in a format suitable for the mixer
     res.json({ track, album });

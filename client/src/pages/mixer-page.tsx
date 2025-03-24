@@ -260,10 +260,23 @@ export default function MixerPage() {
   const [volumeBeforeMute, setVolumeBeforeMute] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   
-  // Load track data with authentication
+  // Load track data without requiring authentication
   const { data, isLoading, error } = useQuery<{ track: Track; album?: Album }>({
     queryKey: ["/api/tracks", trackId],
     enabled: !!trackId && !isNaN(trackId),
+    // Skip authentication check (this will use the alternative track endpoint that doesn't require auth)
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/track/${trackId}?bypass-auth=true`);
+        if (!response.ok) {
+          throw new Error(`Failed to load track: HTTP ${response.status}`);
+        }
+        return await response.json();
+      } catch (err) {
+        console.error("Error fetching track:", err);
+        throw err;
+      }
+    }
   });
   
   // Create audio context and load audio file with improved error handling and fallback methods
