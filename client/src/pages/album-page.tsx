@@ -7,7 +7,7 @@ import MobileMenu from "@/components/mobile-menu";
 import Player from "@/components/player";
 import { TrackListItem } from "@/components/track-list-item";
 import { usePlayer } from "@/hooks/use-player";
-import { Play, Pause, Clock3, Music2 } from "lucide-react";
+import { Play, Pause, Clock3, Music2, Shuffle, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -15,7 +15,7 @@ export default function AlbumPage() {
   const params = useParams<{ id: string }>();
   const albumId = parseInt(params.id);
   
-  const { currentTrack, isPlaying, togglePlay, playAlbum } = usePlayer();
+  const { currentTrack, isPlaying, togglePlay, playAlbum, playAll, playRandom } = usePlayer();
   
   const {
     data: albumData,
@@ -131,7 +131,7 @@ export default function AlbumPage() {
                     Released: {new Date(album.releaseDate).toLocaleDateString()}
                   </p>
                 )}
-                <div className="flex space-x-4 justify-center md:justify-start">
+                <div className="flex flex-wrap space-x-2 gap-y-2 justify-center md:justify-start">
                   <Button 
                     className={`${isAlbumPlaying() ? 'bg-primary' : 'bg-primary'} hover:bg-primary/90 text-black`}
                     onClick={handlePlayPause}
@@ -145,6 +145,34 @@ export default function AlbumPage() {
                         <Play className="h-4 w-4 mr-2" /> Play
                       </>
                     )}
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    className="border-zinc-700 hover:bg-zinc-800 text-white"
+                    onClick={() => {
+                      if (tracks.length === 0) return;
+                      // Convert tracks to enhanced tracks with album info
+                      const enhancedTracks = tracks.map(track => ({ ...track, album }));
+                      playAll(enhancedTracks);
+                    }}
+                    title="Play all tracks in order"
+                  >
+                    <PlayCircle className="h-4 w-4 mr-2" /> Play All
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    className="border-zinc-700 hover:bg-zinc-800 text-white"
+                    onClick={() => {
+                      if (tracks.length === 0) return;
+                      // Convert tracks to enhanced tracks with album info
+                      const enhancedTracks = tracks.map(track => ({ ...track, album }));
+                      playRandom(enhancedTracks);
+                    }}
+                    title="Play a random track"
+                  >
+                    <Shuffle className="h-4 w-4 mr-2" /> Random
                   </Button>
                 </div>
               </div>
