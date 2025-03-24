@@ -320,8 +320,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ANALYTICS ROUTES
-  // Record a track play
+  // Record a track play - simplified for better reliability
   app.post("/api/analytics/track-play", async (req, res) => {
+    // Authentication check
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized: User must be logged in to record track plays" });
     }
@@ -329,49 +330,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Track play request body:", req.body);
       
-      if (!req.body || typeof req.body.trackId === 'undefined') {
+      // Simple validation first
+      if (!req.body || req.body.trackId === undefined || req.body.trackId === null) {
         return res.status(400).json({ message: "Missing trackId in request body" });
       }
       
-      // Validate that trackId is present and is a number
-      if (typeof req.body.trackId !== 'number') {
-        // Try to parse it as a number if it's a string
-        if (typeof req.body.trackId === 'string') {
-          req.body.trackId = parseInt(req.body.trackId);
-          
-          if (isNaN(req.body.trackId)) {
-            return res.status(400).json({ message: "trackId must be a valid number" });
-          }
-        } else {
-          return res.status(400).json({ message: "trackId must be a number" });
+      // Convert to number if needed
+      let trackId: number;
+      if (typeof req.body.trackId === 'string') {
+        trackId = parseInt(req.body.trackId, 10);
+        if (isNaN(trackId)) {
+          return res.status(400).json({ message: "trackId must be a valid number" });
         }
+      } else if (typeof req.body.trackId === 'number') {
+        trackId = req.body.trackId;
+      } else {
+        return res.status(400).json({ message: "trackId must be a number or string containing a number" });
       }
       
-      try {
-        const data = insertTrackPlaySchema.parse(req.body);
-        // Verify track exists
-        const track = await storage.getTrack(data.trackId);
-        if (!track) {
-          return res.status(404).json({ message: `Track with ID ${data.trackId} not found` });
-        }
-        
-        // Override userId with the authenticated user's ID for security
-        const trackPlay = await storage.recordTrackPlay(req.user!.id, data.trackId);
-        console.log(`Successfully recorded play of track ${data.trackId} by user ${req.user!.id}`);
-        res.status(201).json(trackPlay);
-      } catch (zodError) {
-        if (zodError instanceof z.ZodError) {
-          console.error("Validation error in track play request:", zodError.errors);
-          return res.status(400).json({ 
-            message: "Invalid data format", 
-            errors: zodError.errors 
-          });
-        }
-        throw zodError; // re-throw if it's not a ZodError
+      // Check if track exists
+      const track = await storage.getTrack(trackId);
+      if (!track) {
+        console.log(`Track with ID ${trackId} not found when recording play`);
+        return res.status(404).json({ message: `Track with ID ${trackId} not found` });
       }
+      
+      // Record the play using the authenticated user
+      const trackPlay = await storage.recordTrackPlay(req.user!.id, trackId);
+      console.log(`Successfully recorded play of track ${trackId} by user ${req.user!.id}`);
+      return res.status(201).json(trackPlay);
+        
     } catch (error) {
       console.error("Error recording track play:", error);
-      res.status(500).json({ 
+      return res.status(500).json({ 
         message: "Server error while recording track play",
         error: error instanceof Error ? error.message : String(error)
       });

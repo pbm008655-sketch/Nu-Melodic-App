@@ -257,22 +257,40 @@ export default function MixerPage() {
   const [volumeBeforeMute, setVolumeBeforeMute] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   
-  // Load track data
+  // Load track data with authentication
   const { data, isLoading, error } = useQuery<{ track: Track; album?: Album }>({
     queryKey: ["/api/tracks", trackId],
     enabled: !!trackId && !isNaN(trackId),
   });
   
-  // Create audio context and load audio file
+  // Create audio context and load audio file with improved error handling
   useEffect(() => {
     if (data?.track && !isLoaded) {
       const loadAudio = async () => {
         try {
-          // Initialize AudioContext
+          // Initialize AudioContext with user interaction handling
           if (!audioContextRef.current) {
-            audioContextRef.current = new AudioContext();
+            try {
+              audioContextRef.current = new AudioContext();
+              
+              // Handle suspended state (common in browsers requiring user interaction)
+              if (audioContextRef.current.state === 'suspended') {
+                console.log("AudioContext is suspended, waiting for user interaction");
+                // We'll continue anyway and handle the state elsewhere
+              }
+            } catch (ctxError) {
+              console.error("Failed to create AudioContext:", ctxError);
+              toast({
+                title: "Browser Audio Error",
+                description: "Could not initialize audio system. Please check your browser settings.",
+                variant: "destructive",
+              });
+              return;
+            }
           }
           
+          // Log track information for debugging
+          console.log("Track data:", data.track);
           console.log("Attempting to load audio from:", data.track.audioUrl);
           
           // Check if URL is valid
@@ -280,13 +298,22 @@ export default function MixerPage() {
             throw new Error("Track audio URL is missing");
           }
           
-          // Ensure URL is properly formatted
+          // Ensure URL is properly formatted and use absolute path
           const audioUrl = data.track.audioUrl.startsWith('/') 
             ? data.track.audioUrl 
             : `/${data.track.audioUrl}`;
+          
+          console.log("Using audio URL:", audioUrl);
             
-          // Fetch audio file
-          const response = await fetch(audioUrl);
+          // Fetch audio file with credentials to ensure session cookies are sent
+          const response = await fetch(audioUrl, {
+            credentials: 'include', // Important for authentication
+            headers: {
+              'Accept': 'audio/wav, audio/*', // Set proper accept headers
+            },
+          });
+          
+          // Detailed error logging
           if (!response.ok) {
             const errorMessage = `Audio fetch failed with status: ${response.status} ${response.statusText}`;
             console.error(errorMessage);
@@ -295,13 +322,22 @@ export default function MixerPage() {
                 .map(([key, value]) => `${key}: ${value}`)
                 .join(', ')
             );
+            
+            // Try to read response body for more error details
+            try {
+              const errorBody = await response.text();
+              console.error("Error response body:", errorBody);
+            } catch (e) {
+              console.error("Could not read error response body");
+            }
+            
             throw new Error(`Failed to load audio file: ${response.status} ${response.statusText}`);
           }
           
           console.log("Audio fetch successful, parsing array buffer...");
           const arrayBuffer = await response.arrayBuffer();
           
-          if (arrayBuffer.byteLength === 0) {
+          if (!arrayBuffer || arrayBuffer.byteLength === 0) {
             throw new Error("Audio file is empty (0 bytes)");
           }
           

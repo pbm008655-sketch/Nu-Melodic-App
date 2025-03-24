@@ -32,24 +32,46 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  // Record track play mutation
+  // Record track play mutation with enhanced error handling
   const recordPlayMutation = useMutation({
     mutationFn: async (trackId: number) => {
       try {
         // Check if user is authenticated
         if (!user) {
-          throw new Error('User not authenticated');
+          console.warn('Track play not recorded: User not authenticated');
+          return null; // Return null instead of throwing to prevent errors
         }
         
-        const response = await apiRequest('POST', '/api/analytics/track-play', { trackId });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(`Failed to record track play: ${errorData.message || response.status}`);
+        // Ensure trackId is a valid number before sending
+        if (typeof trackId !== 'number' || isNaN(trackId) || trackId <= 0) {
+          console.warn(`Invalid trackId (${trackId}), not recording play`);
+          return null;
         }
-        return response.json();
+        
+        console.log(`Recording play for track ID: ${trackId}`);
+        
+        // Make the API request with better error handling
+        try {
+          const response = await apiRequest('POST', '/api/analytics/track-play', { trackId });
+          if (!response.ok) {
+            const errorText = await response.text();
+            let errorData;
+            try {
+              errorData = JSON.parse(errorText);
+            } catch (e) {
+              errorData = { message: errorText };
+            }
+            console.error(`Track play API error (${response.status}):`, errorData);
+            return null;
+          }
+          return response.json();
+        } catch (apiError) {
+          console.error('API request failed:', apiError);
+          return null;
+        }
       } catch (err) {
         console.error('Track play recording error:', err);
-        throw err;
+        return null; // Don't throw, just return null
       }
     },
     onError: (error) => {
