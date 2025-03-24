@@ -662,7 +662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cb(null, true);
     },
     limits: {
-      fileSize: 100 * 1024 * 1024 // 100MB limit
+      fileSize: 200 * 1024 * 1024 // 200MB limit for larger audio files
     }
   });
   
@@ -723,7 +723,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cb(null, true);
     },
     limits: {
-      fileSize: 50 * 1024 * 1024 // 50MB limit
+      fileSize: 200 * 1024 * 1024 // 200MB limit for larger audio files
     }
   }).fields([
     { name: 'cover', maxCount: 1 },
