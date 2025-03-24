@@ -239,6 +239,9 @@ export default function MixerPage() {
   const waveShaperNodeRef = useRef<WaveShaperNode | null>(null);
   const analyserNodeRef = useRef<AnalyserNode | null>(null);
   
+  // Add Native Audio element as fallback
+  const nativeAudioRef = useRef<HTMLAudioElement | null>(null);
+  
   // UI state
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -408,11 +411,60 @@ export default function MixerPage() {
           } catch (decodeError) {
             console.error("Error decoding audio data:", decodeError);
             console.error("Audio format may be unsupported or file may be corrupted");
-            toast({
-              title: "Error decoding audio",
-              description: "The audio file could not be processed. It may be corrupted or in an unsupported format.",
-              variant: "destructive",
-            });
+            console.log("Trying fallback method using native Audio element...");
+            
+            // Try Native Audio method as fallback (which worked in our test)
+            try {
+              if (!nativeAudioRef.current) {
+                nativeAudioRef.current = new Audio();
+              }
+              
+              // Log all events for debugging
+              const audio = nativeAudioRef.current;
+              const events = [
+                'loadstart', 'progress', 'suspend', 'abort', 'error', 
+                'emptied', 'stalled', 'loadedmetadata', 'loadeddata', 
+                'canplay', 'canplaythrough', 'playing', 'waiting'
+              ];
+              
+              events.forEach(event => {
+                audio.addEventListener(event, () => {
+                  console.log(`Native Audio event: ${event}`);
+                });
+              });
+              
+              audio.onerror = (e) => {
+                console.error("Native Audio error:", audio.error);
+                toast({
+                  title: "Error loading audio",
+                  description: "All audio loading methods failed. Please try a different track.",
+                  variant: "destructive",
+                });
+              };
+              
+              // Set up canplaythrough handler
+              audio.oncanplaythrough = () => {
+                console.log("Native Audio loaded successfully!");
+                setAudioDuration(audio.duration);
+                setIsLoaded(true);
+                
+                toast({
+                  title: "Audio loaded with fallback method",
+                  description: `${data.track.title} is ready for playback (without effects)`,
+                });
+              };
+              
+              audio.src = audioUrl;
+              audio.load();
+              
+            } catch (nativeError) {
+              console.error("Native Audio fallback also failed:", nativeError);
+              toast({
+                title: "Error decoding audio",
+                description: "The audio file could not be processed. It may be corrupted or in an unsupported format.",
+                variant: "destructive",
+              });
+            }
           }
         } catch (error) {
           console.error("Error loading audio:", error);
