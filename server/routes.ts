@@ -12,6 +12,33 @@ import path from "path";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
+  
+  // Add specific route for audio files with proper headers
+  app.get('/audio/:filename', (req, res) => {
+    const audioFilePath = path.join(process.cwd(), 'public', 'audio', req.params.filename);
+    
+    // Check if file exists
+    if (!fs.existsSync(audioFilePath)) {
+      console.error(`Audio file not found: ${audioFilePath}`);
+      return res.status(404).send('Audio file not found');
+    }
+    
+    // Log access
+    console.log(`Audio file accessed: ${req.params.filename}`);
+    
+    // Set appropriate headers
+    res.set({
+      'Content-Type': 'audio/wav',
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    
+    // Stream the file
+    const fileStream = fs.createReadStream(audioFilePath);
+    fileStream.pipe(res);
+  });
 
   // Get all albums
   app.get("/api/albums", async (_req, res) => {

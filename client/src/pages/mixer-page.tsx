@@ -308,13 +308,19 @@ export default function MixerPage() {
             throw new Error("Track audio URL is missing");
           }
           
-          // Ensure URL is properly formatted and use absolute path with timestamp to prevent caching
-          const baseUrl = data.track.audioUrl.startsWith('/') 
-            ? data.track.audioUrl 
-            : `/${data.track.audioUrl}`;
+          // Extract filename from audioUrl for our dedicated route
+          const originalUrl = data.track.audioUrl;
+          let filename = originalUrl.split('/').pop(); // Get last segment after "/"
           
-          // Add cache-busting parameter to URL
-          const audioUrl = `${baseUrl}?t=${Date.now()}`;
+          if (!filename) {
+            throw new Error("Could not extract filename from audio URL");
+          }
+          
+          // Use our dedicated audio route with cache-busting
+          const audioUrl = `/audio/${filename}?t=${Date.now()}`;
+          
+          console.log("Original audio path:", originalUrl);
+          console.log("Using new audio URL:", audioUrl);
           
           console.log("Using audio URL:", audioUrl);
           
