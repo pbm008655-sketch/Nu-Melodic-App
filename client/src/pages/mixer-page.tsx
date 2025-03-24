@@ -308,32 +308,42 @@ export default function MixerPage() {
             throw new Error("Track audio URL is missing");
           }
           
-          // Extract filename from audioUrl for our dedicated route
+          // Simplify audio URL handling to avoid any path issues
+          // First check if the URL is already a path to a WAV file
           const originalUrl = data.track.audioUrl;
-          let filename = originalUrl.split('/').pop(); // Get last segment after "/"
+          let audioUrl: string;
           
-          if (!filename) {
-            throw new Error("Could not extract filename from audio URL");
+          if (originalUrl.startsWith('/audio/')) {
+            // Already using our special route, just add cache-busting
+            audioUrl = `${originalUrl}?t=${Date.now()}`;
+          } else {
+            // Extract filename and use our audio route
+            let filename = originalUrl.startsWith('/') 
+              ? originalUrl.substring(1) // Remove leading slash
+              : originalUrl;
+              
+            // If path includes 'audio/', strip everything before it
+            const audioIndex = filename.indexOf('audio/');
+            if (audioIndex >= 0) {
+              filename = filename.substring(audioIndex + 6); // 'audio/'.length = 6
+            }
+            
+            // If it's a direct filename, use it as is
+            if (!filename.includes('/')) {
+              audioUrl = `/audio/${filename}?t=${Date.now()}`;
+            } else {
+              // Extract just the filename at the end
+              const parts = filename.split('/');
+              const lastPart = parts[parts.length - 1];
+              audioUrl = `/audio/${lastPart}?t=${Date.now()}`;
+            }
           }
           
-          // Use our dedicated audio route with cache-busting
-          const audioUrl = `/audio/${filename}?t=${Date.now()}`;
-          
           console.log("Original audio path:", originalUrl);
-          console.log("Using new audio URL:", audioUrl);
-          
           console.log("Using audio URL:", audioUrl);
           
-          // Load audio using fetch with improved error handling and credentials
-          const response = await fetch(audioUrl, {
-            credentials: 'include', // Important for authentication
-            headers: {
-              'Accept': 'audio/wav, audio/*', // Set proper accept headers
-              'Cache-Control': 'no-cache',
-              'Pragma': 'no-cache'
-            },
-            cache: 'no-store' // Prevent caching
-          });
+          // Use native browser fetch with simple parameters
+          const response = await fetch(audioUrl);
           
           // Detailed error logging
           if (!response.ok) {
