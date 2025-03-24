@@ -41,27 +41,52 @@ export default function MixerTestPage() {
   useEffect(() => {
     if (loadingMethod !== 'native') return;
     
-    addDebugMessage(`📱 Creating native Audio element for ${audioUrl}...`);
+    // Force a direct URL to test with
+    const testUrl = '/test-audio';
+    addDebugMessage(`📱 Creating native Audio element for ${testUrl}...`);
     
     const audio = new Audio();
     
-    // Log events
-    audio.addEventListener('loadstart', () => addDebugMessage('🔄 Load started'));
-    audio.addEventListener('progress', () => addDebugMessage('📶 Loading progress...'));
-    audio.addEventListener('canplay', () => addDebugMessage('✓ Can play (basic playback possible)'));
+    // Log all possible events for debugging
+    const events = [
+      'loadstart', 'progress', 'suspend', 'abort', 'error', 
+      'emptied', 'stalled', 'loadedmetadata', 'loadeddata', 
+      'canplay', 'canplaythrough', 'playing', 'waiting', 
+      'seeking', 'seeked', 'ended', 'durationchange', 
+      'timeupdate', 'play', 'pause', 'ratechange', 'volumechange'
+    ];
+    
+    events.forEach(event => {
+      audio.addEventListener(event, () => {
+        addDebugMessage(`Event: ${event}`);
+      });
+    });
     
     // Handle successful loading
     audio.oncanplaythrough = () => {
-      addDebugMessage('✅ Audio fully loaded successfully!');
+      addDebugMessage(`✅ Audio fully loaded successfully! Duration: ${audio.duration}s`);
       setIsLoaded(true);
       setLoadError(null);
     };
     
-    // Handle loading error
+    // Handle loading error with detailed information
     audio.onerror = (e) => {
-      const errorDetail = audio.error 
-        ? `Code: ${audio.error.code}, Message: ${audio.error.message}` 
-        : 'Unknown error';
+      let errorDetail = 'Unknown error';
+      
+      if (audio.error) {
+        // Error codes: https://developer.mozilla.org/en-US/docs/Web/API/MediaError/code
+        const errorCodes = {
+          1: 'MEDIA_ERR_ABORTED - The user canceled the fetching of the media.',
+          2: 'MEDIA_ERR_NETWORK - A network error occurred while fetching the media.',
+          3: 'MEDIA_ERR_DECODE - The media cannot be decoded due to format issues.',
+          4: 'MEDIA_ERR_SRC_NOT_SUPPORTED - The media type is not supported.'
+        };
+        
+        errorDetail = `Code: ${audio.error.code} (${errorCodes[audio.error.code as 1|2|3|4] || 'Unknown'})`;
+        if (audio.error.message) {
+          errorDetail += `, Message: ${audio.error.message}`;
+        }
+      }
       
       addDebugMessage(`❌ Error loading audio: ${errorDetail}`);
       console.error('Audio loading error:', e, audio.error);
@@ -69,15 +94,29 @@ export default function MixerTestPage() {
       setIsLoaded(false);
     };
     
-    // Set source and load
-    audio.src = audioUrl;
-    audio.load();
+    // Try with fixed MIME type
+    audio.src = testUrl;
+    
+    // Force preload
+    audio.preload = 'auto';
+    
+    // Start loading
+    try {
+      addDebugMessage('🔄 Starting audio load...');
+      audio.load();
+    } catch (err: any) {
+      addDebugMessage(`❌ Exception during load(): ${err?.message || 'Unknown error'}`);
+      setLoadError(`Exception during load(): ${err?.message || 'Unknown error'}`);
+    }
     
     // Store reference
     audioRef.current = audio;
     
     // Cleanup
     return () => {
+      events.forEach(event => {
+        audio.removeEventListener(event, () => {});
+      });
       audio.pause();
       audio.src = '';
     };
@@ -87,38 +126,73 @@ export default function MixerTestPage() {
   useEffect(() => {
     if (loadingMethod !== 'web-audio') return;
     
-    addDebugMessage(`🎛️ Using Web Audio API to load ${audioUrl}...`);
+    // Force a direct URL to test with
+    const testUrl = '/test-audio';
+    addDebugMessage(`🎛️ Using Web Audio API to load ${testUrl}...`);
     
     // Create audio context
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     audioContextRef.current = audioContext;
     
-    // Fetch the audio file
-    fetch(audioUrl)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+    addDebugMessage(`✓ Audio context created, sample rate: ${audioContext.sampleRate}Hz`);
+    
+    // Use XMLHttpRequest for better Web Audio API compatibility
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', testUrl, true);
+    xhr.responseType = 'arraybuffer';
+    
+    xhr.onprogress = (event) => {
+      if (event.lengthComputable) {
+        addDebugMessage(`📶 Loading: ${Math.round((event.loaded / event.total) * 100)}%`);
+      }
+    };
+    
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const arrayBuffer = xhr.response;
+        
+        addDebugMessage(`✓ Audio file loaded (${arrayBuffer.byteLength} bytes), decoding...`);
+        
+        try {
+          // Using legacy callback version for maximum compatibility
+          audioContext.decodeAudioData(
+            arrayBuffer,
+            (decodedData) => {
+              addDebugMessage(`✅ Audio decoded: ${decodedData.duration.toFixed(2)}s, ${decodedData.numberOfChannels} channels`);
+              setIsLoaded(true);
+              setLoadError(null);
+            },
+            (err) => {
+              addDebugMessage(`❌ Error decoding audio: ${err?.message || 'Unknown error'}`);
+              console.error('Decode error:', err);
+              setLoadError(`Error decoding audio: ${err?.message || 'Unknown error'}`);
+              setIsLoaded(false);
+            }
+          );
+        } catch (err: any) {
+          addDebugMessage(`❌ Exception during decoding: ${err?.message || 'Unknown error'}`);
+          console.error('Decode exception:', err);
+          setLoadError(`Exception during decoding: ${err?.message || 'Unknown error'}`);
+          setIsLoaded(false);
         }
-        addDebugMessage(`✓ Fetch successful, status: ${response.status}`);
-        return response.arrayBuffer();
-      })
-      .then(arrayBuffer => {
-        addDebugMessage('✓ Array buffer received, decoding audio...');
-        return audioContext.decodeAudioData(arrayBuffer);
-      })
-      .then(audioBuffer => {
-        addDebugMessage('✅ Audio decoded successfully!');
-        setIsLoaded(true);
-        setLoadError(null);
-      })
-      .catch(error => {
-        addDebugMessage(`❌ Web Audio API error: ${error.message}`);
-        console.error('Web Audio API error:', error);
-        setLoadError(`Web Audio API error: ${error.message}`);
+      } else {
+        addDebugMessage(`❌ HTTP error: ${xhr.status}`);
+        setLoadError(`HTTP error: ${xhr.status}`);
         setIsLoaded(false);
-      });
-      
+      }
+    };
+    
+    xhr.onerror = () => {
+      addDebugMessage(`❌ Network error while loading audio`);
+      setLoadError('Network error while loading audio');
+      setIsLoaded(false);
+    };
+    
+    // Start the request
+    xhr.send();
+    
     return () => {
+      xhr.abort();
       audioContext.close();
     };
   }, [loadingMethod, audioUrl]);
@@ -127,9 +201,17 @@ export default function MixerTestPage() {
   useEffect(() => {
     if (loadingMethod !== 'fetch') return;
     
-    addDebugMessage(`🔍 Testing direct fetch for ${audioUrl}...`);
+    // Force a direct URL to test with
+    const testUrl = '/test-audio';
+    addDebugMessage(`🔍 Testing direct fetch for ${testUrl}...`);
     
-    fetch(audioUrl)
+    fetch(testUrl, {
+      method: 'GET',
+      cache: 'no-cache',
+      headers: {
+        'Accept': 'audio/*',
+      }
+    })
       .then(response => {
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -137,13 +219,17 @@ export default function MixerTestPage() {
         
         addDebugMessage(`✓ Fetch successful (${response.status})`);
         addDebugMessage(`✓ Content-Type: ${response.headers.get('Content-Type')}`);
-        addDebugMessage(`✓ Content-Length: ${response.headers.get('Content-Length')} bytes`);
+        addDebugMessage(`✓ Content-Length: ${response.headers.get('Content-Length') || 'chunked'}`);
         
         setIsLoaded(true);
         setLoadError(null);
         
         // We're just testing the fetch, no need to process the data
         return response.blob();
+      })
+      .then(blob => {
+        addDebugMessage(`✓ Blob received successfully, size: ${blob.size} bytes`);
+        addDebugMessage(`✓ Blob MIME type: ${blob.type}`);
       })
       .catch(error => {
         addDebugMessage(`❌ Fetch error: ${error.message}`);
