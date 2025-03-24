@@ -263,7 +263,7 @@ export default function MixerPage() {
     enabled: !!trackId && !isNaN(trackId),
   });
   
-  // Create audio context and load audio file with improved error handling
+  // Create audio context and load audio file with improved error handling and fallback methods
   useEffect(() => {
     if (data?.track && !isLoaded) {
       const loadAudio = async () => {
@@ -289,6 +289,16 @@ export default function MixerPage() {
             }
           }
           
+          // Resume context on user interaction if needed
+          if (audioContextRef.current.state === 'suspended') {
+            try {
+              await audioContextRef.current.resume();
+              console.log("AudioContext resumed successfully");
+            } catch (e) {
+              console.warn("Could not resume AudioContext:", e);
+            }
+          }
+          
           // Log track information for debugging
           console.log("Track data:", data.track);
           console.log("Attempting to load audio from:", data.track.audioUrl);
@@ -298,19 +308,25 @@ export default function MixerPage() {
             throw new Error("Track audio URL is missing");
           }
           
-          // Ensure URL is properly formatted and use absolute path
-          const audioUrl = data.track.audioUrl.startsWith('/') 
+          // Ensure URL is properly formatted and use absolute path with timestamp to prevent caching
+          const baseUrl = data.track.audioUrl.startsWith('/') 
             ? data.track.audioUrl 
             : `/${data.track.audioUrl}`;
           
+          // Add cache-busting parameter to URL
+          const audioUrl = `${baseUrl}?t=${Date.now()}`;
+          
           console.log("Using audio URL:", audioUrl);
-            
-          // Fetch audio file with credentials to ensure session cookies are sent
+          
+          // Load audio using fetch with improved error handling and credentials
           const response = await fetch(audioUrl, {
             credentials: 'include', // Important for authentication
             headers: {
               'Accept': 'audio/wav, audio/*', // Set proper accept headers
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
             },
+            cache: 'no-store' // Prevent caching
           });
           
           // Detailed error logging
