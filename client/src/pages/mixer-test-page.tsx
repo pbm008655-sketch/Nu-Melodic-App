@@ -192,13 +192,17 @@ export default function MixerTestPage() {
             </TabsList>
             
             <TabsContent value="native" className="space-y-4 pt-4">
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertTitle>Native Audio Element</AlertTitle>
-                <AlertDescription>
-                  Uses the standard HTML Audio element to load and play audio.
-                </AlertDescription>
-              </Alert>
+              <div className="bg-blue-50 border border-blue-200 p-3 rounded-md">
+                <div className="flex items-start">
+                  <Info className="h-4 w-4 mt-1 mr-2 text-blue-500" />
+                  <div>
+                    <h4 className="font-medium text-blue-900">Native Audio Element</h4>
+                    <p className="text-blue-700 text-sm">
+                      Uses the standard HTML Audio element to load and play audio.
+                    </p>
+                  </div>
+                </div>
+              </div>
               
               {isLoaded && loadingMethod === 'native' && (
                 <div className="flex justify-center">
@@ -213,23 +217,31 @@ export default function MixerTestPage() {
             </TabsContent>
             
             <TabsContent value="web-audio" className="space-y-4 pt-4">
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertTitle>Web Audio API</AlertTitle>
-                <AlertDescription>
-                  Uses the Web Audio API to decode and process audio data.
-                </AlertDescription>
-              </Alert>
+              <div className="bg-blue-50 border border-blue-200 p-3 rounded-md">
+                <div className="flex items-start">
+                  <Info className="h-4 w-4 mt-1 mr-2 text-blue-500" />
+                  <div>
+                    <h4 className="font-medium text-blue-900">Web Audio API</h4>
+                    <p className="text-blue-700 text-sm">
+                      Uses the Web Audio API to decode and process audio data.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </TabsContent>
             
             <TabsContent value="fetch" className="space-y-4 pt-4">
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertTitle>Direct Fetch</AlertTitle>
-                <AlertDescription>
-                  Tests if the audio file is accessible via a direct HTTP request.
-                </AlertDescription>
-              </Alert>
+              <div className="bg-blue-50 border border-blue-200 p-3 rounded-md">
+                <div className="flex items-start">
+                  <Info className="h-4 w-4 mt-1 mr-2 text-blue-500" />
+                  <div>
+                    <h4 className="font-medium text-blue-900">Direct Fetch</h4>
+                    <p className="text-blue-700 text-sm">
+                      Tests if the audio file is accessible via a direct HTTP request.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
           
