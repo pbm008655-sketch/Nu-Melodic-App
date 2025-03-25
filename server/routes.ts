@@ -8,6 +8,14 @@ import { z } from "zod";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
+import Stripe from "stripe";
+
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+
+// Initialize Stripe with the secret key
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Define common directory paths
 const audioUploadDir = path.join(process.cwd(), 'public', 'audio');
@@ -340,58 +348,189 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // SUBSCRIPTION ROUTES
-  app.post("/api/subscribe", async (req, res) => {
+  // STRIPE PAYMENT ROUTES
+  
+  // Create a Stripe payment intent for one-time payments
+  app.post("/api/create-payment-intent", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-
+    
     try {
-      // Validate subscription data
-      const { plan } = req.body;
-      if (plan !== "premium") {
-        return res.status(400).json({ message: "Invalid subscription plan" });
-      }
-
-      // In a real app, this would handle payment processing
-      // For this demo, we'll just update the user's premium status
-      
-      // Set premium expiry to 30 days from now
-      const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + 30);
-      
-      const updatedUser = await storage.updateUserPremiumStatus(req.user!.id, true, expiryDate);
-      
-      if (!updatedUser) {
-        return res.status(404).json({ message: "User not found" });
+      const { amount } = req.body;
+      if (!amount || isNaN(amount)) {
+        return res.status(400).json({ message: "Valid amount required" });
       }
       
-      // Exclude password from response
-      const { password, ...userWithoutPassword } = updatedUser;
-      res.json(userWithoutPassword);
-    } catch (error) {
-      res.status(500).json({ message: "Subscription failed" });
+      // Convert amount to cents (Stripe requires cents)
+      const amountInCents = Math.round(amount * 100);
+      
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amountInCents,
+        currency: "usd",
+        metadata: {
+          userId: req.user!.id.toString(),
+        },
+      });
+      
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (error: any) {
+      console.error("Error creating payment intent:", error);
+      res.status(500).json({ 
+        error: { message: error.message || "Error creating payment" }
+      });
     }
   });
+  
+  // Endpoint to create or retrieve a subscription
+  app.post("/api/create-subscription", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const user = req.user!;
+      
+      // If user already has a subscription, check its status
+      if (user.stripeSubscriptionId) {
+        try {
+          const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+          
+          return res.json({
+            subscriptionId: subscription.id,
+            success: true,
+            status: subscription.status
+          });
+        } catch (error) {
+          console.log('Error retrieving subscription, creating new one:', error);
+          // If we can't retrieve it (maybe it was deleted), continue to create a new one
+        }
+      }
+      
+      // Create a new customer if needed
+      if (!user.stripeCustomerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: user.username,
+          metadata: {
+            userId: user.id.toString(),
+          },
+        });
+        
+        // Save the customer ID
+        await storage.updateStripeCustomerId(user.id, customer.id);
+        user.stripeCustomerId = customer.id;
+      }
+      
+      // Create the subscription with a trial period
+      const subscription = await stripe.subscriptions.create({
+        customer: user.stripeCustomerId,
+        items: [
+          {
+            price: 'price_123456789', // Use your actual price ID from Stripe dashboard
+          },
+        ],
+        payment_behavior: 'default_incomplete',
+        trial_period_days: 30,
+      });
+      
+      // Update user with subscription info
+      await storage.updateStripeInfo(user.id, {
+        stripeSubscriptionId: subscription.id,
+      });
+      
+      // Set premium status with expiry date (30 days from now)
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + 30);
+      await storage.updateUserPremiumStatus(user.id, true, expiryDate);
+      
+      // Return subscription info
+      res.json({
+        subscriptionId: subscription.id,
+        success: true,
+      });
+    } catch (error: any) {
+      console.error("Error creating subscription:", error);
+      res.status(500).json({ 
+        error: { message: error.message || "Error creating subscription" }
+      });
+    }
+  });
+  
+  // Webhook handler for Stripe events
+  app.post("/api/stripe-webhook", async (req, res) => {
+    let event;
+    
+    try {
+      // Verify and construct the event
+      const payload = req.body;
+      const signature = req.headers['stripe-signature'] as string;
+      
+      // Skip signature verification in development for simplicity
+      // In production, you would use the webhook secret to verify
+      event = payload;
+      
+      // Handle the event based on its type
+      switch (event.type) {
+        case 'checkout.session.completed':
+          // Handle successful checkout
+          console.log(`Checkout session completed`);
+          break;
+          
+        case 'invoice.paid':
+          // This event is sent when an invoice is successfully paid
+          console.log(`Invoice paid event received`);
 
+          // In a real application, we would look up the customer in our database
+          // and mark their subscription as active
+          // For simplicity in this demo, we'll just log it
+          console.log('Invoice payment successful');
+          break;
+          
+        case 'customer.subscription.deleted':
+          // This event is sent when a subscription is canceled
+          console.log(`Subscription deleted event received`);
+          
+          // In a real application, we would look up the user by subscription ID
+          // and update their premium status
+          // For simplicity in this demo, we'll just log it
+          console.log('Subscription canceled');
+          break;
+      }
+      
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error("Webhook error:", error);
+      res.status(400).send(`Webhook Error: ${error.message}`);
+    }
+  });
+  
   // Cancel subscription
   app.post("/api/cancel-subscription", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-
+    
     try {
-      const updatedUser = await storage.updateUserPremiumStatus(req.user!.id, false);
+      const user = req.user!;
       
-      if (!updatedUser) {
-        return res.status(404).json({ message: "User not found" });
+      if (!user.stripeSubscriptionId) {
+        return res.status(400).json({ message: "No active subscription found" });
       }
       
-      // Exclude password from response
-      const { password, ...userWithoutPassword } = updatedUser;
-      res.json(userWithoutPassword);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to cancel subscription" });
+      // Cancel the subscription at period end to maintain access until the subscription period finishes
+      await stripe.subscriptions.update(user.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+      });
+      
+      res.json({ success: true, message: "Subscription will be canceled at the end of the billing period" });
+    } catch (error: any) {
+      console.error("Error canceling subscription:", error);
+      res.status(500).json({ 
+        error: { message: error.message || "Error canceling subscription" }
+      });
     }
   });
 

@@ -93,6 +93,8 @@ export class MemStorage implements IStorage {
       password: "$2b$10$dXNmcGZHaGJsZHVqaGtraUlnTnZyNDMrcy5lOU9Va2lITU56VUZRRmZlbFhsZFFpMXM5dGVCc1RKMkNhTVowamVybnRsMw==.7177bfdf1ec70da0ea9b3585649a08f2", // password is "password"
       isPremium: false,
       premiumExpiry: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
     };
     this.users.set(demoUser.id, demoUser);
     
@@ -201,7 +203,9 @@ export class MemStorage implements IStorage {
       ...insertUser, 
       id,
       isPremium: false,
-      premiumExpiry: null
+      premiumExpiry: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null
     };
     this.users.set(id, user);
     return user;
