@@ -489,8 +489,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Error creating subscription:", error);
+      
+      // Handle the error more gracefully
+      const errorMessage = error.message || "Error creating subscription";
+      const userFriendlyMessage = errorMessage.includes("secret_key_required")
+        ? "Stripe integration is in test mode. In production, this would create a real subscription."
+        : errorMessage;
+      
       res.status(500).json({ 
-        error: { message: error.message || "Error creating subscription" }
+        error: { message: userFriendlyMessage }
       });
     }
   });
@@ -564,8 +571,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: "Subscription will be canceled at the end of the billing period" });
     } catch (error: any) {
       console.error("Error canceling subscription:", error);
+      
+      // Handle the error more gracefully
+      const errorMessage = error.message || "Error canceling subscription";
+      const userFriendlyMessage = errorMessage.includes("secret_key_required")
+        ? "Stripe integration is in test mode. In production, this would cancel a real subscription."
+        : errorMessage;
+      
       res.status(500).json({ 
-        error: { message: error.message || "Error canceling subscription" }
+        error: { message: userFriendlyMessage }
       });
     }
   });

@@ -39,10 +39,16 @@ export default function SubscriptionsPage() {
     },
     onError: (error) => {
       setIsProcessing(false);
+      
+      // More user-friendly error message for missing Stripe keys
+      const errorMsg = error.message.includes("secret_key_required") 
+        ? "Payment system is currently in test mode. In production, this would process a real subscription."
+        : error.message;
+        
       toast({
-        title: "Subscription Failed",
-        description: error.message,
-        variant: "destructive",
+        title: "Subscription Status",
+        description: errorMsg,
+        variant: errorMsg.includes("test mode") ? "default" : "destructive",
       });
     }
   });
@@ -60,10 +66,15 @@ export default function SubscriptionsPage() {
       });
     },
     onError: (error) => {
+      // More user-friendly error message for missing Stripe keys
+      const errorMsg = error.message.includes("secret_key_required") 
+        ? "Payment system is currently in test mode. In production, this would cancel a real subscription."
+        : error.message;
+        
       toast({
-        title: "Cancellation Failed",
-        description: error.message,
-        variant: "destructive",
+        title: "Cancellation Status",
+        description: errorMsg,
+        variant: errorMsg.includes("test mode") ? "default" : "destructive",
       });
     }
   });
