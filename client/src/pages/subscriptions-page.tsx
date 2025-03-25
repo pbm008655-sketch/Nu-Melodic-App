@@ -20,18 +20,22 @@ export default function SubscriptionsPage() {
   const subscribeMutation = useMutation({
     mutationFn: async () => {
       setIsProcessing(true);
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      const res = await apiRequest("POST", "/api/subscribe", { plan: "premium" });
+      const res = await apiRequest("POST", "/api/create-subscription");
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       setIsProcessing(false);
-      toast({
-        title: "Subscription Successful",
-        description: "You are now a premium subscriber!",
-      });
+      
+      if (data.success) {
+        toast({
+          title: "Subscription Successful",
+          description: "Your premium subscription has been activated!",
+        });
+      } else {
+        // Redirect to checkout page if payment is needed
+        window.location.href = "/checkout";
+      }
     },
     onError: (error) => {
       setIsProcessing(false);

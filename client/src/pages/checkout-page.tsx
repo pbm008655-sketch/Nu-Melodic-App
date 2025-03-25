@@ -12,7 +12,9 @@ import { Redirect } from 'wouter';
 // Make sure to call loadStripe outside of a component's render to avoid
 // recreating the Stripe object on every render.
 // This is your test publishable API key.
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+  : null;
 
 const CheckoutForm = () => {
   const stripe = useStripe();
@@ -91,7 +93,7 @@ const CheckoutForm = () => {
 };
 
 export default function CheckoutPage() {
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
@@ -135,10 +137,11 @@ export default function CheckoutPage() {
     },
   };
   
-  const options = {
+  // Only create the options when clientSecret is available
+  const options = clientSecret ? {
     clientSecret,
     appearance,
-  };
+  } : { appearance };
 
   return (
     <div className="container mx-auto max-w-3xl py-12">
@@ -166,7 +169,7 @@ export default function CheckoutPage() {
             </div>
           ) : error ? (
             <div className="p-6 text-center text-red-500">{error}</div>
-          ) : clientSecret ? (
+          ) : clientSecret && stripePromise ? (
             <Elements options={options} stripe={stripePromise}>
               <CheckoutForm />
             </Elements>

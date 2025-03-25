@@ -16,6 +16,8 @@ import AnalyticsDashboardPage from "./pages/analytics-dashboard-page";
 import AdminPage from "./pages/admin-page";
 import MixerPage from "./pages/mixer-page";
 import MixerTestPage from "./pages/mixer-test-page";
+import CheckoutPage from "./pages/checkout-page";
+import SubscriptionSuccessPage from "./pages/subscription-success-page";
 
 function Router() {
   return (
@@ -29,6 +31,8 @@ function Router() {
       <ProtectedRoute path="/admin" component={AdminPage} />
       <Route path="/mixer/:id" component={MixerPage} />
       <Route path="/mixer-test" component={MixerTestPage} />
+      <ProtectedRoute path="/checkout" component={CheckoutPage} />
+      <ProtectedRoute path="/subscription-success" component={SubscriptionSuccessPage} />
       <Route component={NotFound} />
     </Switch>
   );
