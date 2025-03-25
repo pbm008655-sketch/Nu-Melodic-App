@@ -18,9 +18,9 @@ export default function SubscriptionsPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   
   const subscribeMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (data?: { plan: string }) => {
       setIsProcessing(true);
-      const res = await apiRequest("POST", "/api/create-subscription");
+      const res = await apiRequest("POST", "/api/create-subscription", data);
       return await res.json();
     },
     onSuccess: (data) => {
@@ -69,7 +69,7 @@ export default function SubscriptionsPage() {
   });
   
   const handleSubscribe = () => {
-    subscribeMutation.mutate();
+    subscribeMutation.mutate({ plan: 'premium' });
   };
   
   const handleCancelSubscription = () => {
@@ -101,16 +101,20 @@ export default function SubscriptionsPage() {
           
           {/* Subscription Info */}
           <div className="p-4 md:p-8">
-            {user?.isPremium ? (
+            {user?.stripeSubscriptionId ? (
               <div className="max-w-3xl mx-auto">
                 <div className="bg-zinc-900 rounded-xl p-6 mb-8 border border-zinc-800">
                   <div className="flex items-center mb-4">
-                    <div className="bg-primary/20 p-3 rounded-full mr-4">
-                      <Crown className="h-6 w-6 text-primary" />
+                    <div className={`${user.isPremium ? 'bg-primary/20' : 'bg-zinc-800'} p-3 rounded-full mr-4`}>
+                      <Crown className={`h-6 w-6 ${user.isPremium ? 'text-primary' : 'text-zinc-400'}`} />
                     </div>
                     <div>
-                      <h2 className="text-xl font-heading font-bold">Premium Subscription</h2>
-                      <p className="text-zinc-400">You're subscribed to the Premium plan</p>
+                      <h2 className="text-xl font-heading font-bold">
+                        {user.isPremium ? 'Premium' : 'Basic'} Subscription
+                      </h2>
+                      <p className="text-zinc-400">
+                        You're subscribed to the {user.isPremium ? 'Premium' : 'Basic'} plan
+                      </p>
                     </div>
                     <div className="ml-auto bg-primary/20 px-3 py-1 rounded-full">
                       <span className="text-primary text-sm font-medium">Active</span>
@@ -122,24 +126,72 @@ export default function SubscriptionsPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-zinc-400">Subscription type</span>
-                      <span className="font-medium">Premium</span>
+                      <span className="font-medium">{user.isPremium ? 'Premium' : 'Basic'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-zinc-400">Billing period</span>
-                      <span className="font-medium">Monthly</span>
+                      <span className="font-medium">{user.isPremium ? 'Annual' : 'Monthly'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-zinc-400">Price</span>
-                      <span className="font-medium">$9.99 per month</span>
+                      <span className="font-medium">
+                        {user.isPremium ? '$25.00 per year' : '$1.75 per month'}
+                      </span>
                     </div>
                     {user.premiumExpiry && (
                       <div className="flex justify-between">
-                        <span className="text-zinc-400">Next billing date</span>
+                        <span className="text-zinc-400">
+                          {user.isPremium ? 'Expires on' : 'Next billing date'}
+                        </span>
                         <span className="font-medium">{formatExpiryDate(user.premiumExpiry.toString())}</span>
                       </div>
                     )}
                   </div>
                 </div>
+                
+                {/* Upgrade section for Basic users */}
+                {!user.isPremium && (
+                  <div className="max-w-3xl mx-auto mb-8">
+                    <h2 className="text-xl font-heading font-bold mb-4">Upgrade to Premium</h2>
+                    <Card className="bg-gradient-to-br from-blue-900 to-zinc-900 border-zinc-800">
+                      <CardHeader>
+                        <CardTitle>Get More with Premium</CardTitle>
+                        <CardDescription className="text-zinc-300">
+                          $25.00 for a full year
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2">
+                          <li className="flex items-start">
+                            <Check className="text-primary mt-1 mr-3 h-4 w-4 flex-shrink-0" />
+                            <span>Ad-free music listening</span>
+                          </li>
+                          <li className="flex items-start">
+                            <Check className="text-primary mt-1 mr-3 h-4 w-4 flex-shrink-0" />
+                            <span>Unlimited skips</span>
+                          </li>
+                          <li className="flex items-start">
+                            <Check className="text-primary mt-1 mr-3 h-4 w-4 flex-shrink-0" />
+                            <span>High-quality audio</span>
+                          </li>
+                          <li className="flex items-start">
+                            <Check className="text-primary mt-1 mr-3 h-4 w-4 flex-shrink-0" />
+                            <span>Offline listening</span>
+                          </li>
+                        </ul>
+                      </CardContent>
+                      <CardFooter>
+                        <Button 
+                          className="w-full bg-primary hover:bg-primary/90 text-black"
+                          onClick={handleSubscribe}
+                          disabled={isProcessing || subscribeMutation.isPending}
+                        >
+                          {isProcessing || subscribeMutation.isPending ? "Processing..." : "Upgrade to Premium"}
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </div>
+                )}
                 
                 <div className="max-w-3xl mx-auto">
                   <h2 className="text-xl font-heading font-bold mb-4">Cancel Subscription</h2>
@@ -147,29 +199,53 @@ export default function SubscriptionsPage() {
                     <CardHeader>
                       <CardTitle className="flex items-center">
                         <AlertCircle className="h-5 w-5 mr-2 text-destructive" />
-                        Cancel your premium subscription
+                        Cancel your {user.isPremium ? 'premium' : 'basic'} subscription
                       </CardTitle>
                       <CardDescription>
-                        You will lose access to premium features at the end of your current billing period.
+                        You will lose access to {user.isPremium ? 'premium' : 'basic'} features 
+                        {user.isPremium ? ' when your current subscription expires.' : ' at the end of your current billing period.'}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <p className="text-zinc-400 mb-4">
-                        By cancelling, you'll lose these premium benefits:
+                        By cancelling, you'll lose these benefits:
                       </p>
                       <ul className="space-y-2">
-                        <li className="flex items-start">
-                          <XCircle className="h-5 w-5 mr-2 text-destructive flex-shrink-0" />
-                          <span>Ad-free music listening</span>
-                        </li>
-                        <li className="flex items-start">
-                          <XCircle className="h-5 w-5 mr-2 text-destructive flex-shrink-0" />
-                          <span>Unlimited skips</span>
-                        </li>
-                        <li className="flex items-start">
-                          <XCircle className="h-5 w-5 mr-2 text-destructive flex-shrink-0" />
-                          <span>High-quality audio</span>
-                        </li>
+                        {user.isPremium ? (
+                          <>
+                            <li className="flex items-start">
+                              <XCircle className="h-5 w-5 mr-2 text-destructive flex-shrink-0" />
+                              <span>Ad-free music listening</span>
+                            </li>
+                            <li className="flex items-start">
+                              <XCircle className="h-5 w-5 mr-2 text-destructive flex-shrink-0" />
+                              <span>Unlimited skips</span>
+                            </li>
+                            <li className="flex items-start">
+                              <XCircle className="h-5 w-5 mr-2 text-destructive flex-shrink-0" />
+                              <span>High-quality audio</span>
+                            </li>
+                            <li className="flex items-start">
+                              <XCircle className="h-5 w-5 mr-2 text-destructive flex-shrink-0" />
+                              <span>Offline listening</span>
+                            </li>
+                          </>
+                        ) : (
+                          <>
+                            <li className="flex items-start">
+                              <XCircle className="h-5 w-5 mr-2 text-destructive flex-shrink-0" />
+                              <span>Ad-supported listening</span>
+                            </li>
+                            <li className="flex items-start">
+                              <XCircle className="h-5 w-5 mr-2 text-destructive flex-shrink-0" />
+                              <span>Limited skips</span>
+                            </li>
+                            <li className="flex items-start">
+                              <XCircle className="h-5 w-5 mr-2 text-destructive flex-shrink-0" />
+                              <span>Basic audio quality</span>
+                            </li>
+                          </>
+                        )}
                       </ul>
                     </CardContent>
                     <CardFooter>
@@ -216,7 +292,14 @@ export default function SubscriptionsPage() {
                       </ul>
                     </CardContent>
                     <CardFooter>
-                      <Button variant="outline" className="w-full">Subscribe to Basic</Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => subscribeMutation.mutate({ plan: 'basic' })}
+                        disabled={isProcessing || subscribeMutation.isPending}
+                      >
+                        {isProcessing || subscribeMutation.isPending ? "Processing..." : "Subscribe to Basic"}
+                      </Button>
                     </CardFooter>
                   </Card>
                   

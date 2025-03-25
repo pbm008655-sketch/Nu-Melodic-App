@@ -434,24 +434,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // For Basic plan, create a monthly subscription of $1.75
+      // First create a product for the basic subscription if it doesn't exist
+      const product = await stripe.products.create({
+        name: 'Basic Monthly Subscription',
+        description: 'Basic music streaming plan with ad-supported listening',
+      });
+      
+      // Then create a price for that product
+      const price = await stripe.prices.create({
+        product: product.id,
+        unit_amount: 175, // $1.75 in cents
+        currency: 'usd',
+        recurring: {
+          interval: 'month',
+        },
+      });
+      
+      // Now create the subscription with the price ID
       const subscription = await stripe.subscriptions.create({
         customer: user.stripeCustomerId,
         items: [
           {
-            price_data: {
-              currency: 'usd',
-              product_data: {
-                name: 'Basic Monthly Subscription',
-                description: 'Basic music streaming plan with ad-supported listening',
-              },
-              unit_amount: 175, // $1.75 in cents
-              recurring: {
-                interval: 'month',
-              },
-            },
+            price: price.id,
           },
         ],
         payment_behavior: 'default_incomplete',
+        expand: ['latest_invoice.payment_intent'],
       });
       
       // Update user with subscription info
@@ -459,14 +467,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         stripeSubscriptionId: subscription.id,
       });
       
-      // For basic subscription, set premium to false but track the subscription
-      await storage.updateUserPremiumStatus(user.id, false, null);
+      // For basic subscription, set premium to false but still track the subscription
+      // Pass undefined instead of null for expiryDate to avoid type error
+      await storage.updateUserPremiumStatus(user.id, false, undefined);
       
-      // Return subscription info
+      // Return subscription info with client secret for payment
+      const latestInvoice = subscription.latest_invoice;
+      let clientSecret = null;
+      
+      if (latestInvoice && typeof latestInvoice !== 'string') {
+        const paymentIntent = latestInvoice.payment_intent;
+        if (paymentIntent && typeof paymentIntent !== 'string') {
+          clientSecret = paymentIntent.client_secret;
+        }
+      }
+      
       res.json({
         subscriptionId: subscription.id,
         success: true,
-        clientSecret: subscription.latest_invoice?.payment_intent?.client_secret,
+        clientSecret,
       });
     } catch (error: any) {
       console.error("Error creating subscription:", error);
