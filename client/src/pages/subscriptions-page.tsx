@@ -189,11 +189,11 @@ export default function SubscriptionsPage() {
                 <h2 className="text-xl md:text-2xl font-heading font-bold mb-6">Choose Your Plan</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Free Plan */}
+                  {/* Basic Plan */}
                   <Card className="bg-zinc-900 border-zinc-800 overflow-hidden">
                     <CardHeader>
-                      <CardTitle>Free</CardTitle>
-                      <CardDescription>$0.00 / month</CardDescription>
+                      <CardTitle>Basic</CardTitle>
+                      <CardDescription>$1.75 / month</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <ul className="space-y-3 mb-8">
@@ -216,7 +216,7 @@ export default function SubscriptionsPage() {
                       </ul>
                     </CardContent>
                     <CardFooter>
-                      <Button variant="outline" className="w-full">Continue with Free</Button>
+                      <Button variant="outline" className="w-full">Subscribe to Basic</Button>
                     </CardFooter>
                   </Card>
                   
@@ -229,9 +229,9 @@ export default function SubscriptionsPage() {
                     <CardHeader>
                       <CardTitle>Premium</CardTitle>
                       <CardDescription className="text-zinc-300">
-                        $9.99 / month
+                        $25.00 / year
                       </CardDescription>
-                      <p className="text-zinc-400 text-sm">First month free</p>
+                      <p className="text-zinc-400 text-sm">One-time payment for 12 months</p>
                     </CardHeader>
                     <CardContent>
                       <ul className="space-y-3 mb-8">
@@ -266,7 +266,7 @@ export default function SubscriptionsPage() {
                         {isProcessing || subscribeMutation.isPending ? (
                           "Processing..."
                         ) : (
-                          "Start Free Trial"
+                          "Get Premium Access"
                         )}
                       </Button>
                     </CardFooter>
@@ -274,7 +274,7 @@ export default function SubscriptionsPage() {
                 </div>
                 
                 <p className="text-zinc-400 text-sm text-center mt-6">
-                  Subscription automatically renews. Cancel anytime.
+                  Basic plan renews monthly. Premium plan is a one-time payment for 12 months of access.
                 </p>
               </div>
             )}

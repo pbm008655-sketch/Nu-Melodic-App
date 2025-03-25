@@ -392,6 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       const user = req.user!;
+      const { plan = 'premium' } = req.body; // Default to premium if not specified
       
       // If user already has a subscription, check its status
       if (user.stripeSubscriptionId) {
@@ -423,17 +424,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateStripeCustomerId(user.id, customer.id);
         user.stripeCustomerId = customer.id;
       }
+
+      // For Premium plan, we redirect to checkout page for one-time payment
+      if (plan === 'premium') {
+        return res.json({
+          success: false,
+          redirectToCheckout: true,
+        });
+      }
       
-      // Create the subscription with a trial period
+      // For Basic plan, create a monthly subscription of $1.75
       const subscription = await stripe.subscriptions.create({
         customer: user.stripeCustomerId,
         items: [
           {
-            price: 'price_123456789', // Use your actual price ID from Stripe dashboard
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: 'Basic Monthly Subscription',
+                description: 'Basic music streaming plan with ad-supported listening',
+              },
+              unit_amount: 175, // $1.75 in cents
+              recurring: {
+                interval: 'month',
+              },
+            },
           },
         ],
         payment_behavior: 'default_incomplete',
-        trial_period_days: 30,
       });
       
       // Update user with subscription info
@@ -441,15 +459,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         stripeSubscriptionId: subscription.id,
       });
       
-      // Set premium status with expiry date (30 days from now)
-      const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + 30);
-      await storage.updateUserPremiumStatus(user.id, true, expiryDate);
+      // For basic subscription, set premium to false but track the subscription
+      await storage.updateUserPremiumStatus(user.id, false, null);
       
       // Return subscription info
       res.json({
         subscriptionId: subscription.id,
         success: true,
+        clientSecret: subscription.latest_invoice?.payment_intent?.client_secret,
       });
     } catch (error: any) {
       console.error("Error creating subscription:", error);

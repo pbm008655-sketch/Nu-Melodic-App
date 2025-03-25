@@ -99,7 +99,7 @@ export default function CheckoutPage() {
   const { user } = useAuth();
 
   // One-time payment amount in dollars
-  const paymentAmount = 19.99;
+  const paymentAmount = 25.00;
 
   useEffect(() => {
     if (!user) return;
@@ -130,7 +130,7 @@ export default function CheckoutPage() {
     return <Redirect to="/auth" />;
   }
 
-  const appearance = {
+  const appearance: { theme: 'stripe' | 'night' | 'flat', variables: { colorPrimary: string } } = {
     theme: 'stripe',
     variables: {
       colorPrimary: '#0055FF',
@@ -155,11 +155,11 @@ export default function CheckoutPage() {
         <CardContent>
           <div className="mb-8 p-4 bg-slate-50 rounded-md">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium">Premium Access</span>
+              <span className="text-sm font-medium">Premium Access (12 months)</span>
               <span className="text-sm font-bold">${paymentAmount.toFixed(2)}</span>
             </div>
             <div className="text-xs text-slate-500">
-              Get full access to all premium tracks and features
+              One-time payment for 12 months of premium features and high-quality audio
             </div>
           </div>
           
