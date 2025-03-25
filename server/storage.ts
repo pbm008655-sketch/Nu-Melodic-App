@@ -8,6 +8,8 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPremiumStatus(userId: number, isPremium: boolean, expiryDate?: Date): Promise<User | undefined>;
+  updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined>;
+  updateStripeInfo(userId: number, data: { stripeCustomerId?: string, stripeSubscriptionId?: string }): Promise<User | undefined>;
   
   getAllAlbums(): Promise<Album[]>;
   getAlbum(id: number): Promise<Album | undefined>;
@@ -213,6 +215,33 @@ export class MemStorage implements IStorage {
       ...user,
       isPremium,
       premiumExpiry: expiryDate || null
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+  
+  async updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined> {
+    const user = await this.getUser(userId);
+    if (!user) return undefined;
+    
+    const updatedUser: User = {
+      ...user,
+      stripeCustomerId: customerId
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+  
+  async updateStripeInfo(userId: number, data: { stripeCustomerId?: string, stripeSubscriptionId?: string }): Promise<User | undefined> {
+    const user = await this.getUser(userId);
+    if (!user) return undefined;
+    
+    const updatedUser: User = {
+      ...user,
+      stripeCustomerId: data.stripeCustomerId ?? user.stripeCustomerId,
+      stripeSubscriptionId: data.stripeSubscriptionId ?? user.stripeSubscriptionId
     };
     
     this.users.set(userId, updatedUser);
