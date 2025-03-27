@@ -218,6 +218,12 @@ app.post('/api/high-capacity-album-upload', (req, res) => {
           trackTitle = `Track ${trackNumber}`;
         }
         
+        // If the track title is exactly the default, check if the user intended to customize it
+        if (trackTitle === `Track ${trackNumber}` && req.body[titleIndexKey] && req.body[titleIndexKey] !== `Track ${trackNumber}`) {
+          console.log(`Using custom title for track ${i}: ${req.body[titleIndexKey]}`);
+          trackTitle = req.body[titleIndexKey];
+        }
+        
         console.log(`Track ${i} title (${titleIndexKey}): ${trackTitle}`);
         const trackUrl = `/audio/${newFilename}`;
         

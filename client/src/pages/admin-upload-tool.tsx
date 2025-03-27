@@ -246,13 +246,15 @@ export default function AdminUploadTool() {
                       <Input 
                         id={`title-${i}`} 
                         name={`title-${i}`}
-                        value={trackTitles[`title-${i}`] || `Track ${i+1}`}
+                        value={trackTitles[`title-${i}`]}
                         onChange={(e) => {
                           // Store the track title in state so we can properly send it to the server
+                          const value = e.target.value || `Track ${i+1}`;
                           setTrackTitles(prev => ({
                             ...prev,
-                            [`title-${i}`]: e.target.value
+                            [`title-${i}`]: value
                           }));
+                          console.log(`Updated title-${i} to: ${value}`);
                         }}
                         placeholder={`Track ${i+1} Title`}
                         className="mb-2"
