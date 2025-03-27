@@ -13,6 +13,7 @@ export default function AdminUploadTool() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [files, setFiles] = useState<{ [key: string]: File }>({});
+  const [trackTitles, setTrackTitles] = useState<{ [key: string]: string }>({});
   const [albumTitle, setAlbumTitle] = useState('');
   const [artist, setArtist] = useState('');
   const [loading, setLoading] = useState(false);
@@ -69,6 +70,11 @@ export default function AdminUploadTool() {
       // Add all files
       Object.entries(files).forEach(([fieldName, file]) => {
         formData.append(fieldName, file);
+      });
+      
+      // Add all track titles
+      Object.entries(trackTitles).forEach(([fieldName, title]) => {
+        formData.append(fieldName, title);
       });
 
       // Post to our high-capacity endpoint
@@ -127,7 +133,7 @@ export default function AdminUploadTool() {
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-bold mb-8">High-Capacity Album Upload Tool</h1>
       <p className="mb-8 text-muted-foreground">
-        This tool allows uploading larger WAV files (up to 2GB per file) with extended timeout settings.
+        This tool allows uploading larger WAV files (up to 400MB per file) with extended timeout settings.
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -194,6 +200,11 @@ export default function AdminUploadTool() {
                       <Input 
                         id={`title-${i}`} 
                         name={`title-${i}`}
+                        value={trackTitles[`title-${i}`] || ''}
+                        onChange={(e) => setTrackTitles(prev => ({
+                          ...prev,
+                          [`title-${i}`]: e.target.value
+                        }))}
                         placeholder={`Track ${i+1} Title`}
                         className="mb-2"
                       />

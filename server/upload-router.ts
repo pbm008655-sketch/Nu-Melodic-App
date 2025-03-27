@@ -112,16 +112,21 @@ const albumUpload = multer({
   }
 }).fields([
   { name: 'cover', maxCount: 1 },
-  { name: 'track0', maxCount: 1 },
-  { name: 'track1', maxCount: 1 },
-  { name: 'track2', maxCount: 1 },
-  { name: 'track3', maxCount: 1 },
-  { name: 'track4', maxCount: 1 },
-  { name: 'track5', maxCount: 1 },
-  { name: 'track6', maxCount: 1 },
-  { name: 'track7', maxCount: 1 },
-  { name: 'track8', maxCount: 1 },
-  { name: 'track9', maxCount: 1 },
+  { name: 'track-0', maxCount: 1 },
+  { name: 'track-1', maxCount: 1 },
+  { name: 'track-2', maxCount: 1 },
+  { name: 'track-3', maxCount: 1 },
+  { name: 'track-4', maxCount: 1 },
+  { name: 'track-5', maxCount: 1 },
+  { name: 'track-6', maxCount: 1 },
+  { name: 'track-7', maxCount: 1 },
+  { name: 'track-8', maxCount: 1 },
+  { name: 'track-9', maxCount: 1 },
+  { name: 'track-10', maxCount: 1 },
+  { name: 'track-11', maxCount: 1 },
+  { name: 'track-12', maxCount: 1 },
+  { name: 'track-13', maxCount: 1 },
+  { name: 'track-14', maxCount: 1 },
 ]);
 
 // Create router

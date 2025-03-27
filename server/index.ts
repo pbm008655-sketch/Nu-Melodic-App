@@ -56,8 +56,8 @@ const highCapacityUpload = multer({
     }
   }),
   limits: {
-    fileSize: 200 * 1024 * 1024, // 200MB limit per file
-    fieldSize: 200 * 1024 * 1024, // 200MB field size limit
+    fileSize: 400 * 1024 * 1024, // 400MB limit per file
+    fieldSize: 400 * 1024 * 1024, // 400MB field size limit
     files: 20, // Maximum 20 files
     fields: 100 // Maximum 100 fields
   }
