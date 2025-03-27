@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import uploadRouter from './upload-router';
 
 const app = express();
 app.use(express.json({ limit: '2gb' }));
@@ -17,6 +18,9 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.static('public'));
+
+// Use the enhanced upload router for file uploads
+app.use(uploadRouter);
 
 // Set up our own high-capacity file upload endpoint
 
