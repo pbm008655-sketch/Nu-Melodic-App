@@ -70,11 +70,16 @@ export default function AdminUploadTool() {
       // Add all files
       Object.entries(files).forEach(([fieldName, file]) => {
         formData.append(fieldName, file);
-      });
-      
-      // Add all track titles
-      Object.entries(trackTitles).forEach(([fieldName, title]) => {
-        formData.append(fieldName, title);
+        
+        // If this is a track file, also add its title
+        if (fieldName.startsWith('track-')) {
+          const trackIndex = fieldName.split('-')[1];
+          // The title is keyed as "title-{index}"
+          const titleKey = `title-${trackIndex}`;
+          const titleValue = trackTitles[titleKey] || `Track ${parseInt(trackIndex) + 1}`;
+          console.log(`Adding track title: ${titleKey} = ${titleValue}`);
+          formData.append(titleKey, titleValue);
+        }
       });
 
       // Post to our high-capacity endpoint
@@ -200,11 +205,17 @@ export default function AdminUploadTool() {
                       <Input 
                         id={`title-${i}`} 
                         name={`title-${i}`}
-                        value={trackTitles[`title-${i}`] || ''}
-                        onChange={(e) => setTrackTitles(prev => ({
-                          ...prev,
-                          [`title-${i}`]: e.target.value
-                        }))}
+                        defaultValue={`Track ${i+1}`}
+                        onChange={(e) => {
+                          // Store the track title directly in the form element
+                          // This ensures it gets submitted with the form 
+                          e.currentTarget.setAttribute('value', e.target.value);
+                          // Also store in state for our UI
+                          setTrackTitles(prev => ({
+                            ...prev,
+                            [`title-${i}`]: e.target.value
+                          }));
+                        }}
                         placeholder={`Track ${i+1} Title`}
                         className="mb-2"
                       />

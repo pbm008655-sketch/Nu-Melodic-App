@@ -97,6 +97,12 @@ app.post('/api/high-capacity-album-upload', (req, res) => {
       console.log("Body keys:", Object.keys(req.body || {}));
       console.log("Files:", req.files ? Object.keys(req.files) : "No files");
       
+      // Print all body keys and values to diagnose the issue
+      console.log("Body contents:");
+      Object.entries(req.body || {}).forEach(([key, value]) => {
+        console.log(`  ${key} = ${value}`);
+      });
+      
       if (!req.isAuthenticated()) {
         return res.status(401).json({
           success: false,
@@ -164,7 +170,25 @@ app.post('/api/high-capacity-album-upload', (req, res) => {
         fs.renameSync(oldPath, newPath);
         
         // Create track in storage
-        const trackTitle = req.body[`title-${i}`] || `Track ${trackNumber}`;
+        // Log the entire request.body for debugging track titles
+        console.log(`Full request.body keys: ${Object.keys(req.body).join(', ')}`);
+        
+        // The field name in the form is "title-{i}" but we access it directly here
+        const trackTitleKey = `title-${i}`;
+        // First check req.body directly
+        let trackTitle = req.body[trackTitleKey];
+        
+        // If not found, try checking in an array format that multer might be using
+        if (!trackTitle && req.body[trackTitleKey] && Array.isArray(req.body[trackTitleKey])) {
+          trackTitle = req.body[trackTitleKey][0];
+        }
+        
+        // Default fallback 
+        if (!trackTitle) {
+          trackTitle = `Track ${trackNumber}`;
+        }
+        
+        console.log(`Track ${i} title (${trackTitleKey}): ${trackTitle}`);
         const trackUrl = `/audio/${newFilename}`;
         
         const createdTrack = await storage.createTrack({
@@ -190,12 +214,12 @@ app.post('/api/high-capacity-album-upload', (req, res) => {
         album: createdAlbum,
         tracks: createdTracks
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in album upload:", error);
       res.status(500).json({
         success: false,
-        message: `Upload failed: ${error.message}`,
-        error: error.stack
+        message: `Upload failed: ${error.message || 'Unknown error'}`,
+        error: error.stack || 'No stack trace available'
       });
     }
   });
