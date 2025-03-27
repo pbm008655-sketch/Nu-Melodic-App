@@ -39,7 +39,28 @@ export default function AdminPage() {
         <AdminPanel />
       </div>
       
-      <div className="mt-12 border-t pt-8">
+      <div className="mt-8 border-t pt-8">
+        <h2 className="text-2xl font-bold mb-4">High-Capacity Upload Tool</h2>
+        <div className="rounded-md bg-muted p-6">
+          <p className="mb-4">
+            For larger WAV files or bulk uploads, use our specialized upload tool:
+          </p>
+          <div className="flex justify-center my-4">
+            <a 
+              href="/admin-upload" 
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+            >
+              Open High-Capacity Upload Tool
+            </a>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            This tool supports much larger files (up to 2GB per file) and has extended timeout settings.
+            Great for high-definition WAV files and albums with many tracks.
+          </p>
+        </div>
+      </div>
+      
+      <div className="mt-8 border-t pt-8">
         <h2 className="text-2xl font-bold mb-4">Using the Add Personal Tracks Script</h2>
         <div className="rounded-md bg-muted p-6">
           <p className="mb-4">

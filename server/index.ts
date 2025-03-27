@@ -3,9 +3,22 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
-app.use(express.json({ limit: '400mb' }));
-app.use(express.urlencoded({ extended: false, limit: '400mb' }));
+app.use(express.json({ limit: '2gb' }));
+app.use(express.urlencoded({ extended: false, limit: '2gb' }));
+
+// Increase maximum request size for large file uploads
+app.use((req, res, next) => {
+  // Set timeouts for large file uploads - 15 minutes
+  req.setTimeout(900000);
+  res.setTimeout(900000);
+  next();
+});
 app.use(express.static('public'));
+
+// Import and use the patched album upload router for high-capacity uploads
+import patchedAlbumUpload from './patched-album-upload.js';
+app.use(patchedAlbumUpload);
+console.log('💾 Patched album upload module loaded successfully');
 
 app.use((req, res, next) => {
   const start = Date.now();

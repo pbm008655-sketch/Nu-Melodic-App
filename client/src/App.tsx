@@ -18,6 +18,7 @@ import MixerPage from "./pages/mixer-page";
 import MixerTestPage from "./pages/mixer-test-page";
 import CheckoutPage from "./pages/checkout-page";
 import SubscriptionSuccessPage from "./pages/subscription-success-page";
+import AdminUploadTool from "./pages/admin-upload-tool";
 
 function Router() {
   return (
@@ -29,6 +30,7 @@ function Router() {
       <ProtectedRoute path="/subscriptions" component={SubscriptionsPage} />
       <ProtectedRoute path="/analytics" component={AnalyticsDashboardPage} />
       <ProtectedRoute path="/admin" component={AdminPage} />
+      <ProtectedRoute path="/admin-upload" component={AdminUploadTool} />
       <Route path="/mixer/:id" component={MixerPage} />
       <Route path="/mixer-test" component={MixerTestPage} />
       <ProtectedRoute path="/checkout" component={CheckoutPage} />
