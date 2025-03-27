@@ -89,20 +89,53 @@ export default function AdminUploadTool() {
         // Important: No content-type header, browser will set it with boundary
       });
 
-      const data = await response.json();
-      setResult(data);
-      
+      // Check if response is ok before trying to parse JSON
       if (response.ok) {
-        toast({
-          title: "Upload successful",
-          description: `Uploaded ${data.trackCount} tracks`,
-        });
+        try {
+          const data = await response.json();
+          setResult(data);
+          toast({
+            title: "Upload successful",
+            description: `Uploaded ${data.trackCount} tracks`,
+          });
+        } catch (error) {
+          console.error("Error parsing response JSON:", error);
+          setResult({ error: "Error parsing server response" });
+          toast({
+            title: "Upload error",
+            description: "Server returned an invalid response format",
+            variant: "destructive"
+          });
+        }
       } else {
-        toast({
-          title: "Upload failed",
-          description: data.message || "Unknown error",
-          variant: "destructive"
-        });
+        // Handle error response
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          try {
+            const errorData = await response.json();
+            setResult(errorData);
+            toast({
+              title: "Upload failed",
+              description: errorData.message || "Unknown error",
+              variant: "destructive"
+            });
+          } catch (error) {
+            setResult({ status: response.status, statusText: response.statusText });
+            toast({
+              title: "Upload failed",
+              description: `Status ${response.status}: ${response.statusText}`,
+              variant: "destructive"
+            });
+          }
+        } else {
+          // If not JSON, don't try to parse the body
+          setResult({ status: response.status, statusText: response.statusText });
+          toast({
+            title: "Upload failed",
+            description: `Status ${response.status}: ${response.statusText}`,
+            variant: "destructive"
+          });
+        }
       }
     } catch (error) {
       console.error("Upload error:", error);

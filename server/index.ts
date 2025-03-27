@@ -173,22 +173,47 @@ app.post('/api/high-capacity-album-upload', (req, res) => {
         // Log the entire request.body for debugging track titles
         console.log(`Full request.body keys: ${Object.keys(req.body).join(', ')}`);
         
-        // The field name in the form is "title-{i}" but we access it directly here
-        const trackTitleKey = `title-${i}`;
-        // First check req.body directly
-        let trackTitle = req.body[trackTitleKey];
+        // Check multiple format patterns for track title
+        let trackTitle;
         
-        // If not found, try checking in an array format that multer might be using
-        if (!trackTitle && req.body[trackTitleKey] && Array.isArray(req.body[trackTitleKey])) {
-          trackTitle = req.body[trackTitleKey][0];
+        // Check title-{i} format from admin panel
+        const titleIndexKey = `title-${i}`;
+        if (req.body[titleIndexKey]) {
+          if (Array.isArray(req.body[titleIndexKey])) {
+            trackTitle = req.body[titleIndexKey][0];
+          } else {
+            trackTitle = req.body[titleIndexKey];
+          }
         }
+        
+        // Check track-{i}Title format from older code
+        if (!trackTitle) {
+          const trackFieldName = `track-${i}`;
+          const fieldTitleKey = `${trackFieldName}Title`;
+          if (req.body[fieldTitleKey]) {
+            if (Array.isArray(req.body[fieldTitleKey])) {
+              trackTitle = req.body[fieldTitleKey][0];
+            } else {
+              trackTitle = req.body[fieldTitleKey];
+            }
+          }
+        }
+        
+        // Log all debug information for this track title lookup
+        console.log(`Track ${i} title lookup:`, {
+          titleIndexKey,
+          titleIndexValue: req.body[titleIndexKey],
+          trackFieldTitleKey: `track-${i}Title`,
+          trackFieldTitleValue: req.body[`track-${i}Title`],
+          finalTrackTitle: trackTitle || `Track ${trackNumber}`
+        });
         
         // Default fallback 
         if (!trackTitle) {
           trackTitle = `Track ${trackNumber}`;
         }
         
-        console.log(`Track ${i} title (${trackTitleKey}): ${trackTitle}`);
+        console.log(`Track ${i} title (${titleIndexKey}): ${trackTitle}`);
         const trackUrl = `/audio/${newFilename}`;
         
         const createdTrack = await storage.createTrack({
