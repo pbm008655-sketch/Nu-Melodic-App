@@ -7,8 +7,8 @@ import fs from 'fs';
 import uploadRouter from './upload-router';
 
 const app = express();
-app.use(express.json({ limit: '2gb' }));
-app.use(express.urlencoded({ extended: false, limit: '2gb' }));
+app.use(express.json({ limit: '5gb' }));
+app.use(express.urlencoded({ extended: true, limit: '5gb' }));
 
 // Increase maximum request size for large file uploads
 app.use((req, res, next) => {

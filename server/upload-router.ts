@@ -132,13 +132,17 @@ const albumUpload = multer({
 // Create router
 const router = Router();
 
+// Add middleware to handle larger payloads
+router.use(express.json({ limit: '5gb' }));
+router.use(express.urlencoded({ extended: true, limit: '5gb' }));
+
 // Diagnostics endpoint to check file upload limits
 router.get('/api/diagnostics', (req, res) => {
   res.json({
     limits: {
       bodyParser: {
-        json: '2gb',
-        urlencoded: '2gb'
+        json: '5gb',
+        urlencoded: '5gb'
       },
       uploads: {
         general: '400MB',
