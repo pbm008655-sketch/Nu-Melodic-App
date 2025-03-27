@@ -2,7 +2,11 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { storage } from './storage';
+import { fileURLToPath } from 'url';
+
+// Get the directory name correctly in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Create the upload directories if they don't exist
 const audioUploadDir = path.join(process.cwd(), 'public', 'audio');
@@ -62,11 +66,11 @@ const highCapacityUpload = multer({
     cb(null, true);
   },
   limits: {
-    fileSize: 2 * 1024 * 1024 * 1024, // 2GB limit
-    fieldSize: 2 * 1024 * 1024 * 1024, // 2GB field size limit
+    fileSize: 400 * 1024 * 1024, // 400MB limit per file
+    fieldSize: 400 * 1024 * 1024, // 400MB field size limit
     files: 20, // Maximum 20 files
     fields: 100, // Maximum 100 fields
-    parts: 1200 // Maximum 1200 parts (headers + files)
+    parts: 120 // Maximum 120 parts (headers + files)
   }
 }).fields([
   { name: 'cover', maxCount: 1 },
@@ -91,107 +95,136 @@ const highCapacityUpload = multer({
 // Create a router to handle album uploads
 const router = express.Router();
 
-router.post('/api/high-capacity-album-upload', highCapacityUpload, async (req, res) => {
+router.post('/api/high-capacity-album-upload', async (req, res) => {
   try {
-    console.log("High-capacity album upload received");
-    console.log("Body keys:", Object.keys(req.body));
-    console.log("Files:", req.files ? Object.keys(req.files) : "No files");
+    console.log("High-capacity album upload endpoint hit");
     
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication required"
-      });
-    }
-    
-    const { title, artist } = req.body;
-    if (!title || !artist) {
-      return res.status(400).json({
-        success: false,
-        message: "Album title and artist are required"
-      });
-    }
-    
-    // Type assertion for multer files 
-    const files = req.files as Record<string, Express.Multer.File[]> || {};
-    const trackFiles = Object.entries(files)
-      .filter(([key]) => key.startsWith('track-'))
-      .sort((a, b) => {
-        const numA = parseInt(a[0].split('-')[1]);
-        const numB = parseInt(b[0].split('-')[1]);
-        return numA - numB;
-      })
-      .map(([_, files]) => files[0]);
-    
-    if (trackFiles.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "At least one track is required"
-      });
-    }
-    
-    // Create album
-    let coverUrl = '';
-    if (files['cover'] && files['cover'].length > 0) {
-      coverUrl = `/covers/${files['cover'][0].filename}`;
-    }
-    
-    console.log("Creating album in storage...");
-    const createdAlbum = await storage.createAlbum({
-      title,
-      artist,
-      coverUrl,
-      releaseDate: new Date(),
-      description: null,
-      customAlbum: null
+    // Execute the multer middleware
+    highCapacityUpload(req, res, async (err) => {
+      if (err) {
+        console.error("Multer error:", err);
+        return res.status(400).json({
+          success: false,
+          message: `Upload error: ${err.message}`
+        });
+      }
+      
+      try {
+        console.log("Files uploaded successfully, processing...");
+        console.log("Body keys:", Object.keys(req.body || {}));
+        console.log("Files:", req.files ? Object.keys(req.files) : "No files");
+        
+        if (!req.isAuthenticated()) {
+          return res.status(401).json({
+            success: false,
+            message: "Authentication required"
+          });
+        }
+        
+        // Load storage from our module
+        const { storage } = await import('./storage.js');
+        
+        // Get album data from request
+        const { title, artist } = req.body;
+        if (!title || !artist) {
+          return res.status(400).json({
+            success: false,
+            message: "Album title and artist are required"
+          });
+        }
+        
+        const files = req.files || {};
+        const trackFiles = Object.entries(files)
+          .filter(([key]) => key.startsWith('track-'))
+          .sort((a, b) => {
+            const numA = parseInt(a[0].split('-')[1]);
+            const numB = parseInt(b[0].split('-')[1]);
+            return numA - numB;
+          })
+          .map(([_, fileArray]) => fileArray[0]);
+        
+        if (trackFiles.length === 0) {
+          return res.status(400).json({
+            success: false,
+            message: "At least one track is required"
+          });
+        }
+        
+        // Create album
+        let coverUrl = '';
+        if (files.cover && files.cover.length > 0) {
+          coverUrl = `/covers/${files.cover[0].filename}`;
+        }
+        
+        console.log("Creating album in storage...");
+        const createdAlbum = await storage.createAlbum({
+          title,
+          artist,
+          coverUrl,
+          releaseDate: new Date(),
+          isFeatured: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+        
+        console.log("Album created:", createdAlbum);
+        
+        // Rename and save track files
+        const createdTracks = [];
+        for (let i = 0; i < trackFiles.length; i++) {
+          const trackFile = trackFiles[i];
+          const trackNumber = i + 1;
+          
+          // Rename the track to follow our naming convention
+          const newFilename = `track-${createdAlbum.id}-${trackNumber}.wav`;
+          const oldPath = path.join(audioUploadDir, trackFile.filename);
+          const newPath = path.join(audioUploadDir, newFilename);
+          
+          console.log(`Renaming track ${i+1} from ${trackFile.filename} to ${newFilename}`);
+          fs.renameSync(oldPath, newPath);
+          
+          // Create track in storage
+          const trackTitle = req.body[`title-${i}`] || `Track ${trackNumber}`;
+          const trackUrl = `/audio/${newFilename}`;
+          
+          const createdTrack = await storage.createTrack({
+            albumId: createdAlbum.id,
+            title: trackTitle,
+            artist: artist,
+            trackNumber: trackNumber,
+            duration: 180, // We don't know actual duration without audio analysis
+            audioUrl: trackUrl,
+            isFeatured: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          
+          createdTracks.push(createdTrack);
+        }
+        
+        res.status(200).json({
+          success: true,
+          message: `Album '${title}' created with ${createdTracks.length} tracks`,
+          albumId: createdAlbum.id,
+          trackCount: createdTracks.length,
+          album: createdAlbum,
+          tracks: createdTracks
+        });
+      } catch (innerError) {
+        console.error("Error in processing upload:", innerError);
+        res.status(500).json({
+          success: false,
+          message: `Processing failed: ${innerError.message}`,
+          error: innerError.stack
+        });
+      }
     });
-    
-    console.log("Album created:", createdAlbum);
-    
-    // Rename and save track files
-    const createdTracks = [];
-    for (let i = 0; i < trackFiles.length; i++) {
-      const trackFile = trackFiles[i];
-      const trackNumber = i + 1;
-      
-      // Rename the track to follow our naming convention
-      const newFilename = `track-${createdAlbum.id}-${trackNumber}.wav`;
-      const oldPath = path.join(audioUploadDir, trackFile.filename);
-      const newPath = path.join(audioUploadDir, newFilename);
-      
-      console.log(`Renaming track ${i+1} from ${trackFile.filename} to ${newFilename}`);
-      fs.renameSync(oldPath, newPath);
-      
-      // Create track in storage
-      const trackTitle = req.body[`title-${i}`] || `Track ${trackNumber}`;
-      const trackUrl = `/audio/${newFilename}`;
-      
-      const createdTrack = await storage.createTrack({
-        albumId: createdAlbum.id,
-        title: trackTitle,
-        trackNumber: trackNumber,
-        duration: 180, // We don't know actual duration without audio analysis
-        audioUrl: trackUrl,
-        isFeatured: false
-      });
-      
-      createdTracks.push(createdTrack);
-    }
-    
-    res.status(200).json({
-      success: true,
-      message: `Album '${title}' created with ${createdTracks.length} tracks`,
-      albumId: createdAlbum.id,
-      trackCount: createdTracks.length,
-      album: createdAlbum,
-      tracks: createdTracks
-    });
-  } catch (error) {
-    console.error("Error in high-capacity upload:", error);
+  } catch (outerError) {
+    console.error("Outer error in high-capacity upload:", outerError);
     res.status(500).json({
       success: false,
-      message: `Upload failed: ${error instanceof Error ? error.message : String(error)}`,
-      error: error instanceof Error ? error.stack : String(error)
+      message: `Upload failed: ${outerError.message}`,
+      error: outerError.stack
     });
   }
 });
