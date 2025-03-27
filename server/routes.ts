@@ -25,6 +25,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
   
+  // Admin route for clearing all albums and tracks
+  app.post('/api/admin/clear-albums', async (req, res) => {
+    // Check if user is authenticated
+    if (!req.isAuthenticated() || req.user?.id !== 1) { // Only admin (user 1) can clear
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized. Only admin can clear albums."
+      });
+    }
+    
+    try {
+      await storage.clearAlbumsAndTracks();
+      res.status(200).json({
+        success: true,
+        message: "All albums and tracks have been cleared from the system."
+      });
+    } catch (error) {
+      console.error("Error clearing albums:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to clear albums and tracks."
+      });
+    }
+  });
+
   // Add specific route for audio files with proper headers
   // This endpoint does NOT require authentication to allow for direct audio streaming
   app.get('/audio/:filename', (req, res) => {

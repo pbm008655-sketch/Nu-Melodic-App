@@ -16,6 +16,7 @@ export interface IStorage {
   getFeaturedAlbums(limit?: number): Promise<Album[]>;
   getRecentAlbums(limit?: number): Promise<Album[]>;
   createAlbum(album: Omit<Album, 'id'>): Promise<Album>;
+  clearAlbumsAndTracks(): Promise<void>; // Method to clear all albums and tracks
   
   getAllTracks(): Promise<Track[]>;
   getTrack(id: number): Promise<Track | undefined>;
@@ -98,87 +99,8 @@ export class MemStorage implements IStorage {
     };
     this.users.set(demoUser.id, demoUser);
     
-    // Create sample albums
-    const album1: Album = {
-      id: this.albumId++,
-      title: "Midnight Memories",
-      artist: "MeloStream Artist",
-      coverUrl: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
-      description: "An immersive journey through late night soundscapes",
-      releaseDate: new Date("2023-05-15"),
-      customAlbum: null,
-    };
-    
-    const album2: Album = {
-      id: this.albumId++,
-      title: "Urban Echoes",
-      artist: "MeloStream Artist",
-      coverUrl: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
-      description: "Electronic fusion with urban influences",
-      releaseDate: new Date("2023-08-20"),
-      customAlbum: null,
-    };
-    
-    const album3: Album = {
-      id: this.albumId++,
-      title: "Sound Waves",
-      artist: "MeloStream Artist",
-      coverUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
-      description: "Ambient collection for relaxation",
-      releaseDate: new Date("2023-02-10"),
-      customAlbum: null,
-    };
-    
-    const album4: Album = {
-      id: this.albumId++,
-      title: "Neon Nights",
-      artist: "MeloStream Artist",
-      coverUrl: "https://images.unsplash.com/photo-1593697972672-b1c1356e32f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
-      description: "Synthwave inspired by 80s nostalgia",
-      releaseDate: new Date("2023-09-05"),
-      customAlbum: null,
-    };
-    
-    const album5: Album = {
-      id: this.albumId++,
-      title: "Acoustic Dreams",
-      artist: "MeloStream Artist",
-      coverUrl: "https://images.unsplash.com/photo-1602848597941-0d3f3415bfa9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
-      description: "Peaceful instrumental acoustic melodies",
-      releaseDate: new Date("2023-06-30"),
-      customAlbum: null,
-    };
-    
-    this.albums.set(album1.id, album1);
-    this.albums.set(album2.id, album2);
-    this.albums.set(album3.id, album3);
-    this.albums.set(album4.id, album4);
-    this.albums.set(album5.id, album5);
-    
-    // Create sample tracks
-    const createTracks = (albumId: number, count: number, featured = false) => {
-      const tracks: Track[] = [];
-      for (let i = 1; i <= count; i++) {
-        const track: Track = {
-          id: this.trackId++,
-          title: `Track ${i}`,
-          albumId,
-          trackNumber: i,
-          duration: 180 + Math.floor(Math.random() * 120), // 3-5 minutes
-          audioUrl: `/audio/track-${albumId}-${i}.wav`,
-          isFeatured: featured && i <= 2, // First two tracks of featured albums are featured
-        };
-        tracks.push(track);
-        this.tracks.set(track.id, track);
-      }
-      return tracks;
-    };
-    
-    createTracks(album1.id, 8, true);
-    createTracks(album2.id, 6, true);
-    createTracks(album3.id, 5);
-    createTracks(album4.id, 7);
-    createTracks(album5.id, 6, true);
+    // No demo albums or tracks - clean slate for custom uploads
+    console.log('Initialized storage with demo user only. Ready for custom album uploads.');
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -438,6 +360,25 @@ export class MemStorage implements IStorage {
       .slice(0, limit);
     
     return trackCounts;
+  }
+  
+  // Method to clear all albums and tracks
+  async clearAlbumsAndTracks(): Promise<void> {
+    // First, clear track plays that reference track IDs
+    this.trackPlays = new Map();
+    
+    // Clear tracks
+    this.tracks = new Map();
+    
+    // Clear albums
+    this.albums = new Map();
+    
+    // Reset IDs for next creations
+    this.albumId = 1;
+    this.trackId = 1;
+    this.trackPlayId = 1;
+    
+    console.log('Cleared all albums and tracks from the system');
   }
 
   async getTrackPlaysByAlbum(albumId: number): Promise<{albumId: number; plays: number}> {

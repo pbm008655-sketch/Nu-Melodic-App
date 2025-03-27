@@ -124,14 +124,5 @@ export async function importPersonalTracks({
 // We'll use a different approach for ES modules
 if (import.meta.url === `file://${process.cwd()}/server/add-personal-tracks.ts`) {
   console.log('Running add-personal-tracks.ts directly...');
-  importPersonalTracks().then(async ({ album }) => {
-    // Verify that the album and tracks were created
-    const verifiedAlbum = await storage.getAlbum(album.id);
-    console.log('Verification - Album:', verifiedAlbum);
-    
-    const tracks = await storage.getTracksByAlbumId(album.id);
-    console.log('Verification - Tracks:', tracks);
-  }).catch(err => {
-    console.error('Error adding personal tracks:', err);
-  });
+  console.log('Skipping automatic track import - ready for custom uploads only');
 }
