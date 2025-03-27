@@ -13,7 +13,15 @@ export default function AdminUploadTool() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [files, setFiles] = useState<{ [key: string]: File }>({});
-  const [trackTitles, setTrackTitles] = useState<{ [key: string]: string }>({});
+  // Initialize track titles with default values
+  const [trackTitles, setTrackTitles] = useState<{ [key: string]: string }>(() => {
+    const defaultTitles: { [key: string]: string } = {};
+    // Set default values for all potential tracks
+    for (let i = 0; i < 15; i++) {
+      defaultTitles[`title-${i}`] = `Track ${i+1}`;
+    }
+    return defaultTitles;
+  });
   const [albumTitle, setAlbumTitle] = useState('');
   const [artist, setArtist] = useState('');
   const [loading, setLoading] = useState(false);
@@ -238,12 +246,9 @@ export default function AdminUploadTool() {
                       <Input 
                         id={`title-${i}`} 
                         name={`title-${i}`}
-                        defaultValue={`Track ${i+1}`}
+                        value={trackTitles[`title-${i}`] || `Track ${i+1}`}
                         onChange={(e) => {
-                          // Store the track title directly in the form element
-                          // This ensures it gets submitted with the form 
-                          e.currentTarget.setAttribute('value', e.target.value);
-                          // Also store in state for our UI
+                          // Store the track title in state so we can properly send it to the server
                           setTrackTitles(prev => ({
                             ...prev,
                             [`title-${i}`]: e.target.value
