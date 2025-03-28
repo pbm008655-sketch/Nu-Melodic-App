@@ -20,6 +20,7 @@ import CheckoutPage from "./pages/checkout-page";
 import SubscriptionSuccessPage from "./pages/subscription-success-page";
 import AdminUploadTool from "./pages/admin-upload-tool";
 import UploadTestPage from "./pages/upload-test-page";
+import ChunkedUploaderPage from "./pages/chunked-uploader-page";
 
 function Router() {
   return (
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/mixer/:id" component={MixerPage} />
       <Route path="/mixer-test" component={MixerTestPage} />
       <Route path="/upload-test" component={UploadTestPage} />
+      <ProtectedRoute path="/chunked-upload" component={ChunkedUploaderPage} />
       <ProtectedRoute path="/checkout" component={CheckoutPage} />
       <ProtectedRoute path="/subscription-success" component={SubscriptionSuccessPage} />
       <Route component={NotFound} />

@@ -95,17 +95,24 @@ export default function AdminPage() {
           <p className="mb-4">
             For larger WAV files or bulk uploads, use our specialized upload tool:
           </p>
-          <div className="flex justify-center my-4">
+          <div className="flex justify-center gap-4 my-4">
             <a 
               href="/admin-upload" 
               className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
             >
               Open High-Capacity Upload Tool
             </a>
+            <a
+              href="/chunked-upload"
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              Chunked Uploader (70MB+ Files)
+            </a>
           </div>
           <p className="text-sm text-muted-foreground">
-            This tool supports much larger files (up to 2GB per file) and has extended timeout settings.
-            Great for high-definition WAV files and albums with many tracks.
+            The High-Capacity tool supports larger files (up to 400MB per file) with extended timeout settings.
+            For even larger files (70MB+), use the Chunked Uploader which can handle files of any size by breaking
+            them into smaller pieces during upload, preventing timeouts.
           </p>
         </div>
       </div>

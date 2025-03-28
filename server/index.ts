@@ -5,6 +5,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import uploadRouter from './upload-router';
+import chunkedUploader from './chunked-uploader';
 
 const app = express();
 app.use(express.json({ limit: '5gb' }));
@@ -21,6 +22,9 @@ app.use(express.static('public'));
 
 // Use the enhanced upload router for file uploads
 app.use(uploadRouter);
+
+// Use the chunked uploader for large file uploads
+app.use(chunkedUploader);
 
 // Set up our own high-capacity file upload endpoint
 
