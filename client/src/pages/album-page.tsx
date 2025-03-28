@@ -7,9 +7,10 @@ import MobileMenu from "@/components/mobile-menu";
 import Player from "@/components/player";
 import { TrackListItem } from "@/components/track-list-item";
 import { usePlayer } from "@/hooks/use-player";
-import { Play, Pause, Clock3, Music2, Shuffle, PlayCircle } from "lucide-react";
+import { Play, Pause, Clock3, Music2, Shuffle, PlayCircle, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DownloadButton } from "@/components/download-button";
 
 export default function AlbumPage() {
   const params = useParams<{ id: string }>();
@@ -174,6 +175,31 @@ export default function AlbumPage() {
                   >
                     <Shuffle className="h-4 w-4 mr-2" /> Random
                   </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="border-zinc-700 hover:bg-zinc-800 text-white flex items-center"
+                    onClick={() => {
+                      // Let the DownloadButton component handle the download
+                      // This is a wrapper around the actual download button
+                      const downloadButton = document.getElementById('album-download-button');
+                      if (downloadButton) {
+                        downloadButton.click();
+                      }
+                    }}
+                    title="Download entire album"
+                  >
+                    <Download className="h-4 w-4 mr-2" /> Download
+                  </Button>
+                  
+                  {/* Hidden download button with proper handlers */}
+                  <div className="hidden">
+                    <DownloadButton
+                      id="album-download-button"
+                      album={album}
+                      variant="ghost"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

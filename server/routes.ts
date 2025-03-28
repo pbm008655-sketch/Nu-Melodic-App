@@ -1272,6 +1272,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Download track endpoint - allows downloading a single track
+  app.get("/api/tracks/:id/download", async (req, res) => {
+    try {
+      const trackId = parseInt(req.params.id);
+      if (isNaN(trackId)) {
+        return res.status(400).json({ error: "Invalid track ID" });
+      }
+
+      // Get track details from database
+      const track = await storage.getTrack(trackId);
+      if (!track) {
+        return res.status(404).json({ error: "Track not found" });
+      }
+
+      // Get the album to include in the filename
+      const album = await storage.getAlbum(track.albumId);
+      if (!album) {
+        return res.status(404).json({ error: "Album not found" });
+      }
+
+      // Generate clean filenames without special characters
+      const cleanArtistName = album.artist.replace(/[^\w\s]/gi, '').replace(/\s+/g, '_');
+      const cleanAlbumTitle = album.title.replace(/[^\w\s]/gi, '').replace(/\s+/g, '_');
+      const cleanTrackTitle = track.title.replace(/[^\w\s]/gi, '').replace(/\s+/g, '_');
+      
+      // Build the file path from the track's URL
+      const audioPath = track.audioUrl.startsWith("/") 
+        ? track.audioUrl.substring(1)  // Remove leading slash
+        : track.audioUrl;
+      
+      const filePath = path.join(process.cwd(), "public", audioPath);
+      
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: "Audio file not found" });
+      }
+      
+      // Determine file extension
+      const fileExt = path.extname(filePath).toLowerCase();
+      
+      // Set download filename with track number and clean names
+      const downloadFilename = `${track.trackNumber.toString().padStart(2, '0')}-${cleanTrackTitle}${fileExt}`;
+      
+      // Set headers for file download
+      res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
+      
+      if (fileExt === '.mp3') {
+        res.setHeader('Content-Type', 'audio/mpeg');
+      } else if (fileExt === '.wav') {
+        res.setHeader('Content-Type', 'audio/wav');
+      } else {
+        res.setHeader('Content-Type', 'application/octet-stream');
+      }
+      
+      // Stream the file to response
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+    } catch (error: any) {
+      console.error("Error downloading track:", error);
+      res.status(500).json({ error: "Error downloading track" });
+    }
+  });
+  
+  // Download entire album endpoint - returns track info for frontend to handle multiple downloads
+  app.get("/api/albums/:id/download", async (req, res) => {
+    try {
+      const albumId = parseInt(req.params.id);
+      if (isNaN(albumId)) {
+        return res.status(400).json({ error: "Invalid album ID" });
+      }
+
+      // Get album details from database
+      const album = await storage.getAlbum(albumId);
+      if (!album) {
+        return res.status(404).json({ error: "Album not found" });
+      }
+      
+      // Get all tracks from the album
+      const tracks = await storage.getTracksByAlbumId(albumId);
+      if (!tracks || tracks.length === 0) {
+        return res.status(404).json({ error: "No tracks found for this album" });
+      }
+      
+      // Return track information for frontend to process
+      res.json({
+        album,
+        tracks,
+        message: `Album "${album.title}" has ${tracks.length} tracks ready for download`
+      });
+      
+    } catch (error: any) {
+      console.error("Error preparing album download:", error);
+      res.status(500).json({ error: "Error preparing album download" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
