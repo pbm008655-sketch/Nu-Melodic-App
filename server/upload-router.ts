@@ -40,7 +40,10 @@ const audioUpload = multer({
     },
     filename: (req, file, cb) => {
       const { albumId, trackNumber } = req.body;
-      const filename = `track-${albumId}-${trackNumber}.wav`;
+      // Support both MP3 and WAV files
+      const ext = path.extname(file.originalname).toLowerCase();
+      const fileExt = ext === '.mp3' ? '.mp3' : '.wav'; // Default to .wav if not .mp3
+      const filename = `track-${albumId}-${trackNumber}${fileExt}`;
       cb(null, filename);
     }
   }),
@@ -48,10 +51,15 @@ const audioUpload = multer({
     fileSize: 400 * 1024 * 1024, // 400MB limit for audio files
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'audio/wav' || file.originalname.endsWith('.wav')) {
+    if (
+      file.mimetype === 'audio/wav' || 
+      file.originalname.endsWith('.wav') ||
+      file.mimetype === 'audio/mpeg' || 
+      file.originalname.endsWith('.mp3')
+    ) {
       cb(null, true);
     } else {
-      cb(new Error('Only WAV files are allowed'));
+      cb(new Error('Only WAV and MP3 files are allowed'));
     }
   }
 }).single('audio');
@@ -100,7 +108,10 @@ const albumUpload = multer({
         cb(null, `temp-cover-${timestamp}${ext}`);
       } else if (file.fieldname.startsWith('track')) {
         const timestamp = Date.now();
-        cb(null, `temp-track-${timestamp}.wav`);
+        // Check if it's an MP3 file
+        const ext = path.extname(file.originalname).toLowerCase();
+        const fileExt = ext === '.mp3' ? '.mp3' : '.wav'; // Default to .wav if not .mp3
+        cb(null, `temp-track-${timestamp}${fileExt}`);
       } else {
         const timestamp = Date.now();
         cb(null, `file-${timestamp}${path.extname(file.originalname)}`);
@@ -212,7 +223,10 @@ router.post('/api/upload/audio', (req, res) => {
     }
     
     const { albumId, trackNumber } = req.body;
-    const audioUrl = `/audio/track-${albumId}-${trackNumber}.wav`;
+    // Use the file extension from the original file
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const fileExt = ext === '.mp3' ? '.mp3' : '.wav'; // Default to .wav if not .mp3
+    const audioUrl = `/audio/track-${albumId}-${trackNumber}${fileExt}`;
     
     res.json({
       success: true,
@@ -334,9 +348,13 @@ router.post('/api/upload/album', (req, res) => {
         const fieldName = trackFields[i];
         const trackNumber = i + 1;
         
-        if (req.files[fieldName] && req.files[fieldName][0]) {
+        if (req.files && req.files[fieldName] && req.files[fieldName][0]) {
           const track = req.files[fieldName][0];
-          const newFilename = `track-${album.id}-${trackNumber}.wav`;
+          
+          // Get file extension from the original file
+          const ext = path.extname(track.originalname).toLowerCase();
+          const fileExt = ext === '.mp3' ? '.mp3' : '.wav'; // Default to .wav if not .mp3
+          const newFilename = `track-${album.id}-${trackNumber}${fileExt}`;
           const newPath = path.join(audioDir, newFilename);
           
           // Rename the temp file
@@ -372,7 +390,7 @@ router.post('/api/upload/album', (req, res) => {
         trackCount: tracks.length
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error processing album upload:', error);
       res.status(500).json({
         success: false,
@@ -437,9 +455,13 @@ router.post('/api/albums', (req, res) => {
         const fieldName = trackFields[i];
         const trackNumber = i + 1;
         
-        if (req.files[fieldName] && req.files[fieldName][0]) {
+        if (req.files && req.files[fieldName] && req.files[fieldName][0]) {
           const track = req.files[fieldName][0];
-          const newFilename = `track-${album.id}-${trackNumber}.wav`;
+          
+          // Get file extension from the original file
+          const ext = path.extname(track.originalname).toLowerCase();
+          const fileExt = ext === '.mp3' ? '.mp3' : '.wav'; // Default to .wav if not .mp3
+          const newFilename = `track-${album.id}-${trackNumber}${fileExt}`;
           const newPath = path.join(audioDir, newFilename);
           
           // Rename the temp file
@@ -474,7 +496,7 @@ router.post('/api/albums', (req, res) => {
         trackCount: tracks.length
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error processing album upload from admin:', error);
       res.status(500).json({
         success: false,

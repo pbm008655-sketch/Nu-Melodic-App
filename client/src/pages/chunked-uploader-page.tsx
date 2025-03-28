@@ -361,7 +361,7 @@ export default function ChunkedUploaderPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Chunked Uploader</h1>
         <p className="text-muted-foreground">
-          Upload large audio files in small chunks to prevent timeouts
+          Upload large WAV or MP3 files in small chunks to prevent timeouts
         </p>
       </div>
       
@@ -456,7 +456,7 @@ export default function ChunkedUploaderPage() {
             <div>
               <CardTitle>Tracks</CardTitle>
               <CardDescription>
-                Add audio tracks to your album
+                Add WAV or MP3 audio tracks to your album
               </CardDescription>
             </div>
             
@@ -465,7 +465,7 @@ export default function ChunkedUploaderPage() {
                 type="file"
                 id="trackUpload"
                 className="hidden"
-                accept="audio/*"
+                accept=".wav,audio/wav,.mp3,audio/mpeg,audio/*"
                 onChange={handleTrackSelect}
               />
               <Label 

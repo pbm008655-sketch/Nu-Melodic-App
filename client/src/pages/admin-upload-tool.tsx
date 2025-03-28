@@ -233,7 +233,7 @@ export default function AdminUploadTool() {
         <Card>
           <CardHeader>
             <CardTitle>Track Files</CardTitle>
-            <CardDescription>Upload WAV files (up to 15 tracks)</CardDescription>
+            <CardDescription>Upload WAV or MP3 files (up to 15 tracks)</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -265,7 +265,7 @@ export default function AdminUploadTool() {
                     <Input 
                       id={`track-${i}`} 
                       type="file" 
-                      accept=".wav,audio/wav"
+                      accept=".wav,audio/wav,.mp3,audio/mpeg"
                       onChange={(e) => handleFileSelect(e, `track-${i}`)}
                     />
                     {files[`track-${i}`] && (

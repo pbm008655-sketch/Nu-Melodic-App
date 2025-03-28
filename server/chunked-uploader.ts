@@ -139,8 +139,10 @@ router.post('/api/chunked-upload/complete', async (req, res) => {
     let targetPath = '';
     
     if (isTrack) {
-      // For audio tracks
-      const finalFilename = `track-${albumId}-${trackNumber}.wav`;
+      // For audio tracks - determine file extension based on file type
+      const fileExt = path.extname(metadata.filename).toLowerCase();
+      const ext = (fileExt === '.mp3' || metadata.fileType === 'audio/mpeg') ? '.mp3' : '.wav';
+      const finalFilename = `track-${albumId}-${trackNumber}${ext}`;
       targetPath = path.join(audioDir, finalFilename);
     } else if (isCover) {
       // For album covers
@@ -177,7 +179,9 @@ router.post('/api/chunked-upload/complete', async (req, res) => {
     // Generate the appropriate URL based on file type
     let fileUrl = '';
     if (isTrack) {
-      fileUrl = `/audio/track-${albumId}-${trackNumber}.wav`;
+      const fileExt = path.extname(metadata.filename).toLowerCase();
+      const ext = (fileExt === '.mp3' || metadata.fileType === 'audio/mpeg') ? '.mp3' : '.wav';
+      fileUrl = `/audio/track-${albumId}-${trackNumber}${ext}`;
     } else if (isCover) {
       const ext = path.extname(metadata.filename);
       fileUrl = `/covers/album-${albumId}${ext}`;

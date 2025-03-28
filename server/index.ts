@@ -64,6 +64,28 @@ const highCapacityUpload = multer({
     fieldSize: 400 * 1024 * 1024, // 400MB field size limit
     files: 20, // Maximum 20 files
     fields: 100 // Maximum 100 fields
+  },
+  fileFilter: function(req, file, cb) {
+    if (file.fieldname.startsWith('track-')) {
+      // Allow both WAV and MP3 files for tracks
+      if (file.mimetype === 'audio/wav' || 
+          file.originalname.endsWith('.wav') || 
+          file.mimetype === 'audio/mpeg' || 
+          file.originalname.endsWith('.mp3')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only WAV and MP3 files are allowed for audio tracks'), false);
+      }
+    } else if (file.fieldname === 'cover') {
+      // Check if it's an image file
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only image files are allowed for album covers'), false);
+      }
+    } else {
+      cb(null, true);
+    }
   }
 }).fields([
   { name: 'cover', maxCount: 1 },
@@ -171,7 +193,10 @@ app.post('/api/high-capacity-album-upload', (req, res) => {
         const trackNumber = i + 1;
         
         // Rename the track to follow our naming convention
-        const newFilename = `track-${createdAlbum.id}-${trackNumber}.wav`;
+        // Get the file extension from the original file
+        const fileExt = path.extname(trackFile.originalname).toLowerCase();
+        const ext = (fileExt === '.mp3' || trackFile.mimetype === 'audio/mpeg') ? '.mp3' : '.wav';
+        const newFilename = `track-${createdAlbum.id}-${trackNumber}${ext}`;
         const oldPath = path.join(audioUploadDir, trackFile.filename);
         const newPath = path.join(audioUploadDir, newFilename);
         
