@@ -3,6 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { storage } from './storage';
+import * as mm from 'music-metadata';
 
 // Create necessary directories
 const uploadDir = path.join(process.cwd(), 'public', 'uploads');
@@ -206,7 +207,7 @@ router.post('/api/upload', (req, res) => {
 
 // Audio upload endpoint
 router.post('/api/upload/audio', (req, res) => {
-  audioUpload(req, res, (err) => {
+  audioUpload(req, res, async (err) => {
     if (err) {
       console.error('Audio upload error:', err);
       return res.status(400).json({ 
@@ -228,6 +229,18 @@ router.post('/api/upload/audio', (req, res) => {
     const fileExt = ext === '.mp3' ? '.mp3' : '.wav'; // Default to .wav if not .mp3
     const audioUrl = `/audio/track-${albumId}-${trackNumber}${fileExt}`;
     
+    // Extract duration from the audio file
+    let duration = 180; // Default duration
+    try {
+      const metadata = await mm.parseFile(req.file.path);
+      if (metadata && metadata.format && metadata.format.duration) {
+        duration = Math.round(metadata.format.duration);
+        console.log(`Extracted duration: ${duration} seconds`);
+      }
+    } catch (err) {
+      console.error('Failed to extract duration:', err);
+    }
+    
     res.json({
       success: true,
       message: 'Audio file uploaded successfully',
@@ -235,7 +248,8 @@ router.post('/api/upload/audio', (req, res) => {
         filename: req.file.filename,
         originalname: req.file.originalname,
         size: req.file.size,
-        path: audioUrl
+        path: audioUrl,
+        duration: duration
       }
     });
   });
@@ -363,11 +377,23 @@ router.post('/api/upload/album', (req, res) => {
           // Create track in database
           const trackTitle = req.body[`${fieldName}Title`] || `Track ${trackNumber}`;
           
+          // Extract actual duration from the audio file
+          let duration = 180; // Default duration in seconds
+          try {
+            const metadata = await mm.parseFile(newPath);
+            if (metadata && metadata.format && metadata.format.duration) {
+              duration = Math.round(metadata.format.duration);
+              console.log(`Extracted duration for ${trackTitle}: ${duration} seconds`);
+            }
+          } catch (err) {
+            console.error(`Failed to extract duration for ${trackTitle}:`, err);
+          }
+          
           const newTrack = await storage.createTrack({
             title: trackTitle,
             albumId: album.id,
             trackNumber,
-            duration: 180, // Mock duration
+            duration: duration, // Actual duration from metadata
             audioUrl: `/audio/${newFilename}`,
             isFeatured: false
           });
@@ -470,11 +496,23 @@ router.post('/api/albums', (req, res) => {
           // Create track in database
           const trackTitle = req.body[`${fieldName}Title`] || `Track ${trackNumber}`;
           
+          // Extract actual duration from the audio file
+          let duration = 180; // Default duration in seconds
+          try {
+            const metadata = await mm.parseFile(newPath);
+            if (metadata && metadata.format && metadata.format.duration) {
+              duration = Math.round(metadata.format.duration);
+              console.log(`Extracted duration for ${trackTitle}: ${duration} seconds`);
+            }
+          } catch (err) {
+            console.error(`Failed to extract duration for ${trackTitle}:`, err);
+          }
+          
           const newTrack = await storage.createTrack({
             title: trackTitle,
             albumId: album.id,
             trackNumber,
-            duration: 180, // Mock duration
+            duration: duration, // Actual duration from metadata
             audioUrl: `/audio/${newFilename}`,
             isFeatured: false
           });

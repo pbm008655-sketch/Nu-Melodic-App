@@ -2,6 +2,7 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { storage } from './storage';
+import * as mm from 'music-metadata';
 
 const router = express.Router();
 
@@ -230,7 +231,7 @@ router.post('/api/chunked-upload/create-album', async (req, res) => {
       description: description || "",
       coverUrl: coverUrl || "/covers/default-cover.jpg",
       releaseDate: new Date(),
-      customAlbum: true
+      customAlbum: "true"
     });
     
     // Create the tracks
@@ -242,11 +243,28 @@ router.post('/api/chunked-upload/create-album', async (req, res) => {
         continue;
       }
       
+      // Get the actual file path to extract duration
+      let duration = 180; // Default duration
+      if (audioUrl && audioUrl.startsWith('/audio/')) {
+        const filePath = path.join(process.cwd(), 'public', audioUrl.substring(1));
+        try {
+          if (fs.existsSync(filePath)) {
+            const metadata = await mm.parseFile(filePath);
+            if (metadata && metadata.format && metadata.format.duration) {
+              duration = Math.round(metadata.format.duration);
+              console.log(`Extracted duration for ${trackTitle}: ${duration} seconds`);
+            }
+          }
+        } catch (err) {
+          console.error(`Failed to extract duration for ${trackTitle}:`, err);
+        }
+      }
+      
       const newTrack = await storage.createTrack({
         albumId: album.id,
         title: trackTitle,
         trackNumber: trackNumber || tracks.length + 1,
-        duration: 180, // Default duration
+        duration: duration, // Actual duration from metadata
         audioUrl,
         isFeatured: false
       });
