@@ -231,7 +231,13 @@ router.post('/api/chunked-upload/create-album', async (req, res) => {
       description: description || "",
       coverUrl: coverUrl || "/covers/default-cover.jpg",
       releaseDate: new Date(),
-      customAlbum: "true"
+      // Store metadata as JSON string for proper display on home page
+      customAlbum: JSON.stringify({
+        title,
+        artist,
+        description: description || "",
+        coverUrl: coverUrl || "/covers/default-cover.jpg"
+      })
     });
     
     // Create the tracks
