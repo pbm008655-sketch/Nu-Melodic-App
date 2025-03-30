@@ -288,7 +288,7 @@ export default function StoragePage() {
                         <button
                           onClick={() => handleDeleteClick(file.path)}
                           className="p-2 text-red-500 hover:text-red-700 transition-colors"
-                          title="Delete file"
+                          title={`Delete file: ${file.name}`}
                           disabled={deleteMutation.isPending}
                         >
                           {deleteMutation.isPending && fileToDelete === file.path ? (

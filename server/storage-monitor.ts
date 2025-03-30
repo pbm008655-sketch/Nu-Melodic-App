@@ -61,7 +61,7 @@ export async function getStorageInfo(): Promise<StorageInfo> {
           
           result.files.push({
             name: file,
-            path: `/audio/${file}`,
+            path: path.join(process.cwd(), 'public', 'audio', file),
             size,
             type: isAudio ? 'audio' : 'other'
           });
@@ -94,7 +94,7 @@ export async function getStorageInfo(): Promise<StorageInfo> {
           
           result.files.push({
             name: file,
-            path: `/covers/${file}`,
+            path: path.join(process.cwd(), 'public', 'covers', file),
             size,
             type: isImage ? 'image' : 'other'
           });

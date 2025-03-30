@@ -72,7 +72,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         formattedImageSize: formatBytes(storageInfo.imageSize),
         files: storageInfo.files.map(file => ({
           ...file,
-          formattedSize: formatBytes(file.size)
+          formattedSize: formatBytes(file.size),
+          // Include a human-readable display path for the UI
+          displayPath: file.path.includes('/audio/') 
+            ? `/audio/${file.name}`
+            : file.path.includes('/covers/') 
+              ? `/covers/${file.name}` 
+              : file.path
         }))
       };
       
