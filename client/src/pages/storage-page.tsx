@@ -99,7 +99,7 @@ export default function StoragePage() {
   // Delete file mutation
   const deleteMutation = useMutation({
     mutationFn: async (filePath: string) => {
-      const response = await apiRequest('DELETE', '/api/admin/delete-file', { filePath });
+      const response = await apiRequest('POST', '/api/admin/delete-file', { filePath });
       return response.json();
     },
     onSuccess: (data) => {
