@@ -100,6 +100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     const { filePath } = req.body;
+    console.log("Received file path for deletion (DELETE method):", filePath);
     
     if (!filePath) {
       return res.status(400).json({
@@ -108,54 +109,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
     
-    // Ensure the file path is within the allowed directories (public/audio or public/covers)
+    // First check if file exists at the exact path provided (for direct references from storage monitor)
+    if (fs.existsSync(filePath)) {
+      try {
+        // For simple safety, make sure it's an audio or image file
+        if (!filePath.includes('/audio/') && !filePath.includes('/covers/')) {
+          return res.status(403).json({
+            success: false, 
+            message: "Access denied. Can only delete files in the audio or covers directories."
+          });
+        }
+        
+        // Delete the file
+        fs.unlinkSync(filePath);
+        
+        console.log(`File deleted directly: ${filePath}`);
+        
+        return res.status(200).json({
+          success: true,
+          message: "File deleted successfully."
+        });
+      } catch (error) {
+        console.error("Error deleting file directly:", error);
+        return res.status(500).json({
+          success: false,
+          message: `Failed to delete file: ${error.message}`
+        });
+      }
+    }
+    
+    // If file not found at direct path, try resolving it relative to current directory
     const normalizedPath = path.normalize(filePath);
     const absolutePath = path.resolve(process.cwd(), normalizedPath);
     
     // Security check to make sure we're only deleting files in the allowed directories
-    const audioDir = path.join(process.cwd(), 'public', 'audio');
-    const coversDir = path.join(process.cwd(), 'public', 'covers');
-    
-    console.log('File path:', filePath);
-    console.log('Normalized path:', normalizedPath);
-    console.log('Absolute path:', absolutePath);
-    console.log('Audio dir:', audioDir);
-    console.log('Covers dir:', coversDir);
-    console.log('Starts with audio dir:', absolutePath.startsWith(audioDir));
-    console.log('Starts with covers dir:', absolutePath.startsWith(coversDir));
-    
-    if (!absolutePath.startsWith(audioDir) && !absolutePath.startsWith(coversDir)) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied. Can only delete files in the audio or covers directories."
-      });
-    }
-    
-    try {
-      // Check if file exists
-      if (!fs.existsSync(absolutePath)) {
-        return res.status(404).json({
+    if (absolutePath.includes('/audio/') || absolutePath.includes('/covers/')) {
+      try {
+        // Check if file exists at absolute path
+        if (!fs.existsSync(absolutePath)) {
+          return res.status(404).json({
+            success: false,
+            message: `File not found at path: ${absolutePath}`
+          });
+        }
+        
+        // Delete the file
+        fs.unlinkSync(absolutePath);
+        
+        console.log(`File deleted using absolute path: ${absolutePath}`);
+        
+        return res.status(200).json({
+          success: true,
+          message: "File deleted successfully."
+        });
+      } catch (error) {
+        console.error("Error deleting file with absolute path:", error);
+        return res.status(500).json({
           success: false,
-          message: "File not found."
+          message: `Failed to delete file: ${error.message}`
         });
       }
-      
-      // Delete the file
-      fs.unlinkSync(absolutePath);
-      
-      console.log(`File deleted: ${absolutePath}`);
-      
-      res.status(200).json({
-        success: true,
-        message: "File deleted successfully."
-      });
-    } catch (error) {
-      console.error("Error deleting file:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to delete file."
-      });
     }
+    
+    // If we get here, try one more way - check if the path is a relative path to public directory
+    const publicPath = path.join(process.cwd(), 'public', filePath.replace(/^public\//, ''));
+    
+    if (publicPath.includes('/audio/') || publicPath.includes('/covers/')) {
+      try {
+        // Check if file exists in public directory
+        if (!fs.existsSync(publicPath)) {
+          return res.status(404).json({
+            success: false,
+            message: `File not found at any tested path: ${filePath}, ${absolutePath}, ${publicPath}`
+          });
+        }
+        
+        // Delete the file
+        fs.unlinkSync(publicPath);
+        
+        console.log(`File deleted from public directory: ${publicPath}`);
+        
+        return res.status(200).json({
+          success: true,
+          message: "File deleted successfully."
+        });
+      } catch (error) {
+        console.error("Error deleting file from public directory:", error);
+        return res.status(500).json({
+          success: false,
+          message: `Failed to delete file: ${error.message}`
+        });
+      }
+    }
+    
+    // If we get here, none of our path resolution methods worked
+    return res.status(403).json({
+      success: false,
+      message: `Access denied. Path ${filePath} could not be resolved to a safe location in audio or covers directories.`
+    });
   });
   
   // Alternative endpoint for POST method that does the same (for compatibility)
@@ -169,6 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     const { filePath } = req.body;
+    console.log("Received file path for deletion:", filePath);
     
     if (!filePath) {
       return res.status(400).json({
@@ -177,46 +229,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
     
-    // Ensure the file path is within the allowed directories (public/audio or public/covers)
+    // First check if file exists at the exact path provided (for direct references from storage monitor)
+    if (fs.existsSync(filePath)) {
+      try {
+        // For simple safety, make sure it's an audio or image file
+        if (!filePath.includes('/audio/') && !filePath.includes('/covers/')) {
+          return res.status(403).json({
+            success: false, 
+            message: "Access denied. Can only delete files in the audio or covers directories."
+          });
+        }
+        
+        // Delete the file
+        fs.unlinkSync(filePath);
+        
+        console.log(`File deleted directly: ${filePath}`);
+        
+        return res.status(200).json({
+          success: true,
+          message: "File deleted successfully."
+        });
+      } catch (error) {
+        console.error("Error deleting file directly:", error);
+        return res.status(500).json({
+          success: false,
+          message: `Failed to delete file: ${error.message}`
+        });
+      }
+    }
+    
+    // If file not found at direct path, try resolving it relative to current directory
     const normalizedPath = path.normalize(filePath);
     const absolutePath = path.resolve(process.cwd(), normalizedPath);
     
     // Security check to make sure we're only deleting files in the allowed directories
-    const audioDir = path.join(process.cwd(), 'public', 'audio');
-    const coversDir = path.join(process.cwd(), 'public', 'covers');
-    
-    if (!absolutePath.startsWith(audioDir) && !absolutePath.startsWith(coversDir)) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied. Can only delete files in the audio or covers directories."
-      });
-    }
-    
-    try {
-      // Check if file exists
-      if (!fs.existsSync(absolutePath)) {
-        return res.status(404).json({
+    if (absolutePath.includes('/audio/') || absolutePath.includes('/covers/')) {
+      try {
+        // Check if file exists at absolute path
+        if (!fs.existsSync(absolutePath)) {
+          return res.status(404).json({
+            success: false,
+            message: `File not found at path: ${absolutePath}`
+          });
+        }
+        
+        // Delete the file
+        fs.unlinkSync(absolutePath);
+        
+        console.log(`File deleted using absolute path: ${absolutePath}`);
+        
+        return res.status(200).json({
+          success: true,
+          message: "File deleted successfully."
+        });
+      } catch (error) {
+        console.error("Error deleting file with absolute path:", error);
+        return res.status(500).json({
           success: false,
-          message: "File not found."
+          message: `Failed to delete file: ${error.message}`
         });
       }
-      
-      // Delete the file
-      fs.unlinkSync(absolutePath);
-      
-      console.log(`File deleted: ${absolutePath}`);
-      
-      res.status(200).json({
-        success: true,
-        message: "File deleted successfully."
-      });
-    } catch (error) {
-      console.error("Error deleting file:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to delete file."
-      });
     }
+    
+    // If we get here, try one more way - check if the path is a relative path to public directory
+    const publicPath = path.join(process.cwd(), 'public', filePath.replace(/^public\//, ''));
+    
+    if (publicPath.includes('/audio/') || publicPath.includes('/covers/')) {
+      try {
+        // Check if file exists in public directory
+        if (!fs.existsSync(publicPath)) {
+          return res.status(404).json({
+            success: false,
+            message: `File not found at any tested path: ${filePath}, ${absolutePath}, ${publicPath}`
+          });
+        }
+        
+        // Delete the file
+        fs.unlinkSync(publicPath);
+        
+        console.log(`File deleted from public directory: ${publicPath}`);
+        
+        return res.status(200).json({
+          success: true,
+          message: "File deleted successfully."
+        });
+      } catch (error) {
+        console.error("Error deleting file from public directory:", error);
+        return res.status(500).json({
+          success: false,
+          message: `Failed to delete file: ${error.message}`
+        });
+      }
+    }
+    
+    // If we get here, none of our path resolution methods worked
+    return res.status(403).json({
+      success: false,
+      message: `Access denied. Path ${filePath} could not be resolved to a safe location in audio or covers directories.`
+    });
   });
 
   // Add specific route for audio files with proper headers
