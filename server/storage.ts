@@ -99,8 +99,48 @@ export class MemStorage implements IStorage {
     };
     this.users.set(demoUser.id, demoUser);
     
-    // No demo albums or tracks - clean slate for custom uploads
-    console.log('Initialized storage with demo user only. Ready for custom album uploads.');
+    // Create a demo album with sample MP3 files
+    const demoAlbum: Album = {
+      id: this.albumId++,
+      title: "Electronic Dreams",
+      artist: "Demo Artist",
+      coverUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
+      description: "A collection of electronic music tracks",
+      releaseDate: new Date(),
+      isFeatured: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      customAlbum: null
+    };
+    this.albums.set(demoAlbum.id, demoAlbum);
+    
+    // Add tracks using existing files in the public/audio directory
+    const trackFiles = [
+      { title: "Ambient Waves", fileName: "track-1-1.mp3" },
+      { title: "Digital Horizon", fileName: "track-1-2.mp3" },
+      { title: "Electric Dreams", fileName: "track-1-3.mp3" },
+      { title: "Future Beats", fileName: "track-1-4.mp3" },
+      { title: "Synth Journey", fileName: "track-1-5.mp3" }
+    ];
+    
+    for (let i = 0; i < trackFiles.length; i++) {
+      const { title, fileName } = trackFiles[i];
+      const track: Track = {
+        id: this.trackId++,
+        albumId: demoAlbum.id,
+        title,
+        artist: demoAlbum.artist,
+        trackNumber: i + 1,
+        duration: 180, // Default duration in seconds
+        audioUrl: `/audio/${fileName}`,
+        isFeatured: i < 2, // First two tracks are featured
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      this.tracks.set(track.id, track);
+    }
+    
+    console.log('Initialized storage with demo user and sample album with tracks.');
   }
 
   async getUser(id: number): Promise<User | undefined> {
