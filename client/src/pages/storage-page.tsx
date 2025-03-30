@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 import { Redirect } from 'wouter';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Card, 
   CardContent, 
@@ -23,9 +25,21 @@ import {
   Music,
   Image,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Define the type of storage info we expect from the API
 interface StorageInfo {
@@ -49,6 +63,9 @@ interface StorageInfo {
 
 export default function StoragePage() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [fileToDelete, setFileToDelete] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   // Only admin (user with id 1) can access this page
   const isAdmin = user?.id === 1;
@@ -79,11 +96,60 @@ export default function StoragePage() {
     enabled: !!isAdmin  // Only fetch if user is admin
   });
   
+  // Delete file mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (filePath: string) => {
+      const response = await apiRequest('DELETE', '/api/admin/delete-file', { filePath });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast({
+          title: "File Deleted",
+          description: "The file has been successfully deleted.",
+        });
+        // Invalidate the query to refresh data
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/storage-info'] });
+      } else {
+        toast({
+          title: "Error",
+          description: data.message || "Failed to delete the file.",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete the file: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Handle delete confirmation
+  const handleConfirmDelete = () => {
+    if (fileToDelete) {
+      deleteMutation.mutate(fileToDelete);
+      setIsDeleteDialogOpen(false);
+      setFileToDelete(null);
+    }
+  };
+  
+  // Handle delete button click
+  const handleDeleteClick = (filePath: string) => {
+    setFileToDelete(filePath);
+    setIsDeleteDialogOpen(true);
+  };
+  
   const storageInfo: StorageInfo | undefined = response?.data;
   
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Storage Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-2">Storage Dashboard</h1>
+      <p className="text-muted-foreground mb-6">
+        Manage your audio and image files. You can delete unused files to free up storage space. Note that deleting files used by active albums may cause playback issues.
+      </p>
       
       {isLoading && (
         <div className="flex justify-center items-center py-12">
@@ -200,6 +266,7 @@ export default function StoragePage() {
                     <TableHead>Name</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead className="text-right">Size</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -217,10 +284,51 @@ export default function StoragePage() {
                       <TableCell className="font-medium">{file.name}</TableCell>
                       <TableCell>{file.type}</TableCell>
                       <TableCell className="text-right">{file.formattedSize}</TableCell>
+                      <TableCell>
+                        <button
+                          onClick={() => handleDeleteClick(file.path)}
+                          className="p-2 text-red-500 hover:text-red-700 transition-colors"
+                          title="Delete file"
+                          disabled={deleteMutation.isPending}
+                        >
+                          {deleteMutation.isPending && fileToDelete === file.path ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+              
+              {/* Delete Confirmation Dialog */}
+              <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete the file 
+                      from your storage.
+                      {fileToDelete && (
+                        <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                          <strong>File: </strong> {fileToDelete.split('/').pop()}
+                        </div>
+                      )}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleConfirmDelete}
+                      className="bg-red-500 hover:bg-red-600"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </CardContent>
           </Card>
         </>

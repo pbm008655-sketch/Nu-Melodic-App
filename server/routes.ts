@@ -88,6 +88,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Delete file endpoint
+  app.delete('/api/admin/delete-file', async (req, res) => {
+    // Check if user is authenticated
+    if (!req.isAuthenticated() || req.user?.id !== 1) { // Only admin (user 1) can delete files
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized. Only admin can delete files."
+      });
+    }
+    
+    const { filePath } = req.body;
+    
+    if (!filePath) {
+      return res.status(400).json({
+        success: false,
+        message: "File path is required."
+      });
+    }
+    
+    // Ensure the file path is within the allowed directories (public/audio or public/covers)
+    const normalizedPath = path.normalize(filePath);
+    const absolutePath = path.resolve(process.cwd(), normalizedPath);
+    
+    // Security check to make sure we're only deleting files in the allowed directories
+    const audioDir = path.join(process.cwd(), 'public', 'audio');
+    const coversDir = path.join(process.cwd(), 'public', 'covers');
+    
+    if (!absolutePath.startsWith(audioDir) && !absolutePath.startsWith(coversDir)) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Can only delete files in the audio or covers directories."
+      });
+    }
+    
+    try {
+      // Check if file exists
+      if (!fs.existsSync(absolutePath)) {
+        return res.status(404).json({
+          success: false,
+          message: "File not found."
+        });
+      }
+      
+      // Delete the file
+      fs.unlinkSync(absolutePath);
+      
+      console.log(`File deleted: ${absolutePath}`);
+      
+      res.status(200).json({
+        success: true,
+        message: "File deleted successfully."
+      });
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to delete file."
+      });
+    }
+  });
 
   // Add specific route for audio files with proper headers
   // This endpoint does NOT require authentication to allow for direct audio streaming
