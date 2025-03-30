@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { importPersonalTracks } from "./add-personal-tracks";
+import { getStorageInfo, formatBytes } from "./storage-monitor";
 import { insertPlaylistSchema, insertTrackPlaySchema } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
@@ -46,6 +47,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: "Failed to clear albums and tracks."
+      });
+    }
+  });
+  
+  // Storage monitoring endpoint
+  app.get('/api/admin/storage-info', async (req, res) => {
+    // Check if user is authenticated
+    if (!req.isAuthenticated() || req.user?.id !== 1) { // Only admin (user 1) can access
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized. Only admin can view storage information."
+      });
+    }
+    
+    try {
+      const storageInfo = await getStorageInfo();
+      
+      // Add human-readable formatted values
+      const formattedInfo = {
+        ...storageInfo,
+        formattedTotalSize: formatBytes(storageInfo.totalSize),
+        formattedAudioSize: formatBytes(storageInfo.audioSize),
+        formattedImageSize: formatBytes(storageInfo.imageSize),
+        files: storageInfo.files.map(file => ({
+          ...file,
+          formattedSize: formatBytes(file.size)
+        }))
+      };
+      
+      res.status(200).json({
+        success: true,
+        data: formattedInfo
+      });
+    } catch (error) {
+      console.error("Error getting storage info:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to get storage information."
       });
     }
   });

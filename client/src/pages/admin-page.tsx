@@ -90,29 +90,36 @@ export default function AdminPage() {
       </div>
       
       <div className="mt-8 border-t pt-8">
-        <h2 className="text-2xl font-bold mb-4">High-Capacity Upload Tool</h2>
+        <h2 className="text-2xl font-bold mb-4">Admin Tools</h2>
         <div className="rounded-md bg-muted p-6">
           <p className="mb-4">
-            For larger WAV files or bulk uploads, use our specialized upload tool:
+            Manage your music collection with our specialized admin tools:
           </p>
-          <div className="flex justify-center gap-4 my-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-4">
             <a 
               href="/admin-upload" 
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-center"
             >
-              Open High-Capacity Upload Tool
+              High-Capacity Upload Tool
             </a>
             <a
               href="/chunked-upload"
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-center"
             >
               Chunked Uploader (70MB+ Files)
+            </a>
+            <a
+              href="/storage"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-center"
+            >
+              Storage Dashboard
             </a>
           </div>
           <p className="text-sm text-muted-foreground">
             The High-Capacity tool supports larger files (up to 400MB per file) with extended timeout settings.
             For even larger files (70MB+), use the Chunked Uploader which can handle files of any size by breaking
             them into smaller pieces during upload, preventing timeouts.
+            The Storage Dashboard provides detailed information about your storage usage and file sizes.
           </p>
         </div>
       </div>
