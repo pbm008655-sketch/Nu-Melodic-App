@@ -1,6 +1,10 @@
 import { albums, tracks, playlists, playlistTracks, users, trackPlays, type User, type InsertUser, type Album, type Track, type Playlist, type PlaylistTrack, type TrackPlay } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
+// We're now using hardcoded duration values instead of metadata extraction
+// import { parseFile } from "music-metadata";
+import * as fs from "fs";
+import * as path from "path";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -99,48 +103,113 @@ export class MemStorage implements IStorage {
     };
     this.users.set(demoUser.id, demoUser);
     
-    // Create a demo album with sample MP3 files
+    // Create demo albums with actual track titles from past uploads
     const demoAlbum: Album = {
       id: this.albumId++,
-      title: "Electronic Dreams",
-      artist: "Demo Artist",
+      title: "Melodic Journeys",
+      artist: "Sonic Landscapes",
       coverUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
-      description: "A collection of electronic music tracks",
+      description: "A captivating collection of melodic soundscapes",
       releaseDate: new Date(),
-      isFeatured: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
       customAlbum: null
     };
     this.albums.set(demoAlbum.id, demoAlbum);
     
-    // Add tracks using existing files in the public/audio directory
-    const trackFiles = [
-      { title: "Ambient Waves", fileName: "track-1-1.mp3" },
-      { title: "Digital Horizon", fileName: "track-1-2.mp3" },
-      { title: "Electric Dreams", fileName: "track-1-3.mp3" },
-      { title: "Future Beats", fileName: "track-1-4.mp3" },
-      { title: "Synth Journey", fileName: "track-1-5.mp3" }
+    // Add a second demo album
+    const electronicAlbum: Album = {
+      id: this.albumId++,
+      title: "Electronic Dreams",
+      artist: "Digital Harmony",
+      coverUrl: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=800&q=80",
+      description: "Cutting-edge electronic beats and rhythms",
+      releaseDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+      customAlbum: null
+    };
+    this.albums.set(electronicAlbum.id, electronicAlbum);
+    
+    // Add tracks using existing files in the public/audio directory with correct track titles
+    const albumOneTracks = [
+      { title: "Acoustic Dreams", fileName: "track-1-1.mp3", duration: 244 },
+      { title: "Morning Light", fileName: "track-1-2.mp3", duration: 281 },
+      { title: "Endless Horizon", fileName: "track-1-3.mp3", duration: 367 },
+      { title: "Deep Reflections", fileName: "track-1-4.mp3", duration: 198 },
+      { title: "Evening Stars", fileName: "track-1-5.mp3", duration: 319 }
     ];
     
-    for (let i = 0; i < trackFiles.length; i++) {
-      const { title, fileName } = trackFiles[i];
+    // Electronic album tracks
+    const albumTwoTracks = [
+      { title: "Digital Pulse", fileName: "track-2-1.mp3", duration: 258 },
+      { title: "Circuit Rhythm", fileName: "track-2-2.mp3", duration: 312 },
+      { title: "Synthetic Waves", fileName: "track-2-3.mp3", duration: 285 },
+      { title: "Binary Beat", fileName: "track-2-4.mp3", duration: 221 },
+      { title: "Electric Horizon", fileName: "track-2-5.mp3", duration: 347 },
+      { title: "Cyber Dreams", fileName: "track-2-6.mp3", duration: 274 }
+    ];
+    
+    try {
+      // Process first album tracks
+      for (let i = 0; i < albumOneTracks.length; i++) {
+        const { title, fileName, duration } = albumOneTracks[i];
+        const trackNumber = i + 1;
+        const audioFilePath = path.join(process.cwd(), 'public', 'audio', fileName);
+        
+        // Check if file exists
+        if (!fs.existsSync(audioFilePath)) {
+          console.log(`File not found: ${audioFilePath}, using it anyway`);
+        }
+        
+        const track: Track = {
+          id: this.trackId++,
+          albumId: demoAlbum.id,
+          title,
+          trackNumber,
+          duration,
+          audioUrl: `/audio/${fileName}`,
+          isFeatured: i < 2 ? true : false // First two tracks are featured
+        };
+        this.tracks.set(track.id, track);
+      }
+      
+      // Process second album tracks
+      for (let i = 0; i < albumTwoTracks.length; i++) {
+        const { title, fileName, duration } = albumTwoTracks[i];
+        const trackNumber = i + 1;
+        const audioFilePath = path.join(process.cwd(), 'public', 'audio', fileName);
+        
+        // Check if file exists
+        if (!fs.existsSync(audioFilePath)) {
+          console.log(`File not found: ${audioFilePath}, using it anyway`);
+        }
+        
+        const track: Track = {
+          id: this.trackId++,
+          albumId: electronicAlbum.id,
+          title,
+          trackNumber,
+          duration,
+          audioUrl: `/audio/${fileName}`,
+          isFeatured: i < 2 ? true : false // First two tracks are featured
+        };
+        this.tracks.set(track.id, track);
+      }
+      
+      console.log('Initialized storage with demo user and sample albums with tracks.');
+    } catch (error) {
+      console.error('Error initializing storage with demo data:', error);
+      console.log('Falling back to basic initialization...');
+      
+      // Create a basic track in case of errors
       const track: Track = {
         id: this.trackId++,
         albumId: demoAlbum.id,
-        title,
-        artist: demoAlbum.artist,
-        trackNumber: i + 1,
-        duration: 180, // Default duration in seconds
-        audioUrl: `/audio/${fileName}`,
-        isFeatured: i < 2, // First two tracks are featured
-        createdAt: new Date(),
-        updatedAt: new Date()
+        title: "Demo Track",
+        trackNumber: 1,
+        duration: 180,
+        audioUrl: `/audio/track-1-1.mp3`,
+        isFeatured: true
       };
       this.tracks.set(track.id, track);
     }
-    
-    console.log('Initialized storage with demo user and sample album with tracks.');
   }
 
   async getUser(id: number): Promise<User | undefined> {
