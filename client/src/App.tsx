@@ -22,6 +22,7 @@ import AdminUploadTool from "./pages/admin-upload-tool";
 import UploadTestPage from "./pages/upload-test-page";
 import ChunkedUploaderPage from "./pages/chunked-uploader-page";
 import StoragePage from "./pages/storage-page";
+import StorageTestPage from "./pages/storage-test-page";
 
 function Router() {
   return (
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/admin" component={AdminPage} />
       <Route path="/admin-upload" component={AdminUploadTool} />
       <Route path="/storage" component={StoragePage} />
+      <Route path="/storage-test" component={StorageTestPage} />
       <Route path="/mixer/:id" component={MixerPage} />
       <Route path="/mixer-test" component={MixerTestPage} />
       <Route path="/upload-test" component={UploadTestPage} />
