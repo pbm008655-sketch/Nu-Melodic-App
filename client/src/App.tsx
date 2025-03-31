@@ -26,21 +26,21 @@ import StoragePage from "./pages/storage-page";
 function Router() {
   return (
     <Switch>
-      <ProtectedRoute path="/" component={HomePage} />
+      <Route path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/album/:id" component={AlbumPage} />
-      <ProtectedRoute path="/playlist/:id" component={PlaylistPage} />
-      <ProtectedRoute path="/subscriptions" component={SubscriptionsPage} />
-      <ProtectedRoute path="/analytics" component={AnalyticsDashboardPage} />
-      <ProtectedRoute path="/admin" component={AdminPage} />
-      <ProtectedRoute path="/admin-upload" component={AdminUploadTool} />
-      <ProtectedRoute path="/storage" component={StoragePage} />
+      <Route path="/album/:id" component={AlbumPage} />
+      <Route path="/playlist/:id" component={PlaylistPage} />
+      <Route path="/subscriptions" component={SubscriptionsPage} />
+      <Route path="/analytics" component={AnalyticsDashboardPage} />
+      <Route path="/admin" component={AdminPage} />
+      <Route path="/admin-upload" component={AdminUploadTool} />
+      <Route path="/storage" component={StoragePage} />
       <Route path="/mixer/:id" component={MixerPage} />
       <Route path="/mixer-test" component={MixerTestPage} />
       <Route path="/upload-test" component={UploadTestPage} />
-      <ProtectedRoute path="/chunked-upload" component={ChunkedUploaderPage} />
-      <ProtectedRoute path="/checkout" component={CheckoutPage} />
-      <ProtectedRoute path="/subscription-success" component={SubscriptionSuccessPage} />
+      <Route path="/chunked-upload" component={ChunkedUploaderPage} />
+      <Route path="/checkout" component={CheckoutPage} />
+      <Route path="/subscription-success" component={SubscriptionSuccessPage} />
       <Route component={NotFound} />
     </Switch>
   );
