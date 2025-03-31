@@ -90,8 +90,15 @@ export default function StoragePage() {
     );
   }
 
+  // Define the type for the API response
+  interface StorageApiResponse {
+    success: boolean;
+    data: StorageInfo;
+    message?: string;
+  }
+  
   // Fetch storage info
-  const { data: response, isLoading, error } = useQuery({
+  const { data: response, isLoading, error } = useQuery<StorageApiResponse>({
     queryKey: ['/api/admin/storage-info'],
     enabled: !!isAdmin  // Only fetch if user is admin
   });
@@ -142,7 +149,8 @@ export default function StoragePage() {
     setIsDeleteDialogOpen(true);
   };
   
-  const storageInfo: StorageInfo | undefined = response?.data;
+  // Get the storage info from the response
+  const storageInfo = response?.data;
   
   return (
     <div className="container mx-auto p-6">
