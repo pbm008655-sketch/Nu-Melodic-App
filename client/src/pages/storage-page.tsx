@@ -92,18 +92,36 @@ export default function StoragePage() {
   }
   */
 
-  // Define the type for the API response
-  interface StorageApiResponse {
-    success: boolean;
-    data: StorageInfo;
-    message?: string;
-  }
+  // State to manually handle the API response
+  const [storageResponse, setStorageResponse] = useState<{success: boolean; data: StorageInfo; message?: string} | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
   
-  // Fetch storage info
-  const { data: response, isLoading, error } = useQuery<StorageApiResponse>({
-    queryKey: ['/api/admin/storage-info'],
-    enabled: !!isAdmin  // Only fetch if user is admin
-  });
+  // Fetch storage info manually
+  useEffect(() => {
+    const fetchStorageInfo = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/admin/storage-info');
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        const result = await response.json();
+        console.log('Storage API response:', result);
+        setStorageResponse(result);
+        setError(null);
+      } catch (err: any) {
+        console.error('Storage error:', err);
+        setError(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isAdmin) {
+      fetchStorageInfo();
+    }
+  }, [isAdmin]);
   
   // Delete file mutation
   const deleteMutation = useMutation({
@@ -117,8 +135,19 @@ export default function StoragePage() {
           title: "File Deleted",
           description: "The file has been successfully deleted.",
         });
-        // Invalidate the query to refresh data
-        queryClient.invalidateQueries({ queryKey: ['/api/admin/storage-info'] });
+        // Fetch updated storage data
+        (async () => {
+          try {
+            const response = await fetch('/api/admin/storage-info');
+            if (!response.ok) {
+              throw new Error(`API error: ${response.status} ${response.statusText}`);
+            }
+            const result = await response.json();
+            setStorageResponse(result);
+          } catch (err: any) {
+            console.error('Error refreshing storage data:', err);
+          }
+        })();
       } else {
         toast({
           title: "Error",
@@ -151,14 +180,14 @@ export default function StoragePage() {
     setIsDeleteDialogOpen(true);
   };
   
-  // Get the storage info from the response
-  const storageInfo = response?.data;
-  
   // Debug - log the response data
   useEffect(() => {
-    console.log("Storage API response:", response);
-    console.log("Storage data:", storageInfo);
-  }, [response, storageInfo]);
+    console.log("Storage API response:", storageResponse);
+    console.log("Storage data:", storageResponse?.data);
+  }, [storageResponse]);
+  
+  // Get the storage info from the response
+  const storageInfo = storageResponse?.data;
   
   return (
     <div className="container mx-auto p-6">
@@ -286,7 +315,7 @@ export default function StoragePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {storageInfo.files.map((file) => (
+                  {storageInfo.files.map((file: any) => (
                     <TableRow key={file.path}>
                       <TableCell>
                         {file.type === 'audio' ? (
