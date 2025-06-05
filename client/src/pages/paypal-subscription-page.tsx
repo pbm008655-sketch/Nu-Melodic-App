@@ -149,6 +149,7 @@ export default function PayPalSubscriptionPage() {
                 <CardFooter className="flex flex-col space-y-4">
                   <div className="w-full">
                     <PayPalButton
+                      key={`${selectedPlan}-${plans[selectedPlan].price}`}
                       amount={plans[selectedPlan].price}
                       currency="USD"
                       intent="CAPTURE"

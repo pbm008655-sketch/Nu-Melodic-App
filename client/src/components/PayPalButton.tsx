@@ -91,9 +91,15 @@ export default function PayPalButton({
     };
 
     loadPayPalSDK();
-  }, []);
+  }, [amount, currency, intent]); // Re-initialize when props change
   const initPayPal = async () => {
     try {
+      // Clean up existing PayPal button
+      const existingButton = document.getElementById("paypal-button");
+      if (existingButton) {
+        existingButton.replaceWith(existingButton.cloneNode(true));
+      }
+
       const clientToken: string = await fetch("/paypal/setup")
         .then((res) => res.json())
         .then((data) => {
