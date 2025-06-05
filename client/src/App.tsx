@@ -24,6 +24,7 @@ import ChunkedUploaderPage from "./pages/chunked-uploader-page";
 import StoragePage from "./pages/storage-page";
 import StorageTestPage from "./pages/storage-test-page";
 import PayPalSubscriptionPage from "./pages/paypal-subscription-page";
+import TestLogin from "./pages/test-login";
 
 function Router() {
   return (
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/chunked-upload" component={ChunkedUploaderPage} />
       <Route path="/checkout" component={CheckoutPage} />
       <Route path="/subscription-success" component={SubscriptionSuccessPage} />
+      <Route path="/test-login" component={TestLogin} />
       <Route component={NotFound} />
     </Switch>
   );
