@@ -191,13 +191,21 @@ export default function SubscriptionsPage() {
                           </li>
                         </ul>
                       </CardContent>
-                      <CardFooter>
+                      <CardFooter className="flex flex-col space-y-3">
                         <Button 
                           className="w-full bg-primary hover:bg-primary/90 text-black"
                           onClick={handleSubscribe}
                           disabled={isProcessing || subscribeMutation.isPending}
                         >
-                          {isProcessing || subscribeMutation.isPending ? "Processing..." : "Upgrade to Premium"}
+                          {isProcessing || subscribeMutation.isPending ? "Processing..." : "Pay with Stripe"}
+                        </Button>
+                        <div className="text-center text-sm text-zinc-400">or</div>
+                        <Button 
+                          variant="outline"
+                          className="w-full border-zinc-600 hover:bg-zinc-800"
+                          onClick={() => window.location.href = "/paypal-subscription"}
+                        >
+                          Pay with PayPal
                         </Button>
                       </CardFooter>
                     </Card>

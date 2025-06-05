@@ -23,6 +23,7 @@ import UploadTestPage from "./pages/upload-test-page";
 import ChunkedUploaderPage from "./pages/chunked-uploader-page";
 import StoragePage from "./pages/storage-page";
 import StorageTestPage from "./pages/storage-test-page";
+import PayPalSubscriptionPage from "./pages/paypal-subscription-page";
 
 function Router() {
   return (
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/album/:id" component={AlbumPage} />
       <Route path="/playlist/:id" component={PlaylistPage} />
       <Route path="/subscriptions" component={SubscriptionsPage} />
+      <Route path="/paypal-subscription" component={PayPalSubscriptionPage} />
       <Route path="/analytics" component={AnalyticsDashboardPage} />
       <Route path="/admin" component={AdminPage} />
       <Route path="/admin-upload" component={AdminUploadTool} />
