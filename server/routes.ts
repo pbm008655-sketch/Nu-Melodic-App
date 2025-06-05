@@ -1,11 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupMobileAuth } from "./mobile-auth";
+import { setupAuth } from "./auth";
 import { importPersonalTracks } from "./add-personal-tracks";
 import { getStorageInfo, formatBytes } from "./storage-monitor";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
-import { createRestOrder, captureRestOrder } from "./paypal-rest";
 import { insertPlaylistSchema, insertTrackPlaySchema } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
@@ -26,7 +25,7 @@ const coverUploadDir = path.join(process.cwd(), 'public', 'covers');
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
-  setupMobileAuth(app);
+  setupAuth(app);
   
   // Admin route for clearing all albums and tracks
   app.post('/api/admin/clear-albums', async (req, res) => {
@@ -485,18 +484,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ track, album });
   });
 
-  // Get all tracks with album information (public endpoint)
-  app.get("/api/tracks", async (_req, res) => {
-    const allTracks = await storage.getAllTracks();
-    const tracksWithAlbums = await Promise.all(
-      allTracks.map(async (track) => {
-        const album = await storage.getAlbum(track.albumId);
-        return { ...track, album };
-      })
-    );
-    res.json(tracksWithAlbums);
-  });
-
   // Get featured tracks
   app.get("/api/featured-tracks", async (_req, res) => {
     const featuredTracks = await storage.getFeaturedTracks();
@@ -920,15 +907,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/paypal/order/:orderID/capture", async (req, res) => {
     await capturePaypalOrder(req, res);
-  });
-
-  // PayPal REST API endpoints for better account payment support
-  app.post("/api/paypal-rest/create-order", async (req, res) => {
-    await createRestOrder(req, res);
-  });
-
-  app.post("/api/paypal-rest/capture/:orderID", async (req, res) => {
-    await captureRestOrder(req, res);
   });
 
   // ANALYTICS ROUTES

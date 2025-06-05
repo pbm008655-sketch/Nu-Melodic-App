@@ -42,14 +42,11 @@ async function comparePasswords(supplied: string, stored: string) {
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "melostream-music-app-secret",
-    resave: true, // Force session save
-    saveUninitialized: true, // Create session for every request
+    resave: false,
+    saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      httpOnly: false, // Allow client-side access for mobile
-      secure: false, // Allow non-HTTPS for development
-      sameSite: "lax",
     }
   };
 
@@ -125,17 +122,9 @@ export function setupAuth(app: Express) {
       req.login(user, (err) => {
         if (err) return next(err);
         
-        // Force session save
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            console.error("Session save error:", saveErr);
-            return next(saveErr);
-          }
-          
-          // Exclude password from response
-          const { password, ...userWithoutPassword } = user;
-          res.status(200).json(userWithoutPassword);
-        });
+        // Exclude password from response
+        const { password, ...userWithoutPassword } = user;
+        res.status(200).json(userWithoutPassword);
       });
     })(req, res, next);
   });
@@ -148,29 +137,10 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", (req, res) => {
-    console.log("=== AUTH DEBUG ===");
-    console.log("Session ID:", req.sessionID);
-    console.log("Is authenticated:", req.isAuthenticated());
-    console.log("User in session:", req.user?.id);
-    console.log("Session:", req.session);
-    console.log("Cookies:", req.headers.cookie);
-    console.log("==================");
-    
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
     // Exclude password from response
     const { password, ...userWithoutPassword } = req.user as SelectUser;
     res.json(userWithoutPassword);
-  });
-
-  // Debug endpoint
-  app.get("/api/debug-auth", (req, res) => {
-    res.json({
-      sessionID: req.sessionID,
-      isAuthenticated: req.isAuthenticated(),
-      user: req.user || null,
-      hasSession: !!req.session,
-      cookies: req.headers.cookie
-    });
   });
 }

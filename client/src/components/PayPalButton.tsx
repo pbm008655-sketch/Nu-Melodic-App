@@ -58,29 +58,17 @@ export default function PayPalButton({
   };
 
   const onApprove = async (data: any) => {
-    console.log("PayPal onApprove", data);
-    try {
-      const orderData = await captureOrder(data.orderId);
-      console.log("PayPal capture result", orderData);
-      
-      if (orderData.status === 'COMPLETED') {
-        alert('Payment successful! Your subscription is now active.');
-        window.location.href = '/subscription-success';
-      }
-    } catch (error) {
-      console.error("PayPal capture error:", error);
-      alert('Payment processing failed. Please try again.');
-    }
+    console.log("onApprove", data);
+    const orderData = await captureOrder(data.orderId);
+    console.log("Capture result", orderData);
   };
 
   const onCancel = async (data: any) => {
-    console.log("PayPal onCancel", data);
-    alert('Payment was cancelled. You can try again anytime.');
+    console.log("onCancel", data);
   };
 
   const onError = async (data: any) => {
-    console.log("PayPal onError", data);
-    alert('There was an error processing your payment. Please try again.');
+    console.log("onError", data);
   };
 
   useEffect(() => {
@@ -103,7 +91,7 @@ export default function PayPalButton({
     };
 
     loadPayPalSDK();
-  }, [amount, currency, intent]); // Re-initialize when props change
+  }, []);
   const initPayPal = async () => {
     try {
       const clientToken: string = await fetch("/paypal/setup")
@@ -121,35 +109,23 @@ export default function PayPalButton({
               onApprove,
               onCancel,
               onError,
-              style: {
-                layout: 'vertical',
-                color: 'blue',
-                shape: 'rect',
-                label: 'pay',
-                tagline: false
-              }
             });
 
       const onClick = async () => {
         try {
           const checkoutOptionsPromise = createOrder();
           await paypalCheckout.start(
-            { 
-              paymentFlow: "auto"
-            },
+            { paymentFlow: "auto" },
             checkoutOptionsPromise,
           );
         } catch (e) {
-          console.error("PayPal checkout error:", e);
-          alert('Unable to start PayPal checkout. Please try again.');
+          console.error(e);
         }
       };
 
       const paypalButton = document.getElementById("paypal-button");
 
       if (paypalButton) {
-        // Remove any existing listeners before adding new one
-        paypalButton.onclick = null;
         paypalButton.addEventListener("click", onClick);
       }
 
