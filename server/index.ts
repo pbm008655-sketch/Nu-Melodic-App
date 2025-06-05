@@ -8,6 +8,22 @@ import uploadRouter from './upload-router';
 import chunkedUploader from './chunked-uploader';
 
 const app = express();
+
+// Add CORS configuration for mobile compatibility
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  res.header('Access-Control-Allow-Origin', origin);
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
 app.use(express.json({ limit: '5gb' }));
 app.use(express.urlencoded({ extended: true, limit: '5gb' }));
 
