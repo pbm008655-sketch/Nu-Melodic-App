@@ -1,0 +1,132 @@
+2025-06-05 16:42:49.92
+7b5fe2e7
+System
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+2025-06-05 16:42:50.78
+7b5fe2e7
+System
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+2025-06-05 16:42:51.64
+7b5fe2e7
+User
+> rest-express@1.0.0 start
+2025-06-05 16:42:51.64
+7b5fe2e7
+User
+> NODE_ENV=production node dist/index.js
+2025-06-05 16:42:52.76
+7b5fe2e7
+System
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+2025-06-05 16:42:52.79
+7b5fe2e7
+System
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+2025-06-05 16:42:53.39
+7b5fe2e7
+System
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+2025-06-05 16:42:54.26
+7b5fe2e7
+User
+serving on port 5000
+2025-06-05 16:42:55.33
+7b5fe2e7
+User
+Database already has data, skipping seed
+2025-06-05 16:43:41.76
+a329144e
+System
+system: received signal terminated
+2025-06-05 16:43:41.78
+a329144e
+System
+command finished with error [npm run start]: signal: terminated
+2025-06-05 16:43:41.82
+a329144e
+System
+main done, exiting
+2025-06-05 16:44:59.76
+7b5fe2e7
+User
+Recent albums count: 3
+2025-06-05 16:47:16.43
+7b5fe2e7
+User
+Recent albums count: 3
+2025-06-05 16:52:25.81
+8dc85680
+System
+starting up user application
+2025-06-05 16:52:25.98
+8dc85680
+System
+forwarding local port 5000 to external port 80 (mapped as 1104)
+2025-06-05 16:52:25.99
+8dc85680
+System
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+2025-06-05 16:52:26.01
+8dc85680
+System
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+2025-06-05 16:52:26.02
+8dc85680
+System
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+2025-06-05 16:52:26.06
+8dc85680
+System
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+2025-06-05 16:52:26.07
+8dc85680
+System
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+2025-06-05 16:52:26.24
+8dc85680
+System
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+2025-06-05 16:52:26.40
+8dc85680
+System
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+2025-06-05 16:52:26.59
+8dc85680
+System
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+2025-06-05 16:52:27.22
+8dc85680
+User
+> rest-express@1.0.0 start
+2025-06-05 16:52:27.22
+8dc85680
+User
+> NODE_ENV=production node dist/index.js
+2025-06-05 16:52:28.10
+8dc85680
+System
+error proxying request error=dial tcp 127.0.0.1:5000: connect: connection refused
+2025-06-05 16:52:29.87
+8dc85680
+User
+serving on port 5000
+2025-06-05 16:52:30.63
+8dc85680
+User
+Database already has data, skipping seed
+2025-06-05 16:52:59.52
+8dc85680
+User
+Recent albums count: 3
+2025-06-05 16:53:43.90
+7b5fe2e7
+System
+system: received signal terminated
+2025-06-05 16:53:43.92
+7b5fe2e7
+System
+command finished with error [npm run start]: signal: terminated
+2025-06-05 16:53:43.99
+7b5fe2e7
+System
+main done, exiting
