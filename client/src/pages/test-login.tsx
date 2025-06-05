@@ -9,9 +9,9 @@ export default function TestLogin() {
 
   const handleDirectLogin = async () => {
     try {
-      console.log("Testing direct login...");
+      console.log("Testing mobile login...");
       
-      const response = await fetch("/api/login", {
+      const response = await fetch("/api/mobile-login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -21,16 +21,16 @@ export default function TestLogin() {
       });
 
       const data = await response.json();
-      console.log("Direct login response:", data);
+      console.log("Mobile login response:", data);
 
-      if (data.token) {
+      if (data.success && data.token) {
         localStorage.setItem('auth_token', data.token);
         sessionStorage.setItem('auth_token', data.token);
         console.log("Token stored in localStorage:", localStorage.getItem('auth_token'));
         console.log("Token stored in sessionStorage:", sessionStorage.getItem('auth_token'));
         
         // Test authenticated request
-        const userResponse = await fetch("/api/user", {
+        const userResponse = await fetch("/api/mobile-user", {
           headers: {
             "Authorization": `Bearer ${data.token}`,
             "X-Auth-Token": data.token,
@@ -41,9 +41,18 @@ export default function TestLogin() {
         const userData = await userResponse.json();
         console.log("User data response:", userData);
         
-        setResult(`Success! Token: ${data.token.substring(0, 20)}... User: ${userData.username || 'Error'}`);
+        if (userData.success) {
+          setResult(`SUCCESS! User: ${userData.user.username} logged in. Token works!`);
+          
+          // Try to navigate to home page
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 2000);
+        } else {
+          setResult(`Login succeeded but user check failed: ${userData.message}`);
+        }
       } else {
-        setResult("Login failed - no token received");
+        setResult(`Login failed: ${data.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error("Login error:", error);
