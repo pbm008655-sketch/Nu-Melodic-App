@@ -18,12 +18,18 @@ export async function apiRequest(
     headers["Content-Type"] = "application/json";
   }
   
-  // Add auth token if available
-  const token = localStorage.getItem('auth_token');
-  console.log("API Request - Current token in localStorage:", token);
+  // Add auth token if available (multiple fallback methods)
+  const token = localStorage.getItem('auth_token') || 
+                sessionStorage.getItem('auth_token');
+  
+  console.log("API Request - Current token in localStorage:", localStorage.getItem('auth_token'));
+  console.log("API Request - Current token in sessionStorage:", sessionStorage.getItem('auth_token'));
+  console.log("API Request - Selected token:", token);
+  
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
-    console.log("Added Authorization header to request");
+    headers["X-Auth-Token"] = token; // Additional header for mobile compatibility
+    console.log("Added Authorization and X-Auth-Token headers to request");
   }
 
   const res = await fetch(url, {

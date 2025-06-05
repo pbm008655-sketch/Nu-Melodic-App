@@ -39,11 +39,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       console.log("Login response received:", data);
       
-      // Store token if provided
+      // Store token in multiple places for mobile compatibility
       if (data.token) {
-        console.log("Storing token in localStorage:", data.token);
+        console.log("Storing token in localStorage and sessionStorage:", data.token);
         localStorage.setItem('auth_token', data.token);
+        sessionStorage.setItem('auth_token', data.token);
+        
+        // Also try to set in a global variable as fallback
+        (window as any).authToken = data.token;
+        
         console.log("Token stored. Checking localStorage:", localStorage.getItem('auth_token'));
+        console.log("Token stored. Checking sessionStorage:", sessionStorage.getItem('auth_token'));
       } else {
         console.log("No token in response data");
       }

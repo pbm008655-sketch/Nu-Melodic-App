@@ -38,29 +38,49 @@ function generateToken(): string {
 }
 
 function authenticateToken(req: Request, res: Response, next: NextFunction) {
+  // Check multiple sources for token
   const token = req.headers.authorization?.replace('Bearer ', '') || 
-                req.cookies?.auth_token;
+                req.cookies?.auth_token ||
+                req.headers['x-auth-token'] as string;
+  
+  console.log("=== AUTH TOKEN CHECK ===");
+  console.log("Authorization header:", req.headers.authorization);
+  console.log("Cookie auth_token:", req.cookies?.auth_token);
+  console.log("X-Auth-Token header:", req.headers['x-auth-token']);
+  console.log("Selected token:", token);
+  console.log("Active tokens count:", activeTokens.size);
   
   if (!token) {
+    console.log("No token found in any source");
     return res.status(401).json({ message: "No token provided" });
   }
 
   const tokenData = activeTokens.get(token);
+  console.log("Token data found:", !!tokenData);
+  
   if (!tokenData || tokenData.expires < new Date()) {
-    if (tokenData) activeTokens.delete(token);
+    if (tokenData) {
+      console.log("Token expired, removing");
+      activeTokens.delete(token);
+    } else {
+      console.log("Token not found in active tokens");
+    }
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 
   // Extend token expiry
   tokenData.expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+  console.log("Token valid, extending expiry");
   
   // Get user and attach to request
   storage.getUser(tokenData.userId).then(user => {
     if (!user) {
+      console.log("User not found for token");
       activeTokens.delete(token);
       return res.status(401).json({ message: "User not found" });
     }
     
+    console.log("User authenticated:", user.username);
     (req as any).user = user;
     next();
   }).catch(next);
@@ -175,7 +195,8 @@ export function setupSimpleAuth(app: Express) {
     res.json(userWithoutPassword);
   });
 
-  // Middleware for protected routes
+  // Apply authentication middleware to protected routes
   app.use("/api/create-subscription", authenticateToken);
   app.use("/api/get-or-create-subscription", authenticateToken);
+  app.use("/api/admin/*", authenticateToken);
 }
