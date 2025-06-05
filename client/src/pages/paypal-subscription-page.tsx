@@ -148,28 +148,21 @@ export default function PayPalSubscriptionPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col space-y-4">
-                  <div className="w-full space-y-3">
-                    <div className="text-sm font-medium text-zinc-300 mb-3">
-                      Choose your payment method:
+                  <div className="w-full">
+                    <div className="text-sm font-medium text-zinc-300 mb-4 text-center">
+                      Secure Payment with Credit Card
                     </div>
                     
-                    {/* PayPal Account Payment - REST API */}
-                    <PayPalRestButton
-                      amount={plans[selectedPlan].price}
-                      currency="USD"
-                      onSuccess={handlePaymentSuccess}
-                      onError={(error) => toast({
-                        title: "Payment Failed",
-                        description: error,
-                        variant: "destructive"
-                      })}
-                    />
-                    
-                    <div className="text-center text-xs text-zinc-500">OR</div>
-                    
-                    {/* Credit Card Payment - SDK */}
-                    <div className="border border-zinc-700 rounded-lg p-3">
-                      <div className="text-xs text-zinc-400 mb-2">Pay with Credit Card via PayPal:</div>
+                    {/* Primary Credit Card Payment */}
+                    <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700">
+                      <div className="text-center mb-3">
+                        <div className="text-sm text-zinc-400 mb-2">
+                          Pay securely with your credit or debit card
+                        </div>
+                        <div className="text-xs text-zinc-500">
+                          No PayPal account required • Processed by PayPal
+                        </div>
+                      </div>
                       <PayPalButton
                         key={`${selectedPlan}-${plans[selectedPlan].price}`}
                         amount={plans[selectedPlan].price}
@@ -179,9 +172,12 @@ export default function PayPalSubscriptionPage() {
                     </div>
                   </div>
                   
-                  <div className="text-center">
+                  <div className="text-center space-y-1">
                     <p className="text-xs text-zinc-500">
-                      Secure payment processing by PayPal
+                      256-bit SSL encryption • PCI DSS compliant
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      Instant activation after successful payment
                     </p>
                   </div>
                 </CardFooter>
