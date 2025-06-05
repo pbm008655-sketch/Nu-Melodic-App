@@ -5,6 +5,7 @@ import { setupMobileAuth } from "./mobile-auth";
 import { importPersonalTracks } from "./add-personal-tracks";
 import { getStorageInfo, formatBytes } from "./storage-monitor";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
+import { createRestOrder, captureRestOrder } from "./paypal-rest";
 import { insertPlaylistSchema, insertTrackPlaySchema } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
@@ -907,6 +908,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/paypal/order/:orderID/capture", async (req, res) => {
     await capturePaypalOrder(req, res);
+  });
+
+  // PayPal REST API endpoints for better account payment support
+  app.post("/api/paypal-rest/create-order", async (req, res) => {
+    await createRestOrder(req, res);
+  });
+
+  app.post("/api/paypal-rest/capture/:orderID", async (req, res) => {
+    await captureRestOrder(req, res);
   });
 
   // ANALYTICS ROUTES

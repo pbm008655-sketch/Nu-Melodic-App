@@ -5,6 +5,7 @@ import Sidebar from "@/components/sidebar";
 import MobileMenu from "@/components/mobile-menu";
 import Player from "@/components/player";
 import PayPalButton from "@/components/PayPalButton";
+import PayPalRestButton from "@/components/PayPalRestButton";
 import { Crown, Check, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -147,14 +148,37 @@ export default function PayPalSubscriptionPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col space-y-4">
-                  <div className="w-full">
-                    <PayPalButton
-                      key={`${selectedPlan}-${plans[selectedPlan].price}`}
+                  <div className="w-full space-y-3">
+                    <div className="text-sm font-medium text-zinc-300 mb-3">
+                      Choose your payment method:
+                    </div>
+                    
+                    {/* PayPal Account Payment - REST API */}
+                    <PayPalRestButton
                       amount={plans[selectedPlan].price}
                       currency="USD"
-                      intent="CAPTURE"
+                      onSuccess={handlePaymentSuccess}
+                      onError={(error) => toast({
+                        title: "Payment Failed",
+                        description: error,
+                        variant: "destructive"
+                      })}
                     />
+                    
+                    <div className="text-center text-xs text-zinc-500">OR</div>
+                    
+                    {/* Credit Card Payment - SDK */}
+                    <div className="border border-zinc-700 rounded-lg p-3">
+                      <div className="text-xs text-zinc-400 mb-2">Pay with Credit Card via PayPal:</div>
+                      <PayPalButton
+                        key={`${selectedPlan}-${plans[selectedPlan].price}`}
+                        amount={plans[selectedPlan].price}
+                        currency="USD"
+                        intent="CAPTURE"
+                      />
+                    </div>
                   </div>
+                  
                   <div className="text-center">
                     <p className="text-xs text-zinc-500">
                       Secure payment processing by PayPal
