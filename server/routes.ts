@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { importPersonalTracks } from "./add-personal-tracks";
 import { getStorageInfo, formatBytes } from "./storage-monitor";
+import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
 import { insertPlaylistSchema, insertTrackPlaySchema } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
@@ -892,6 +893,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: { message: userFriendlyMessage }
       });
     }
+  });
+
+  // PAYPAL PAYMENT ROUTES
+  app.get("/paypal/setup", async (req, res) => {
+    await loadPaypalDefault(req, res);
+  });
+
+  app.post("/paypal/order", async (req, res) => {
+    // Request body should contain: { intent, amount, currency }
+    await createPaypalOrder(req, res);
+  });
+
+  app.post("/paypal/order/:orderID/capture", async (req, res) => {
+    await capturePaypalOrder(req, res);
   });
 
   // ANALYTICS ROUTES
