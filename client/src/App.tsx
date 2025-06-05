@@ -30,7 +30,7 @@ import TestLogin from "./pages/test-login";
 function Router() {
   return (
     <Switch>
-      <ProtectedRoute path="/" component={HomePage} />
+      <Route path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/album/:id" component={AlbumPage} />
       <Route path="/playlist/:id" component={PlaylistPage} />
