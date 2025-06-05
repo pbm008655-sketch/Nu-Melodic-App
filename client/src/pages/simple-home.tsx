@@ -9,7 +9,7 @@ export default function SimpleHome() {
     queryKey: ["/api/albums"],
   });
 
-  const { data: tracks, isLoading: tracksLoading } = useQuery<Track[]>({
+  const { data: tracks, isLoading: tracksLoading } = useQuery<(Track & { album?: Album })[]>({
     queryKey: ["/api/tracks"],
   });
 
@@ -80,7 +80,7 @@ export default function SimpleHome() {
                       </div>
                       <div>
                         <h4 className="font-medium text-white">{track.title}</h4>
-                        <p className="text-sm text-zinc-400">{track.artist}</p>
+                        <p className="text-sm text-zinc-400">{track.album?.artist || 'Unknown Artist'}</p>
                       </div>
                     </div>
                     <Button size="sm" variant="ghost">

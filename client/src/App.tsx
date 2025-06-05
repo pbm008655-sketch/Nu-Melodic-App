@@ -18,12 +18,8 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <PlayerProvider>
-          <Router />
-          <Toaster />
-        </PlayerProvider>
-      </AuthProvider>
+      <Router />
+      <Toaster />
     </QueryClientProvider>
   );
 }
