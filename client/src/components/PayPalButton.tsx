@@ -123,9 +123,10 @@ export default function PayPalButton({
               onError,
               style: {
                 layout: 'vertical',
-                color: 'gold',
+                color: 'blue',
                 shape: 'rect',
-                label: 'paypal'
+                label: 'pay',
+                tagline: false
               }
             });
 
@@ -134,8 +135,7 @@ export default function PayPalButton({
           const checkoutOptionsPromise = createOrder();
           await paypalCheckout.start(
             { 
-              paymentFlow: "vault",
-              userAction: "subscribe_now"
+              paymentFlow: "auto"
             },
             checkoutOptionsPromise,
           );
