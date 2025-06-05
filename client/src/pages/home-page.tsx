@@ -7,7 +7,7 @@ import MobileMenu from "@/components/mobile-menu";
 import Player from "@/components/player";
 import { AlbumCard } from "@/components/album-card";
 import { TrackListItem } from "@/components/track-list-item";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth-bypass";
 import { usePlayer } from "@/hooks/use-player";
 import { ChevronLeft, ChevronRight, Bell, User, Play, Pause, Crown, Shuffle, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
