@@ -27,17 +27,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     error,
     isLoading,
   } = useQuery<SelectUser | null, Error>({
-    queryKey: ["/api/user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
+    queryKey: ["/api/mobile-user"],
+    queryFn: async () => {
+      const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+      
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+        headers["X-Auth-Token"] = token;
+      }
+
+      const res = await fetch("/api/mobile-user", {
+        headers,
+        credentials: "include",
+      });
+
+      if (res.status === 401) {
+        return null;
+      }
+
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      return data.success ? data.user : null;
+    },
   });
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      console.log("Login attempt starting...", credentials);
-      const res = await apiRequest("POST", "/api/login", credentials);
-      const data = await res.json();
+      console.log("Mobile login attempt starting...", credentials);
       
-      console.log("Login response received:", data);
+      const res = await fetch("/api/mobile-login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(credentials),
+        credentials: "include",
+      });
+
+      const data = await res.json();
+      console.log("Mobile login response received:", data);
+      
+      if (!data.success) {
+        throw new Error(data.message || "Login failed");
+      }
       
       // Store token in multiple places for mobile compatibility
       if (data.token) {
@@ -45,20 +81,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('auth_token', data.token);
         sessionStorage.setItem('auth_token', data.token);
         
-        // Also try to set in a global variable as fallback
-        (window as any).authToken = data.token;
-        
         console.log("Token stored. Checking localStorage:", localStorage.getItem('auth_token'));
         console.log("Token stored. Checking sessionStorage:", sessionStorage.getItem('auth_token'));
       } else {
         console.log("No token in response data");
       }
       
-      return data.user || data;
+      return data.user;
     },
     onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.setQueryData(["/api/mobile-user"], user);
+      queryClient.invalidateQueries({ queryKey: ["/api/mobile-user"] });
       toast({
         title: "Login Successful",
         description: `Welcome back, ${user.username}!`,
@@ -103,13 +136,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
-      // Clear stored token
+      await fetch("/api/mobile-logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+      // Clear stored tokens
       localStorage.removeItem('auth_token');
+      sessionStorage.removeItem('auth_token');
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.setQueryData(["/api/mobile-user"], null);
+      queryClient.invalidateQueries({ queryKey: ["/api/mobile-user"] });
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out.",
