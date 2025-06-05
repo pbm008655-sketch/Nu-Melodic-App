@@ -485,6 +485,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ track, album });
   });
 
+  // Get all tracks with album information (public endpoint)
+  app.get("/api/tracks", async (_req, res) => {
+    const allTracks = await storage.getAllTracks();
+    const tracksWithAlbums = await Promise.all(
+      allTracks.map(async (track) => {
+        const album = await storage.getAlbum(track.albumId);
+        return { ...track, album };
+      })
+    );
+    res.json(tracksWithAlbums);
+  });
+
   // Get featured tracks
   app.get("/api/featured-tracks", async (_req, res) => {
     const featuredTracks = await storage.getFeaturedTracks();
