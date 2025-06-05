@@ -544,9 +544,9 @@ export class DatabaseStorage implements IStorage {
   sessionStore: any;
 
   constructor() {
-    this.sessionStore = new PostgresSessionStore({ 
-      pool, 
-      createTableIfMissing: true 
+    // Use memory store for sessions to fix authentication issues
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000,
     });
   }
 
