@@ -33,12 +33,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
+      console.log("Login attempt starting...", credentials);
       const res = await apiRequest("POST", "/api/login", credentials);
       const data = await res.json();
       
+      console.log("Login response received:", data);
+      
       // Store token if provided
       if (data.token) {
+        console.log("Storing token in localStorage:", data.token);
         localStorage.setItem('auth_token', data.token);
+        console.log("Token stored. Checking localStorage:", localStorage.getItem('auth_token'));
+      } else {
+        console.log("No token in response data");
       }
       
       return data.user || data;
