@@ -94,12 +94,6 @@ export default function PayPalButton({
   }, [amount, currency, intent]); // Re-initialize when props change
   const initPayPal = async () => {
     try {
-      // Clean up existing PayPal button
-      const existingButton = document.getElementById("paypal-button");
-      if (existingButton) {
-        existingButton.replaceWith(existingButton.cloneNode(true));
-      }
-
       const clientToken: string = await fetch("/paypal/setup")
         .then((res) => res.json())
         .then((data) => {
@@ -132,6 +126,8 @@ export default function PayPalButton({
       const paypalButton = document.getElementById("paypal-button");
 
       if (paypalButton) {
+        // Remove any existing listeners before adding new one
+        paypalButton.onclick = null;
         paypalButton.addEventListener("click", onClick);
       }
 
