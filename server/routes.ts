@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth } from "./auth";
+import { setupSimpleAuth } from "./simple-auth";
 import { importPersonalTracks } from "./add-personal-tracks";
 import { getStorageInfo, formatBytes } from "./storage-monitor";
 import { createPaypalOrder, capturePaypalOrder, loadPaypalDefault } from "./paypal";
@@ -25,7 +25,7 @@ const coverUploadDir = path.join(process.cwd(), 'public', 'covers');
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
-  setupAuth(app);
+  setupSimpleAuth(app);
   
   // Admin route for clearing all albums and tracks
   app.post('/api/admin/clear-albums', async (req, res) => {
