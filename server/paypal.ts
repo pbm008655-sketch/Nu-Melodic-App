@@ -30,12 +30,45 @@ async function getPayPalAccessToken(): Promise<string> {
   return data.access_token;
 }
 
+// Create a product first (required for plans)
+export async function createProduct() {
+  const accessToken = await getPayPalAccessToken();
+  
+  const productData = {
+    name: "Music Streaming Service",
+    description: "Premium music streaming subscription service",
+    type: "SERVICE",
+    category: "DIGITAL_MEDIA_BOOKS_MOVIES_MUSIC"
+  };
+
+  const response = await fetch(`${PAYPAL_API_BASE}/v1/catalogs/products`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+      'Accept': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(productData)
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to create PayPal product: ${error}`);
+  }
+
+  return await response.json();
+}
+
 // Create a subscription plan (this would typically be done once)
 export async function createSubscriptionPlan() {
   const accessToken = await getPayPalAccessToken();
   
+  // First create a product
+  const product = await createProduct();
+  
   const planData = {
-    product_id: "PROD-MUSIC-STREAMING",
+    product_id: product.id,
     name: "Music Streaming Premium Plan",
     description: "Monthly premium music streaming subscription",
     status: "ACTIVE",

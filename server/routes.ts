@@ -10,7 +10,7 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import Stripe from "stripe";
-import { createSubscription, getSubscription, cancelSubscription } from "./paypal";
+import { createSubscription, getSubscription, cancelSubscription, createSubscriptionPlan } from "./paypal";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -899,6 +899,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // PAYPAL SUBSCRIPTION ROUTES
+  
+  // Create PayPal subscription plan (one-time setup)
+  app.post("/api/create-paypal-plan", async (req, res) => {
+    try {
+      const plan = await createSubscriptionPlan();
+      res.json({
+        success: true,
+        planId: plan.id,
+        plan
+      });
+    } catch (error: any) {
+      console.error("Error creating PayPal plan:", error);
+      res.status(500).json({ 
+        error: { message: error.message || "Error creating PayPal plan" }
+      });
+    }
+  });
   
   // Create PayPal subscription
   app.post("/api/create-paypal-subscription", async (req, res) => {
