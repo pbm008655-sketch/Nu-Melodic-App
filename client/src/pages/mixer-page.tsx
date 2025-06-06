@@ -197,6 +197,7 @@ function Waveform({ analyserNode, isPlaying }: { analyserNode: AnalyserNode | nu
 }
 import { useToast } from "@/hooks/use-toast";
 import { usePlayer } from "@/hooks/use-player";
+import { audioManager } from "@/lib/audio-manager";
 
 // Define the available audio effects
 const EFFECTS = {
@@ -492,6 +493,13 @@ export default function MixerPage() {
       loadAudio();
     }
     
+    // Register with audio manager to be paused when other audio plays
+    const unsubscribe = audioManager.onPause(() => {
+      if (isPlaying) {
+        stopAudio();
+      }
+    });
+
     return () => {
       // Clean up audio context when component unmounts
       stopAudio();
@@ -506,6 +514,9 @@ export default function MixerPage() {
         nativeAudioRef.current.src = '';
         nativeAudioRef.current.load();
       }
+      
+      // Unsubscribe from audio manager
+      unsubscribe();
     };
   }, [data, isLoaded, toast]);
   
@@ -728,6 +739,9 @@ export default function MixerPage() {
       if (audioBufferRef.current) {
         playAudio();
       } else if (nativeAudioRef.current) {
+        // Register with audio manager before playing
+        audioManager.setActiveAudio(nativeAudioRef.current, `mixer-${trackId}`);
+        
         // Play using Native Audio element (fallback)
         try {
           nativeAudioRef.current.currentTime = audioProgress;
@@ -746,6 +760,7 @@ export default function MixerPage() {
                     setIsPlaying(false);
                     setAudioProgress(0);
                     clearInterval(progressInterval);
+                    audioManager.clearActiveAudio(nativeAudioRef.current);
                   }
                 }
               }, 100);
@@ -756,6 +771,10 @@ export default function MixerPage() {
                 audioEl.onended = () => {
                   setIsPlaying(false);
                   clearInterval(progressInterval);
+                  audioManager.clearActiveAudio(audioEl);
+                };
+                audioEl.onpause = () => {
+                  audioManager.clearActiveAudio(audioEl);
                 };
               }
             })
