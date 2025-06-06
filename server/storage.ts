@@ -105,6 +105,8 @@ export class MemStorage implements IStorage {
       premiumExpiry: null,
       stripeCustomerId: null,
       stripeSubscriptionId: null,
+      paypalSubscriptionId: null,
+      paymentProvider: 'stripe',
     };
     this.users.set(demoUser.id, demoUser);
     
@@ -241,7 +243,9 @@ export class MemStorage implements IStorage {
       isPremium: false,
       premiumExpiry: null,
       stripeCustomerId: null,
-      stripeSubscriptionId: null
+      stripeSubscriptionId: null,
+      paypalSubscriptionId: null,
+      paymentProvider: 'stripe'
     };
     this.users.set(id, user);
     return user;
@@ -282,6 +286,20 @@ export class MemStorage implements IStorage {
       ...user,
       stripeCustomerId: data.stripeCustomerId ?? user.stripeCustomerId,
       stripeSubscriptionId: data.stripeSubscriptionId ?? user.stripeSubscriptionId
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+
+  async updatePaypalInfo(userId: number, data: { paypalSubscriptionId?: string, paymentProvider?: string }): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    const updatedUser: User = {
+      ...user,
+      paypalSubscriptionId: data.paypalSubscriptionId ?? user.paypalSubscriptionId,
+      paymentProvider: data.paymentProvider ?? user.paymentProvider
     };
     
     this.users.set(userId, updatedUser);
