@@ -1,38 +1,61 @@
-import * as checkoutsdk from '@paypal/checkout-server-sdk';
+// Using PayPal REST API directly instead of SDK due to import issues
 
 if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_CLIENT_SECRET) {
   throw new Error('Missing required PayPal secrets: PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET');
 }
 
-// Configure PayPal environment (sandbox for development, live for production)
-const environment = process.env.NODE_ENV === 'production' 
-  ? new checkoutsdk.core.LiveEnvironment(process.env.PAYPAL_CLIENT_ID, process.env.PAYPAL_CLIENT_SECRET)
-  : new checkoutsdk.core.SandboxEnvironment(process.env.PAYPAL_CLIENT_ID, process.env.PAYPAL_CLIENT_SECRET);
+// PayPal API base URL
+const PAYPAL_API_BASE = process.env.NODE_ENV === 'production'
+  ? 'https://api-m.paypal.com'
+  : 'https://api-m.sandbox.paypal.com';
 
-export const paypalClient = new checkoutsdk.core.PayPalHttpClient(environment);
+// Get PayPal access token
+async function getPayPalAccessToken(): Promise<string> {
+  const auth = Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`).toString('base64');
+  
+  const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: 'grant_type=client_credentials'
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to get PayPal access token: ${response.statusText}`);
+  }
+  
+  const data = await response.json();
+  return data.access_token;
+}
 
-// Create a subscription plan for monthly premium access
+// Create a subscription plan (this would typically be done once)
 export async function createSubscriptionPlan() {
-  const request = new checkoutsdk.plans.PlansCreateRequest();
-  request.requestBody({
+  const accessToken = await getPayPalAccessToken();
+  
+  const planData = {
+    product_id: "PROD-MUSIC-STREAMING",
     name: "Music Streaming Premium Plan",
-    description: "Monthly subscription for premium music access",
+    description: "Monthly premium music streaming subscription",
     status: "ACTIVE",
-    billing_cycles: [{
-      frequency: {
-        interval_unit: "MONTH",
-        interval_count: 1
-      },
-      tenure_type: "REGULAR",
-      sequence: 1,
-      total_cycles: 0, // 0 means unlimited
-      pricing_scheme: {
-        fixed_price: {
-          value: "9.99",
-          currency_code: "USD"
+    billing_cycles: [
+      {
+        frequency: {
+          interval_unit: "MONTH",
+          interval_count: 1
+        },
+        tenure_type: "REGULAR",
+        sequence: 1,
+        total_cycles: 0,
+        pricing_scheme: {
+          fixed_price: {
+            value: "9.99",
+            currency_code: "USD"
+          }
         }
       }
-    }],
+    ],
     payment_preferences: {
       auto_bill_outstanding: true,
       setup_fee: {
@@ -46,21 +69,32 @@ export async function createSubscriptionPlan() {
       percentage: "0",
       inclusive: false
     }
+  };
+
+  const response = await fetch(`${PAYPAL_API_BASE}/v1/billing/plans`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+      'Accept': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(planData)
   });
 
-  try {
-    const response = await paypalClient.execute(request);
-    return response.result;
-  } catch (error: any) {
-    console.error('Error creating PayPal subscription plan:', error);
-    throw error;
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to create PayPal plan: ${error}`);
   }
+
+  return await response.json();
 }
 
 // Create a subscription for a user
 export async function createSubscription(planId: string, userEmail: string) {
-  const request = new checkoutsdk.subscriptions.SubscriptionsCreateRequest();
-  request.requestBody({
+  const accessToken = await getPayPalAccessToken();
+  
+  const subscriptionData = {
     plan_id: planId,
     subscriber: {
       email_address: userEmail
@@ -77,42 +111,70 @@ export async function createSubscription(planId: string, userEmail: string) {
       return_url: `${process.env.CLIENT_URL || 'http://localhost:5000'}/subscription-success`,
       cancel_url: `${process.env.CLIENT_URL || 'http://localhost:5000'}/subscriptions`
     }
+  };
+
+  const response = await fetch(`${PAYPAL_API_BASE}/v1/billing/subscriptions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+      'Accept': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(subscriptionData)
   });
 
-  try {
-    const response = await paypalClient.execute(request);
-    return response.result;
-  } catch (error: any) {
-    console.error('Error creating PayPal subscription:', error);
-    throw error;
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to create PayPal subscription: ${error}`);
   }
+
+  return await response.json();
 }
 
 // Get subscription details
 export async function getSubscription(subscriptionId: string) {
-  const request = new checkoutsdk.subscriptions.SubscriptionsGetRequest(subscriptionId);
+  const accessToken = await getPayPalAccessToken();
   
-  try {
-    const response = await paypalClient.execute(request);
-    return response.result;
-  } catch (error: any) {
-    console.error('Error getting PayPal subscription:', error);
-    throw error;
+  const response = await fetch(`${PAYPAL_API_BASE}/v1/billing/subscriptions/${subscriptionId}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+      'Accept': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to get PayPal subscription: ${error}`);
   }
+
+  return await response.json();
 }
 
 // Cancel a subscription
 export async function cancelSubscription(subscriptionId: string, reason: string = "User requested cancellation") {
-  const request = new checkoutsdk.subscriptions.SubscriptionsCancelRequest(subscriptionId);
-  request.requestBody({
+  const accessToken = await getPayPalAccessToken();
+  
+  const cancelData = {
     reason: reason
+  };
+
+  const response = await fetch(`${PAYPAL_API_BASE}/v1/billing/subscriptions/${subscriptionId}/cancel`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify(cancelData)
   });
 
-  try {
-    const response = await paypalClient.execute(request);
-    return response.result;
-  } catch (error: any) {
-    console.error('Error cancelling PayPal subscription:', error);
-    throw error;
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to cancel PayPal subscription: ${error}`);
   }
+
+  return response.status === 204; // PayPal returns 204 No Content on successful cancellation
 }
