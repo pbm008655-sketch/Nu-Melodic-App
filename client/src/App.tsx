@@ -14,8 +14,7 @@ import PlaylistPage from "./pages/playlist-page";
 import SubscriptionsPage from "./pages/subscriptions-page";
 import AnalyticsDashboardPage from "./pages/analytics-dashboard-page";
 import AdminPage from "./pages/admin-page";
-import MixerPage from "./pages/mixer-page";
-import MixerTestPage from "./pages/mixer-test-page";
+
 import CheckoutPage from "./pages/checkout-page";
 import SubscriptionSuccessPage from "./pages/subscription-success-page";
 import AdminUploadTool from "./pages/admin-upload-tool";
@@ -37,8 +36,7 @@ function Router() {
       <ProtectedRoute path="/admin-upload" component={AdminUploadTool} />
       <ProtectedRoute path="/storage" component={StoragePage} />
       <ProtectedRoute path="/storage-test" component={StorageTestPage} />
-      <ProtectedRoute path="/mixer/:id" component={MixerPage} />
-      <ProtectedRoute path="/mixer-test" component={MixerTestPage} />
+
       <ProtectedRoute path="/upload-test" component={UploadTestPage} />
       <ProtectedRoute path="/chunked-upload" component={ChunkedUploaderPage} />
       <ProtectedRoute path="/checkout" component={CheckoutPage} />
