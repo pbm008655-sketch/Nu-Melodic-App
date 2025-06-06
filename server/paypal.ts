@@ -1,4 +1,4 @@
-const checkoutsdk = require('@paypal/checkout-server-sdk');
+import * as checkoutsdk from '@paypal/checkout-server-sdk';
 
 if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_CLIENT_SECRET) {
   throw new Error('Missing required PayPal secrets: PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET');

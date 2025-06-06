@@ -19,7 +19,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 // Initialize Stripe with the secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// PayPal plan ID - this should be created once and stored as an environment variable
+// PayPal plan ID - this would be created in PayPal dashboard
 const PAYPAL_PLAN_ID = process.env.PAYPAL_PLAN_ID || "P-5ML4271244454362WXNWU5NQ";
 
 // Define common directory paths
@@ -894,6 +894,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(500).json({ 
         error: { message: userFriendlyMessage }
+      });
+    }
+  });
+
+  // PAYPAL SUBSCRIPTION ROUTES
+  
+  // Create PayPal subscription
+  app.post("/api/create-paypal-subscription", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const user = req.user!;
+      
+      // Check if user already has an active PayPal subscription
+      if (user.paypalSubscriptionId) {
+        try {
+          const subscription = await getSubscription(user.paypalSubscriptionId);
+          if (subscription.status === 'ACTIVE') {
+            return res.json({
+              success: true,
+              subscriptionId: subscription.id,
+              status: subscription.status,
+              approvalUrl: null
+            });
+          }
+        } catch (error: any) {
+          console.log('Error retrieving PayPal subscription, creating new one:', error);
+        }
+      }
+      
+      // Create new PayPal subscription
+      const subscription = await createSubscription(PAYPAL_PLAN_ID, user.email);
+      
+      // Save PayPal subscription ID to user
+      await storage.updatePaypalInfo(user.id, {
+        paypalSubscriptionId: subscription.id,
+        paymentProvider: 'paypal'
+      });
+      
+      // Find approval URL from subscription links
+      const approvalUrl = subscription.links?.find((link: any) => link.rel === 'approve')?.href;
+      
+      res.json({
+        success: true,
+        subscriptionId: subscription.id,
+        approvalUrl,
+        status: subscription.status
+      });
+      
+    } catch (error: any) {
+      console.error("Error creating PayPal subscription:", error);
+      res.status(500).json({ 
+        error: { message: error.message || "Error creating PayPal subscription" }
+      });
+    }
+  });
+  
+  // Complete PayPal subscription after user approval
+  app.post("/api/complete-paypal-subscription", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const { subscriptionId } = req.body;
+      const user = req.user!;
+      
+      if (!subscriptionId) {
+        return res.status(400).json({ message: "Subscription ID required" });
+      }
+      
+      // Get subscription details from PayPal
+      const subscription = await getSubscription(subscriptionId);
+      
+      if (subscription.status === 'ACTIVE') {
+        // Update user premium status
+        const expiryDate = new Date();
+        expiryDate.setMonth(expiryDate.getMonth() + 1); // 1 month from now
+        
+        await storage.updateUserPremiumStatus(user.id, true, expiryDate);
+        await storage.updatePaypalInfo(user.id, {
+          paypalSubscriptionId: subscriptionId,
+          paymentProvider: 'paypal'
+        });
+        
+        res.json({
+          success: true,
+          message: "PayPal subscription activated successfully",
+          status: subscription.status
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: "Subscription is not active",
+          status: subscription.status
+        });
+      }
+      
+    } catch (error: any) {
+      console.error("Error completing PayPal subscription:", error);
+      res.status(500).json({ 
+        error: { message: error.message || "Error completing PayPal subscription" }
+      });
+    }
+  });
+  
+  // Cancel PayPal subscription
+  app.post("/api/cancel-paypal-subscription", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const user = req.user!;
+      
+      if (!user.paypalSubscriptionId) {
+        return res.status(400).json({ message: "No active PayPal subscription found" });
+      }
+      
+      // Cancel the PayPal subscription
+      await cancelSubscription(user.paypalSubscriptionId, "User requested cancellation");
+      
+      // Update user status
+      await storage.updateUserPremiumStatus(user.id, false, undefined);
+      await storage.updatePaypalInfo(user.id, {
+        paypalSubscriptionId: undefined,
+        paymentProvider: 'stripe'
+      });
+      
+      res.json({ 
+        success: true, 
+        message: "PayPal subscription canceled successfully" 
+      });
+      
+    } catch (error: any) {
+      console.error("Error canceling PayPal subscription:", error);
+      res.status(500).json({ 
+        error: { message: error.message || "Error canceling PayPal subscription" }
       });
     }
   });

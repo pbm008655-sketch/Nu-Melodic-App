@@ -16,6 +16,7 @@ export default function SubscriptionsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'stripe' | 'paypal'>('stripe');
   
   const subscribeMutation = useMutation({
     mutationFn: async (data?: { plan: string }) => {
@@ -49,6 +50,57 @@ export default function SubscriptionsPage() {
         title: "Subscription Status",
         description: errorMsg,
         variant: errorMsg.includes("test mode") ? "default" : "destructive",
+      });
+    }
+  });
+
+  const paypalSubscribeMutation = useMutation({
+    mutationFn: async () => {
+      setIsProcessing(true);
+      const res = await apiRequest("POST", "/api/create-paypal-subscription");
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      setIsProcessing(false);
+      if (data.success && data.approvalUrl) {
+        // Redirect to PayPal for approval
+        window.location.href = data.approvalUrl;
+      } else if (data.success) {
+        // Already subscribed
+        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+        toast({
+          title: "PayPal Subscription Active",
+          description: "Your PayPal subscription is already active!",
+        });
+      }
+    },
+    onError: (error) => {
+      setIsProcessing(false);
+      toast({
+        title: "PayPal Subscription Error",
+        description: error.message || "Failed to create PayPal subscription",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const cancelPaypalSubscriptionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/cancel-paypal-subscription");
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      toast({
+        title: "PayPal Subscription Cancelled",
+        description: "Your PayPal subscription has been cancelled.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "PayPal Cancellation Error",
+        description: error.message || "Failed to cancel PayPal subscription",
+        variant: "destructive",
       });
     }
   });
@@ -191,11 +243,38 @@ export default function SubscriptionsPage() {
                           </li>
                         </ul>
                       </CardContent>
-                      <CardFooter>
+                      <CardFooter className="space-y-4">
+                        <div className="w-full">
+                          <p className="text-sm text-zinc-400 mb-3">Choose payment method:</p>
+                          <div className="grid grid-cols-2 gap-2 mb-4">
+                            <Button
+                              variant={selectedPaymentMethod === 'stripe' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => setSelectedPaymentMethod('stripe')}
+                              className="flex items-center gap-2"
+                            >
+                              <div className="w-4 h-4 bg-blue-600 rounded flex items-center justify-center">
+                                <span className="text-white text-xs font-bold">S</span>
+                              </div>
+                              Stripe
+                            </Button>
+                            <Button
+                              variant={selectedPaymentMethod === 'paypal' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => setSelectedPaymentMethod('paypal')}
+                              className="flex items-center gap-2"
+                            >
+                              <div className="w-4 h-4 bg-blue-500 rounded flex items-center justify-center">
+                                <span className="text-white text-xs font-bold">P</span>
+                              </div>
+                              PayPal
+                            </Button>
+                          </div>
+                        </div>
                         <Button 
                           className="w-full bg-primary hover:bg-primary/90 text-black"
-                          onClick={handleSubscribe}
-                          disabled={isProcessing || subscribeMutation.isPending}
+                          onClick={selectedPaymentMethod === 'stripe' ? handleSubscribe : () => paypalSubscribeMutation.mutate()}
+                          disabled={isProcessing || subscribeMutation.isPending || paypalSubscribeMutation.isPending}
                         >
                           {isProcessing || subscribeMutation.isPending ? "Processing..." : "Upgrade to Premium"}
                         </Button>
