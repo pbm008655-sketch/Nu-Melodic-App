@@ -3,6 +3,7 @@ import { usePlayer } from "@/hooks/use-player";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { audioManager } from "@/lib/audio-manager";
 import { Heart, Repeat, Shuffle, SkipBack, SkipForward, Pause, Play, Volume2, Volume1, VolumeX, ListMusic } from "lucide-react";
 
 export default function Player() {
@@ -40,17 +41,31 @@ export default function Player() {
     // Set up event listeners
     const onTimeUpdate = () => setCurrentTime(audio.currentTime);
     const onLoadedMetadata = () => setDuration(audio.duration);
-    const onEnded = () => nextTrack();
+    const onEnded = () => {
+      audioManager.clearActiveAudio(audio);
+      nextTrack();
+    };
+    const onPause = () => audioManager.clearActiveAudio(audio);
     
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('loadedmetadata', onLoadedMetadata);
     audio.addEventListener('ended', onEnded);
+    audio.addEventListener('pause', onPause);
+    
+    // Register with audio manager to be paused when other audio plays
+    const unsubscribe = audioManager.onPause(() => {
+      if (!audio.paused) {
+        audio.pause();
+      }
+    });
     
     // Clean up
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.removeEventListener('loadedmetadata', onLoadedMetadata);
       audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('pause', onPause);
+      unsubscribe();
     };
   }, [nextTrack, volume]);
   
@@ -74,7 +89,8 @@ export default function Player() {
     
     // Handle play event
     const handlePlay = () => {
-      // You can add custom behavior here if needed
+      // Register this audio as the active one
+      audioManager.setActiveAudio(audio, `player-${currentTrack.title}`);
       console.log("Playing track:", currentTrack.title);
     };
     
@@ -100,6 +116,8 @@ export default function Player() {
     if (!audioRef.current) return;
     
     if (isPlaying) {
+      // Register this audio as active before playing
+      audioManager.setActiveAudio(audioRef.current, `player-${currentTrack?.title || 'unknown'}`);
       audioRef.current.play().catch(error => {
         console.error("Error playing audio:", error);
       });
