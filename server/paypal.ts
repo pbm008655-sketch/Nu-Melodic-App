@@ -141,8 +141,8 @@ export async function createSubscription(planId: string, userEmail: string) {
         payer_selected: "PAYPAL",
         payee_preferred: "IMMEDIATE_PAYMENT_REQUIRED"
       },
-      return_url: `${process.env.CLIENT_URL || 'http://localhost:5000'}/subscription-success`,
-      cancel_url: `${process.env.CLIENT_URL || 'http://localhost:5000'}/subscriptions`
+      return_url: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000'}/subscription-success`,
+      cancel_url: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000'}/subscriptions`
     }
   };
 
