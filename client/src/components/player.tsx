@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { usePlayer } from "@/hooks/use-player";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { globalAudio } from "@/lib/global-audio";
 import { Heart, Repeat, Shuffle, SkipBack, SkipForward, Pause, Play, Volume2, Volume1, VolumeX, ListMusic } from "lucide-react";
 
 export default function Player() {
@@ -25,14 +26,9 @@ export default function Player() {
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [prevVolume, setPrevVolume] = useState(1);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   
   useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-    }
-    
-    const audio = audioRef.current;
+    const audio = globalAudio.getAudio();
     
     // Configure audio element
     audio.volume = volume;
@@ -56,18 +52,15 @@ export default function Player() {
   
   // Load new track
   useEffect(() => {
-    if (!audioRef.current || !currentTrack) return;
+    if (!currentTrack) return;
     
-    const audio = audioRef.current;
-    
-    // Set the new audio source
-    audio.src = currentTrack.audioUrl;
-    audio.load();
+    // Use global audio instance to load track
+    globalAudio.loadTrack(currentTrack.audioUrl);
+    const audio = globalAudio.getAudio();
     
     // Add error handling for audio loading
     const handleError = () => {
       console.error("Error loading audio file:", currentTrack.audioUrl);
-      // Continue with player state, just don't play the audio
       setCurrentTime(0);
       setDuration(180); // Simulate a 3-minute track
     };
@@ -82,9 +75,8 @@ export default function Player() {
     
     // Play if needed
     if (isPlaying) {
-      audio.play().catch(error => {
+      audio.play().catch((error: any) => {
         console.error("Error playing audio:", error);
-        // Don't show another error toast as the error event will trigger
       });
     }
     
@@ -96,14 +88,14 @@ export default function Player() {
   
   // Handle play/pause
   useEffect(() => {
-    if (!audioRef.current) return;
+    const audio = globalAudio.getAudio();
     
     if (isPlaying) {
-      audioRef.current.play().catch(error => {
+      audio.play().catch((error: any) => {
         console.error("Error playing audio:", error);
       });
     } else {
-      audioRef.current.pause();
+      audio.pause();
     }
   }, [isPlaying, currentTrack]);
   
@@ -114,15 +106,15 @@ export default function Player() {
   };
   
   const handleSeek = (value: number[]) => {
-    if (!audioRef.current) return;
-    audioRef.current.currentTime = value[0];
+    const audio = globalAudio.getAudio();
+    audio.currentTime = value[0];
     setCurrentTime(value[0]);
   };
   
   const handleVolumeChange = (value: number[]) => {
-    if (!audioRef.current) return;
+    const audio = globalAudio.getAudio();
     const newVolume = value[0];
-    audioRef.current.volume = newVolume;
+    audio.volume = newVolume;
     setVolume(newVolume);
     
     if (newVolume === 0) {
@@ -133,17 +125,17 @@ export default function Player() {
   };
   
   const toggleMute = () => {
-    if (!audioRef.current) return;
+    const audio = globalAudio.getAudio();
     
     if (isMuted) {
       // Unmute
-      audioRef.current.volume = prevVolume;
+      audio.volume = prevVolume;
       setVolume(prevVolume);
       setIsMuted(false);
     } else {
       // Mute
       setPrevVolume(volume);
-      audioRef.current.volume = 0;
+      audio.volume = 0;
       setVolume(0);
       setIsMuted(true);
     }
