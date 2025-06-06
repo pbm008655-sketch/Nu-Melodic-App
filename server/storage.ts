@@ -634,6 +634,21 @@ export class DatabaseStorage implements IStorage {
     return updatedUser || undefined;
   }
 
+  async updatePaypalInfo(userId: number, data: { paypalSubscriptionId?: string, paymentProvider?: string }): Promise<User | undefined> {
+    const user = await this.getUser(userId);
+    if (!user) return undefined;
+
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        paypalSubscriptionId: data.paypalSubscriptionId ?? user.paypalSubscriptionId,
+        paymentProvider: data.paymentProvider ?? user.paymentProvider
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser || undefined;
+  }
+
   async getAllAlbums(): Promise<Album[]> {
     return await db.select().from(albums);
   }

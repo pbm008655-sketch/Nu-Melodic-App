@@ -10,6 +10,7 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import Stripe from "stripe";
+import { createSubscription, getSubscription, cancelSubscription } from "./paypal";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -17,6 +18,9 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 // Initialize Stripe with the secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+// PayPal plan ID - this should be created once and stored as an environment variable
+const PAYPAL_PLAN_ID = process.env.PAYPAL_PLAN_ID || "P-5ML4271244454362WXNWU5NQ";
 
 // Define common directory paths
 const audioUploadDir = path.join(process.cwd(), 'public', 'audio');
