@@ -11,6 +11,8 @@ export const users = pgTable("users", {
   premiumExpiry: timestamp("premium_expiry", { mode: 'date' }),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  paypalSubscriptionId: text("paypal_subscription_id"),
+  paymentProvider: text("payment_provider").default("stripe"), // "stripe" or "paypal"
 });
 
 export const albums = pgTable("albums", {

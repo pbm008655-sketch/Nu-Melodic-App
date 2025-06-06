@@ -19,6 +19,7 @@ export interface IStorage {
   updateUserPremiumStatus(userId: number, isPremium: boolean, expiryDate?: Date): Promise<User | undefined>;
   updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined>;
   updateStripeInfo(userId: number, data: { stripeCustomerId?: string, stripeSubscriptionId?: string }): Promise<User | undefined>;
+  updatePaypalInfo(userId: number, data: { paypalSubscriptionId?: string, paymentProvider?: string }): Promise<User | undefined>;
   
   getAllAlbums(): Promise<Album[]>;
   getAlbum(id: number): Promise<Album | undefined>;
