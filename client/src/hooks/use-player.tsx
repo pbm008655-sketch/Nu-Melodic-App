@@ -121,6 +121,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     // Create an enhanced track with album info if provided
     const enhancedTrack = album ? { ...track, album } : track;
     
+    // If this is the same track that's currently playing, just toggle play/pause
+    if (currentTrack && currentTrack.id === track.id) {
+      setIsPlaying(!isPlaying);
+      return;
+    }
+    
     // Set the current track
     setCurrentTrack(enhancedTrack);
     

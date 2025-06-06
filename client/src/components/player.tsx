@@ -54,7 +54,8 @@ export default function Player() {
     
     // Register with audio manager to be paused when other audio plays
     const unsubscribe = audioManager.onPause(() => {
-      if (!audio.paused) {
+      // Only pause if this audio is not the current active audio
+      if (!audio.paused && audioManager.getCurrentSource() !== `player-${currentTrack?.title || 'unknown'}`) {
         audio.pause();
       }
     });
@@ -116,15 +117,13 @@ export default function Player() {
     if (!audioRef.current) return;
     
     if (isPlaying) {
-      // Register this audio as active before playing
-      audioManager.setActiveAudio(audioRef.current, `player-${currentTrack?.title || 'unknown'}`);
       audioRef.current.play().catch(error => {
         console.error("Error playing audio:", error);
       });
     } else {
       audioRef.current.pause();
     }
-  }, [isPlaying]);
+  }, [isPlaying, currentTrack]);
   
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

@@ -32,11 +32,16 @@ class AudioManager {
 
     // Stop the current audio if it exists and is different
     if (this.currentAudio && this.currentAudio !== audio) {
-      this.currentAudio.pause();
-      this.currentAudio.currentTime = 0;
+      try {
+        if (!this.currentAudio.paused) {
+          this.currentAudio.pause();
+        }
+      } catch (error) {
+        console.warn('Error pausing previous audio:', error);
+      }
     }
 
-    // Notify all other audio sources to pause
+    // Notify all other audio sources to pause (but don't trigger for the current audio)
     this.pauseCallbacks.forEach(callback => {
       try {
         callback();
@@ -48,6 +53,7 @@ class AudioManager {
     // Set the new active audio
     this.currentAudio = audio;
     this.currentSource = source;
+    console.log(`Audio manager: Set active audio to ${source}`);
   }
 
   // Clear the active audio when it stops
