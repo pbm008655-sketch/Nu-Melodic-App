@@ -943,8 +943,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Create subscription plan first if needed, then create subscription
+      let planId = PAYPAL_PLAN_ID;
+      try {
+        // Try to create a new plan (this will be the actual plan we use)
+        const plan = await createSubscriptionPlan();
+        planId = plan.id;
+        console.log('Created new PayPal plan:', planId);
+      } catch (planError: any) {
+        console.log('Plan creation failed, using default plan ID:', planError.message);
+        // If plan creation fails, we'll try with the default plan ID
+      }
+      
       // Create new PayPal subscription
-      const subscription = await createSubscription(PAYPAL_PLAN_ID, user.email);
+      const subscription = await createSubscription(planId, user.email);
       
       // Save PayPal subscription ID to user
       await storage.updatePaypalInfo(user.id, {
