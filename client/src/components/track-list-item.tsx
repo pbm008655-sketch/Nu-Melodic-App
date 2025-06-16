@@ -33,6 +33,7 @@ export function TrackListItem({ track, album, index, showAlbum = false, playlist
   const [, navigate] = useLocation();
   
   const isCurrentTrack = currentTrack?.id === track.id;
+  const isPreviewMode = !user?.isPremium;
   
   const { data: userPlaylists } = useQuery<{ id: number; name: string }[]>({
     queryKey: ["/api/playlists"],
@@ -157,6 +158,14 @@ export function TrackListItem({ track, album, index, showAlbum = false, playlist
       </div>
       
       <div className="ml-auto flex items-center">
+        {/* Preview mode indicator */}
+        {isPreviewMode && (
+          <div className="flex items-center gap-1 px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded-full text-xs mr-2">
+            <Crown className="h-3 w-3" />
+            <span>30s</span>
+          </div>
+        )}
+        
         <span className="text-xs text-zinc-400 w-12 text-right mr-2">
           {formatDuration(track.duration)}
         </span>

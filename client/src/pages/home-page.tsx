@@ -16,6 +16,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function HomePage() {
   const { user } = useAuth();
   const { currentTrack, isPlaying, togglePlay, playAlbum, playAll, playRandom } = usePlayer();
+  
+  const isPreviewMode = !user?.isPremium;
 
   const { 
     data: featuredAlbums,
@@ -46,6 +48,27 @@ export default function HomePage() {
         
         <div className="flex-1 overflow-y-auto pb-24">
           <MobileMenu />
+
+          {/* Preview Mode Banner */}
+          {isPreviewMode && (
+            <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/30 mx-4 my-4 p-4 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Crown className="h-5 w-5 text-yellow-500" />
+                  <div>
+                    <h3 className="text-yellow-100 font-medium">Preview Mode Active</h3>
+                    <p className="text-yellow-200/80 text-sm">You can listen to 30-second previews of all tracks. Subscribe for unlimited access.</p>
+                  </div>
+                </div>
+                <Link href="/subscriptions">
+                  <Button className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white">
+                    <Crown className="h-4 w-4 mr-2" />
+                    Subscribe
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
 
           {/* Header with gradient */}
           <div className="bg-gradient-to-b from-zinc-800 to-zinc-950 p-4 md:p-8">
