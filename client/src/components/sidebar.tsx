@@ -114,12 +114,6 @@ export default function Sidebar() {
       
       {/* Footer Section - Fixed */}
       <div className="p-6 border-t border-zinc-800 space-y-3 flex-shrink-0">
-        <Link href="/subscriptions">
-          <div className={`text-sm ${isActive("/subscriptions") ? "text-primary font-medium" : "text-zinc-300 hover:text-white"} transition-colors cursor-pointer block`}>
-            {user?.isPremium ? "Manage Subscription" : "Upgrade to Premium"}
-          </div>
-        </Link>
-        
         {user && (
           <div className="flex items-center justify-between bg-zinc-800 p-2 rounded">
             <span className="text-xs text-zinc-300">Logged in as {user.username}</span>
@@ -136,6 +130,12 @@ export default function Sidebar() {
             </Button>
           </div>
         )}
+        
+        <Link href="/subscriptions">
+          <div className={`text-sm ${isActive("/subscriptions") ? "text-primary font-medium" : "text-zinc-300 hover:text-white"} transition-colors cursor-pointer block`}>
+            {user?.isPremium ? "Manage Subscription" : "Upgrade to Premium"}
+          </div>
+        </Link>
       </div>
     </div>
   );
