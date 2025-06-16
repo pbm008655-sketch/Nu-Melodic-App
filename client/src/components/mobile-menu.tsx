@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { X, Home, Search, Library, Heart, Crown, User, Menu } from "lucide-react";
+import { X, Home, Search, Library, Heart, Crown, User, Menu, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { Playlist } from "@shared/schema";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 
 export default function MobileMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
   
   // Close menu on route change
   useEffect(() => {
@@ -138,13 +139,23 @@ export default function MobileMenu() {
             </nav>
           </ScrollArea>
           
-          <div className="p-6 border-t border-zinc-800">
-            <Link href="#">
-              <div className="flex items-center text-zinc-300 cursor-pointer">
-                <User className="h-5 w-5 mr-2" />
-                <span>Account</span>
-              </div>
-            </Link>
+          <div className="p-6 border-t border-zinc-800 space-y-3">
+            {user && (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-zinc-400">Logged in as {user.username}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => logoutMutation.mutate()}
+                    disabled={logoutMutation.isPending}
+                    className="text-zinc-400 hover:text-white h-8 px-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
