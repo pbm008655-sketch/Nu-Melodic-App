@@ -176,13 +176,7 @@ export default function Player() {
   };
   
   if (!currentTrack) {
-    return (
-      <div className="fixed bottom-0 left-0 right-0 bg-zinc-900 border-t border-zinc-800 p-3 md:p-4 z-20 h-20">
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-center h-full">
-          <p className="text-zinc-400 text-sm">Select a track to play</p>
-        </div>
-      </div>
-    );
+    return null;
   }
   
   return (
