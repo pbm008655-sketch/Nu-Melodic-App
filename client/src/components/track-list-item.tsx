@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Play, Pause, Heart, Plus, MoreHorizontal, Sliders, Download } from "lucide-react";
+import { Play, Pause, Heart, Plus, MoreHorizontal, Sliders, Download, Crown } from "lucide-react";
 import { Track, Album } from "@shared/schema";
 import { usePlayer } from "@/hooks/use-player";
 import { 
