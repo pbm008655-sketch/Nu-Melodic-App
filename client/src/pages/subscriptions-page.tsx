@@ -16,43 +16,9 @@ export default function SubscriptionsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'stripe' | 'paypal'>('stripe');
+
   
-  const subscribeMutation = useMutation({
-    mutationFn: async (data?: { plan: string }) => {
-      setIsProcessing(true);
-      const res = await apiRequest("POST", "/api/create-subscription", data);
-      return await res.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      setIsProcessing(false);
-      
-      if (data.success) {
-        toast({
-          title: "Subscription Successful",
-          description: "Your premium subscription has been activated!",
-        });
-      } else {
-        // Redirect to checkout page if payment is needed
-        window.location.href = "/checkout";
-      }
-    },
-    onError: (error) => {
-      setIsProcessing(false);
-      
-      // More user-friendly error message for missing Stripe keys
-      const errorMsg = error.message.includes("secret_key_required") 
-        ? "Payment system is currently in test mode. In production, this would process a real subscription."
-        : error.message;
-        
-      toast({
-        title: "Subscription Status",
-        description: errorMsg,
-        variant: errorMsg.includes("test mode") ? "default" : "destructive",
-      });
-    }
-  });
+
 
   const paypalSubscribeMutation = useMutation({
     mutationFn: async () => {
@@ -105,38 +71,8 @@ export default function SubscriptionsPage() {
     }
   });
   
-  const cancelSubscriptionMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/cancel-subscription", {});
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      toast({
-        title: "Subscription Cancelled",
-        description: "Your subscription has been cancelled.",
-      });
-    },
-    onError: (error) => {
-      // More user-friendly error message for missing Stripe keys
-      const errorMsg = error.message.includes("secret_key_required") 
-        ? "Payment system is currently in test mode. In production, this would cancel a real subscription."
-        : error.message;
-        
-      toast({
-        title: "Cancellation Status",
-        description: errorMsg,
-        variant: errorMsg.includes("test mode") ? "default" : "destructive",
-      });
-    }
-  });
-  
-  const handleSubscribe = () => {
-    subscribeMutation.mutate({ plan: 'premium' });
-  };
-  
-  const handleCancelSubscription = () => {
-    cancelSubscriptionMutation.mutate();
+  const handleCancelPaypalSubscription = () => {
+    cancelPaypalSubscriptionMutation.mutate();
   };
   
   // Format the expiry date if it exists
@@ -164,7 +100,7 @@ export default function SubscriptionsPage() {
           
           {/* Subscription Info */}
           <div className="p-4 md:p-8">
-            {user?.stripeSubscriptionId ? (
+            {user?.paypalSubscriptionId ? (
               <div className="max-w-3xl mx-auto">
                 <div className="bg-zinc-900 rounded-xl p-6 mb-8 border border-zinc-800">
                   <div className="flex items-center mb-4">
@@ -244,39 +180,15 @@ export default function SubscriptionsPage() {
                         </ul>
                       </CardContent>
                       <CardFooter className="space-y-4">
-                        <div className="w-full">
-                          <p className="text-sm text-zinc-400 mb-3">Choose payment method:</p>
-                          <div className="grid grid-cols-2 gap-2 mb-4">
-                            <Button
-                              variant={selectedPaymentMethod === 'stripe' ? 'default' : 'outline'}
-                              size="sm"
-                              onClick={() => setSelectedPaymentMethod('stripe')}
-                              className="flex items-center gap-2"
-                            >
-                              <div className="w-4 h-4 bg-blue-600 rounded flex items-center justify-center">
-                                <span className="text-white text-xs font-bold">S</span>
-                              </div>
-                              Stripe
-                            </Button>
-                            <Button
-                              variant={selectedPaymentMethod === 'paypal' ? 'default' : 'outline'}
-                              size="sm"
-                              onClick={() => setSelectedPaymentMethod('paypal')}
-                              className="flex items-center gap-2"
-                            >
-                              <div className="w-4 h-4 bg-blue-500 rounded flex items-center justify-center">
-                                <span className="text-white text-xs font-bold">P</span>
-                              </div>
-                              PayPal
-                            </Button>
-                          </div>
-                        </div>
                         <Button 
-                          className="w-full bg-primary hover:bg-primary/90 text-black"
-                          onClick={selectedPaymentMethod === 'stripe' ? handleSubscribe : () => paypalSubscribeMutation.mutate()}
-                          disabled={isProcessing || subscribeMutation.isPending || paypalSubscribeMutation.isPending}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                          onClick={() => paypalSubscribeMutation.mutate()}
+                          disabled={paypalSubscribeMutation.isPending}
                         >
-                          {isProcessing || subscribeMutation.isPending ? "Processing..." : "Upgrade to Premium"}
+                          <div className="w-4 h-4 bg-white rounded flex items-center justify-center">
+                            <span className="text-blue-600 text-xs font-bold">P</span>
+                          </div>
+                          {paypalSubscribeMutation.isPending ? "Processing PayPal..." : "Subscribe with PayPal"}
                         </Button>
                       </CardFooter>
                     </Card>
