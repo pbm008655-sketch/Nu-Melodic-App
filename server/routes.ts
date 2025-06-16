@@ -9,15 +9,7 @@ import { z } from "zod";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
-import Stripe from "stripe";
 import { createSubscription, getSubscription, cancelSubscription, createSubscriptionPlan } from "./paypal";
-
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
-}
-
-// Initialize Stripe with the secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // PayPal plan ID - this would be created in PayPal dashboard
 const PAYPAL_PLAN_ID = process.env.PAYPAL_PLAN_ID || "P-5ML4271244454362WXNWU5NQ";
@@ -662,41 +654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // STRIPE PAYMENT ROUTES
-  
-  // Create a Stripe payment intent for one-time payments
-  app.post("/api/create-payment-intent", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    
-    try {
-      const { amount } = req.body;
-      if (!amount || isNaN(amount)) {
-        return res.status(400).json({ message: "Valid amount required" });
-      }
-      
-      // Convert amount to cents (Stripe requires cents)
-      const amountInCents = Math.round(amount * 100);
-      
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: amountInCents,
-        currency: "usd",
-        metadata: {
-          userId: req.user!.id.toString(),
-        },
-      });
-      
-      res.json({
-        clientSecret: paymentIntent.client_secret,
-      });
-    } catch (error: any) {
-      console.error("Error creating payment intent:", error);
-      res.status(500).json({ 
-        error: { message: error.message || "Error creating payment" }
-      });
-    }
-  });
+  // PAYPAL PAYMENT ROUTES
   
   // Endpoint to create or retrieve a subscription
   app.post("/api/create-subscription", async (req, res) => {
