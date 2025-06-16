@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Home, Search, Library, PlusCircle, Music, BarChart, Settings } from "lucide-react";
+import { Home, Search, Library, PlusCircle, Music, BarChart, Settings, LogOut } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Playlist } from "@shared/schema";
 
 export default function Sidebar() {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
   
   const { data: playlists } = useQuery<Playlist[]>({
     queryKey: ["/api/playlists"],
@@ -108,12 +108,27 @@ export default function Sidebar() {
         </nav>
       </div>
       
-      <div className="mt-auto p-6 border-t border-zinc-800">
+      <div className="mt-auto p-6 border-t border-zinc-800 space-y-3">
         <Link href="/subscriptions">
-          <div className={`text-sm ${isActive("/subscriptions") ? "text-primary font-medium" : "text-zinc-300 hover:text-white"} transition-colors cursor-pointer`}>
+          <div className={`text-sm ${isActive("/subscriptions") ? "text-primary font-medium" : "text-zinc-300 hover:text-white"} transition-colors cursor-pointer block`}>
             {user?.isPremium ? "Manage Subscription" : "Upgrade to Premium"}
           </div>
         </Link>
+        
+        {user && (
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-zinc-500">Logged in as {user.username}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+              className="text-zinc-400 hover:text-white h-8 px-2"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
