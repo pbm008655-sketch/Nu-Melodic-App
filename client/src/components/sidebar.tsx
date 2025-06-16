@@ -116,16 +116,18 @@ export default function Sidebar() {
         </Link>
         
         {user && (
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-zinc-500">Logged in as {user.username}</span>
+          <div className="flex items-center justify-between bg-zinc-800 p-2 rounded">
+            <span className="text-xs text-zinc-300">Logged in as {user.username}</span>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => logoutMutation.mutate()}
               disabled={logoutMutation.isPending}
-              className="text-zinc-400 hover:text-white h-8 px-2"
+              className="text-white border-zinc-600 hover:bg-zinc-700 h-8 px-3 ml-2"
+              title="Logout"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4 mr-1" />
+              Logout
             </Button>
           </div>
         )}
