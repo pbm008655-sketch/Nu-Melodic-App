@@ -48,8 +48,10 @@ export default function SubscriptionsPage() {
           title: "PayPal Approval Required",
           description: "Redirecting to PayPal to complete your subscription...",
         });
-        // Redirect to PayPal for approval
-        window.location.href = data.approvalUrl;
+        // Small delay to ensure toast shows before redirect
+        setTimeout(() => {
+          window.location.href = data.approvalUrl;
+        }, 1000);
       } else if (data.success && data.status === 'ACTIVE') {
         // Existing active subscription
         toast({
