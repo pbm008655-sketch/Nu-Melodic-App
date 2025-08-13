@@ -689,17 +689,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user already has an active PayPal subscription
       if (user.paypalSubscriptionId) {
         try {
+          console.log('Checking existing PayPal subscription:', user.paypalSubscriptionId);
           const subscription = await getSubscription(user.paypalSubscriptionId);
+          console.log('PayPal subscription status:', subscription.status);
+          
           if (subscription.status === 'ACTIVE') {
+            // Update user to premium if not already
+            if (!user.isPremium) {
+              console.log('Updating user to premium status');
+              await storage.updateUser(user.id, { isPremium: true });
+            }
             return res.json({
               success: true,
               subscriptionId: subscription.id,
               status: subscription.status,
-              approvalUrl: null
+              approvalUrl: null,
+              message: "You already have an active PayPal subscription!"
             });
           }
         } catch (error: any) {
-          console.log('Error retrieving PayPal subscription, creating new one:', error);
+          console.log('Error retrieving PayPal subscription:', error.message);
         }
       }
       
