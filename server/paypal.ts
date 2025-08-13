@@ -22,8 +22,11 @@ async function getPayPalAccessToken(): Promise<string> {
   
   console.log('PayPal API Base URL:', PAYPAL_API_BASE);
   console.log('PayPal Client ID first 10 chars:', clientId.substring(0, 10));
+  console.log('PayPal Client ID full length:', clientId.length);
   console.log('PayPal Secret first 10 chars:', clientSecret.substring(0, 10));
+  console.log('PayPal Secret full length:', clientSecret.length);
   console.log('Auth string length:', auth.length);
+  console.log('Environment:', process.env.NODE_ENV || 'development');
   
   try {
     const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {

@@ -678,6 +678,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create PayPal subscription
+  // Test PayPal authentication endpoint
+  app.get("/api/test-paypal-auth", async (req, res) => {
+    try {
+      console.log("Testing PayPal authentication...");
+      
+      // Direct PayPal auth test
+      const clientId = process.env.PAYPAL_CLIENT_ID?.trim();
+      const clientSecret = process.env.PAYPAL_CLIENT_SECRET?.trim();
+      
+      if (!clientId || !clientSecret) {
+        return res.status(500).json({ success: false, error: 'Missing PayPal credentials' });
+      }
+      
+      const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+      const PAYPAL_API_BASE = 'https://api-m.sandbox.paypal.com';
+      
+      console.log('Testing with Client ID length:', clientId.length);
+      console.log('Testing with Secret length:', clientSecret.length);
+      
+      const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+        },
+        body: 'grant_type=client_credentials'
+      });
+      
+      const responseText = await response.text();
+      console.log('PayPal auth test response status:', response.status);
+      console.log('PayPal auth test response:', responseText);
+      
+      if (!response.ok) {
+        return res.status(500).json({ 
+          success: false, 
+          error: `PayPal API returned ${response.status}: ${responseText}`,
+          status: response.status
+        });
+      }
+      
+      const data = JSON.parse(responseText);
+      res.json({ success: true, message: "PayPal authentication successful", tokenLength: data.access_token.length });
+    } catch (error: any) {
+      console.error("PayPal auth test failed:", error.message);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   app.post("/api/create-paypal-subscription", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
