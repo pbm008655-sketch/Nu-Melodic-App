@@ -20,10 +20,21 @@ export default function SubscriptionsPage() {
   const paypalSubscribeMutation = useMutation({
     mutationFn: async () => {
       setIsProcessing(true);
-      const res = await apiRequest("POST", "/api/create-paypal-subscription");
-      const result = await res.json();
-      console.log("PayPal subscription response:", result);
-      return result;
+      try {
+        const res = await apiRequest("POST", "/api/create-paypal-subscription");
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("PayPal API error response:", errorText);
+          throw new Error(`PayPal API error: ${res.status} - ${errorText}`);
+        }
+        const result = await res.json();
+        console.log("PayPal subscription response:", result);
+        return result;
+      } catch (error) {
+        console.error("PayPal subscription request failed:", error);
+        setIsProcessing(false);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       console.log("PayPal subscription success:", data);

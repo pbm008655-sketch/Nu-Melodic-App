@@ -13,6 +13,10 @@ const PAYPAL_API_BASE = process.env.NODE_ENV === 'production'
 async function getPayPalAccessToken(): Promise<string> {
   const auth = Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`).toString('base64');
   
+  console.log('PayPal API Base URL:', PAYPAL_API_BASE);
+  console.log('PayPal Client ID exists:', !!process.env.PAYPAL_CLIENT_ID);
+  console.log('PayPal Secret exists:', !!process.env.PAYPAL_CLIENT_SECRET);
+  
   const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
     method: 'POST',
     headers: {
@@ -23,7 +27,9 @@ async function getPayPalAccessToken(): Promise<string> {
   });
   
   if (!response.ok) {
-    throw new Error(`Failed to get PayPal access token: ${response.statusText}`);
+    const errorText = await response.text();
+    console.error('PayPal auth error response:', errorText);
+    throw new Error(`Failed to get PayPal access token: ${response.status} ${response.statusText} - ${errorText}`);
   }
   
   const data = await response.json();
