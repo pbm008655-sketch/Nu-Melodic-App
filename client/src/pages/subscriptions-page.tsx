@@ -21,14 +21,18 @@ export default function SubscriptionsPage() {
     mutationFn: async () => {
       setIsProcessing(true);
       const res = await apiRequest("POST", "/api/create-paypal-subscription");
-      return await res.json();
+      const result = await res.json();
+      console.log("PayPal subscription response:", result);
+      return result;
     },
     onSuccess: (data) => {
+      console.log("PayPal subscription success:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       setIsProcessing(false);
       
       if (data.success && data.approvalUrl) {
         // New subscription requires PayPal approval
+        console.log("Redirecting to PayPal approval URL:", data.approvalUrl);
         toast({
           title: "PayPal Approval Required",
           description: "Redirecting to PayPal to complete your subscription...",
@@ -46,9 +50,17 @@ export default function SubscriptionsPage() {
           title: "PayPal Subscription Created",
           description: "Your premium subscription has been set up!",
         });
+      } else {
+        console.error("Unexpected PayPal response:", data);
+        toast({
+          title: "PayPal Subscription Issue",
+          description: "Unexpected response from PayPal. Please try again.",
+          variant: "destructive",
+        });
       }
     },
     onError: (error) => {
+      console.error("PayPal subscription error:", error);
       setIsProcessing(false);
       toast({
         title: "PayPal Subscription Error",
