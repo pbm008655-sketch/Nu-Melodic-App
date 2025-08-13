@@ -27,14 +27,25 @@ export default function SubscriptionsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       setIsProcessing(false);
       
-      if (data.success) {
+      if (data.success && data.approvalUrl) {
+        // New subscription requires PayPal approval
         toast({
-          title: "PayPal Subscription Successful",
-          description: "Your premium subscription has been activated!",
+          title: "PayPal Approval Required",
+          description: "Redirecting to PayPal to complete your subscription...",
         });
-      } else if (data.redirectToCheckout) {
-        // Redirect to PayPal checkout
-        window.location.href = data.checkoutUrl;
+        // Redirect to PayPal for approval
+        window.location.href = data.approvalUrl;
+      } else if (data.success && data.status === 'ACTIVE') {
+        // Existing active subscription
+        toast({
+          title: "PayPal Subscription Active",
+          description: "Your premium subscription is already active!",
+        });
+      } else if (data.success) {
+        toast({
+          title: "PayPal Subscription Created",
+          description: "Your premium subscription has been set up!",
+        });
       }
     },
     onError: (error) => {
