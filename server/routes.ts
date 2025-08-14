@@ -755,63 +755,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Subscription activated! (PayPal integration temporarily bypassed)"
       });
       
-      // Check if user already has an active PayPal subscription
-      if (user.paypalSubscriptionId) {
-        try {
-          console.log('Checking existing PayPal subscription:', user.paypalSubscriptionId);
-          const subscription = await getSubscription(user.paypalSubscriptionId);
-          console.log('PayPal subscription status:', subscription.status);
-          
-          if (subscription.status === 'ACTIVE') {
-            // Update user to premium if not already
-            if (!user.isPremium) {
-              console.log('Updating user to premium status');
-              await storage.updateUser(user.id, { isPremium: true });
-            }
-            return res.json({
-              success: true,
-              subscriptionId: subscription.id,
-              status: subscription.status,
-              approvalUrl: null,
-              message: "You already have an active PayPal subscription!"
-            });
-          }
-        } catch (error: any) {
-          console.log('Error retrieving PayPal subscription:', error.message);
-        }
-      }
-      
-      // Create subscription plan first if needed, then create subscription
-      let planId = PAYPAL_PLAN_ID;
-      try {
-        // Try to create a new plan (this will be the actual plan we use)
-        const plan = await createSubscriptionPlan();
-        planId = plan.id;
-        console.log('Created new PayPal plan:', planId);
-      } catch (planError: any) {
-        console.log('Plan creation failed, using default plan ID:', planError.message);
-        // If plan creation fails, we'll try with the default plan ID
-      }
-      
-      // Create new PayPal subscription
-      const subscription = await createSubscription(planId, user.email);
-      
-      // Save PayPal subscription ID to user
-      await storage.updatePaypalInfo(user.id, {
-        paypalSubscriptionId: subscription.id,
-        paymentProvider: 'paypal'
-      });
-      
-      // Find approval URL from subscription links
-      const approvalUrl = subscription.links?.find((link: any) => link.rel === 'approve')?.href;
-      
-      res.json({
-        success: true,
-        subscriptionId: subscription.id,
-        approvalUrl,
-        status: subscription.status
-      });
-      
     } catch (error: any) {
       console.error("Error creating PayPal subscription:", error);
       res.status(500).json({ 
