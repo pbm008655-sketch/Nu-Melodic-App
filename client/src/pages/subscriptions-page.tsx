@@ -281,14 +281,30 @@ export default function SubscriptionsPage() {
                     <Button 
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
                       onClick={async () => {
-                        // Simple upgrade to premium without PayPal API calls
-                        const res = await fetch('/api/upgrade-to-premium', { method: 'POST' });
-                        if (res.ok) {
-                          queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-                          toast({
-                            title: "Subscription Activated!",
-                            description: "Welcome to Premium! You now have unlimited access.",
+                        setIsProcessing(true);
+                        try {
+                          const res = await fetch('/api/upgrade-to-premium', { 
+                            method: 'POST',
+                            credentials: 'include'
                           });
+                          
+                          if (res.ok) {
+                            queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+                            toast({
+                              title: "Subscription Activated!",
+                              description: "Welcome to Premium! You now have unlimited access.",
+                            });
+                          } else {
+                            throw new Error('Failed to upgrade');
+                          }
+                        } catch (error) {
+                          toast({
+                            title: "Subscription Error",
+                            description: "Failed to activate subscription. Please try again.",
+                            variant: "destructive",
+                          });
+                        } finally {
+                          setIsProcessing(false);
                         }
                       }}
                       disabled={isProcessing}
