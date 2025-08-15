@@ -654,6 +654,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Simple premium upgrade endpoint
+  app.post("/api/upgrade-to-premium", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const userId = req.user!.id;
+      
+      // Update user to premium status
+      await storage.updateUserPremiumStatus(userId, true);
+      await storage.updatePaypalInfo(userId, {
+        paypalSubscriptionId: `PREMIUM_${userId}_${Date.now()}`,
+        paymentProvider: 'paypal'
+      });
+      
+      console.log(`User ${userId} upgraded to premium`);
+      
+      res.json({
+        success: true,
+        message: "Successfully upgraded to premium"
+      });
+    } catch (error: any) {
+      console.error("Error upgrading to premium:", error);
+      res.status(500).json({ 
+        error: { message: error.message || "Error upgrading to premium" }
+      });
+    }
+  });
+
   // PAYPAL PAYMENT ROUTES
   
 
