@@ -46,71 +46,7 @@ export default function SubscriptionsPage() {
     initPayPal();
   }, [toast]);
 
-  const paypalSubscribeMutation = useMutation({
-    mutationFn: async () => {
-      setIsProcessing(true);
-      try {
-        const res = await apiRequest("POST", "/api/create-paypal-subscription");
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error("PayPal API error response:", errorText);
-          throw new Error(`PayPal API error: ${res.status} - ${errorText}`);
-        }
-        const result = await res.json();
-        console.log("PayPal subscription response:", result);
-        return result;
-      } catch (error) {
-        console.error("PayPal subscription request failed:", error);
-        setIsProcessing(false);
-        throw error;
-      }
-    },
-    onSuccess: (data) => {
-      console.log("PayPal subscription success:", data);
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      setIsProcessing(false);
-      
-      if (data.success && data.approvalUrl) {
-        // New subscription requires PayPal approval
-        console.log("Redirecting to PayPal approval URL:", data.approvalUrl);
-        toast({
-          title: "PayPal Approval Required",
-          description: "Redirecting to PayPal to complete your subscription...",
-        });
-        // Small delay to ensure toast shows before redirect
-        setTimeout(() => {
-          window.location.href = data.approvalUrl;
-        }, 1000);
-      } else if (data.success && data.status === 'ACTIVE') {
-        // Existing active subscription
-        toast({
-          title: "PayPal Subscription Active",
-          description: "Your premium subscription is already active!",
-        });
-      } else if (data.success) {
-        toast({
-          title: "PayPal Subscription Created",
-          description: "Your premium subscription has been set up!",
-        });
-      } else {
-        console.error("Unexpected PayPal response:", data);
-        toast({
-          title: "PayPal Subscription Issue",
-          description: "Unexpected response from PayPal. Please try again.",
-          variant: "destructive",
-        });
-      }
-    },
-    onError: (error) => {
-      console.error("PayPal subscription error:", error);
-      setIsProcessing(false);
-      toast({
-        title: "PayPal Subscription Error",
-        description: error.message || "Failed to create PayPal subscription",
-        variant: "destructive",
-      });
-    },
-  });
+  // Removed broken PayPal mutation - now using direct endpoint approach
 
   const cancelPaypalSubscriptionMutation = useMutation({
     mutationFn: async () => {
