@@ -56,8 +56,8 @@ Two-tier user system with premium subscription support:
 ## External Dependencies
 
 ### Payment Processing
-- **Stripe**: Primary payment processor for subscription management
-- **PayPal**: Alternative payment option with subscription support
+- **Stripe**: Fully functional payment processor for subscription management
+- **PayPal**: BROKEN - Integration advertised by Replit but authentication fails with "401 Unauthorized - Client Authentication failed" despite proper sandbox setup. Reported to Replit support.
 
 ### Database
 - **Neon Database**: PostgreSQL hosting with serverless architecture
