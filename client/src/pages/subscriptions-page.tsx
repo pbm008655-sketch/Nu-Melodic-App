@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
@@ -11,42 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
-import { loadScript } from "@paypal/paypal-js";
 
 export default function SubscriptionsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paypalLoaded, setPaypalLoaded] = useState(false);
-
-  // Load PayPal SDK
-  useEffect(() => {
-    const initPayPal = async () => {
-      try {
-        const paypal = await loadScript({
-          clientId: "EDTfSQlNCtLj9vMNcrELAA6Y1tvfegRieHSJrERWX_zJ9pSKoGMddaQ_9TWgGoVkFhzZYZ0hZYZBEnJ0",
-          vault: true,
-          intent: "subscription"
-        });
-        
-        if (paypal) {
-          setPaypalLoaded(true);
-          console.log("PayPal SDK loaded successfully");
-        }
-      } catch (error) {
-        console.error("Failed to load PayPal SDK:", error);
-        toast({
-          title: "PayPal Loading Error",
-          description: "Failed to load PayPal. Please refresh the page.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    initPayPal();
-  }, [toast]);
-
-  // Removed broken PayPal mutation - now using direct endpoint approach
 
   const cancelPaypalSubscriptionMutation = useMutation({
     mutationFn: async () => {
