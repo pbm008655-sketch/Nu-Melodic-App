@@ -9,10 +9,32 @@ import { z } from "zod";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
-import { createSubscription, getSubscription, cancelSubscription, createSubscriptionPlan } from "./paypal";
+import { 
+  getPayPalAccessToken, 
+  getPayPalSubscription, 
+  cancelPayPalSubscription, 
+  verifyPayPalWebhook,
+  initializePayPalPlans 
+} from './paypal';
+import { storage, updateUserPremium, updateUserPayPalSubscription, getUserByPayPalSubscriptionId, getUserById } from './storage';
 
 // PayPal plan ID - this would be created in PayPal dashboard
 const PAYPAL_PLAN_ID = process.env.PAYPAL_PLAN_ID || "P-5ML4271244454362WXNWU5NQ";
+
+// Initialize PayPal plans on server start (call this once)
+let PAYPAL_PLAN_ID_INIT: string | null = null;
+
+async function initPayPal() {
+  try {
+    PAYPAL_PLAN_ID_INIT = await initializePayPalPlans();
+    console.log('PayPal integration ready with plan ID:', PAYPAL_PLAN_ID_INIT);
+  } catch (error) {
+    console.error('PayPal initialization failed:', error);
+  }
+}
+
+// Call this when your server starts
+initPayPal();
 
 // Define common directory paths
 const audioUploadDir = path.join(process.cwd(), 'public', 'audio');
@@ -719,6 +741,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PAYPAL PAYMENT ROUTES
   
 
+
+  // ========== NEW PAYPAL INTEGRATION ROUTES ==========
+  
+  /**
+   * Get PayPal subscription plan ID for frontend
+   */
+  app.get('/api/paypal/plan-id', (req, res) => {
+    if (!PAYPAL_PLAN_ID_INIT) {
+      return res.status(500).json({ error: 'PayPal plan not initialized' });
+    }
+    
+    res.json({ planId: PAYPAL_PLAN_ID_INIT });
+  });
+
+  /**
+   * Handle successful PayPal subscription creation
+   */
+  app.post('/api/paypal/subscription-success', async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const { subscriptionId, orderID } = req.body;
+
+    if (!subscriptionId) {
+      return res.status(400).json({ error: 'Missing subscription ID' });
+    }
+
+    try {
+      // Verify the subscription with PayPal
+      const subscription = await getPayPalSubscription(subscriptionId);
+      
+      if (subscription.status !== 'ACTIVE') {
+        return res.status(400).json({ 
+          error: 'Subscription is not active', 
+          status: subscription.status 
+        });
+      }
+
+      // Update user to premium status
+      const premiumExpiry = new Date();
+      premiumExpiry.setFullYear(premiumExpiry.getFullYear() + 1); // 1 year from now
+
+      await updateUserPremium(req.user.id, {
+        isPremium: true,
+        premiumExpiry: premiumExpiry,
+        paypalSubscriptionId: subscriptionId,
+      });
+
+      console.log(`User ${req.user.id} upgraded to premium via PayPal subscription ${subscriptionId}`);
+
+      res.json({ 
+        success: true, 
+        subscription: {
+          id: subscriptionId,
+          status: subscription.status,
+          expiryDate: premiumExpiry.toISOString(),
+        }
+      });
+
+    } catch (error: any) {
+      console.error('PayPal subscription verification failed:', error);
+      res.status(500).json({ 
+        error: 'Failed to verify PayPal subscription',
+        details: error.message 
+      });
+    }
+  });
+
+  /**
+   * Cancel PayPal subscription
+   */
+  app.post('/api/paypal/cancel-subscription', async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const user = await getUserById(req.user.id);
+    if (!user?.paypalSubscriptionId) {
+      return res.status(400).json({ error: 'No PayPal subscription found' });
+    }
+
+    try {
+      // Cancel with PayPal
+      const cancelled = await cancelPayPalSubscription(
+        user.paypalSubscriptionId, 
+        'User requested cancellation via MeloStream'
+      );
+
+      if (cancelled) {
+        // Update user in database (keep premium until current period ends)
+        await updateUserPayPalSubscription(req.user.id, null);
+        
+        console.log(`PayPal subscription ${user.paypalSubscriptionId} cancelled for user ${req.user.id}`);
+        
+        res.json({ 
+          success: true, 
+          message: 'Subscription cancelled. Premium access continues until current billing period ends.' 
+        });
+      } else {
+        res.status(500).json({ error: 'Failed to cancel PayPal subscription' });
+      }
+
+    } catch (error: any) {
+      console.error('PayPal subscription cancellation failed:', error);
+      res.status(500).json({ 
+        error: 'Failed to cancel subscription',
+        details: error.message 
+      });
+    }
+  });
+
+  /**
+   * Get current user's PayPal subscription status
+   */
+  app.get('/api/paypal/subscription-status', async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const user = await getUserById(req.user.id);
+    if (!user?.paypalSubscriptionId) {
+      return res.json({ hasSubscription: false });
+    }
+
+    try {
+      const subscription = await getPayPalSubscription(user.paypalSubscriptionId);
+      
+      res.json({
+        hasSubscription: true,
+        subscriptionId: user.paypalSubscriptionId,
+        status: subscription.status,
+        nextBillingTime: subscription.billing_info?.next_billing_time,
+        lastPaymentAmount: subscription.billing_info?.last_payment?.amount,
+      });
+
+    } catch (error: any) {
+      console.error('Failed to fetch PayPal subscription status:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch subscription status',
+        details: error.message 
+      });
+    }
+  });
 
   // PAYPAL SUBSCRIPTION ROUTES
   

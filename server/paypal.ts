@@ -1,239 +1,269 @@
-// Using PayPal REST API directly instead of SDK due to import issues
+// server/paypal.ts - Complete PayPal Integration Fix
 
-if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_CLIENT_SECRET) {
-  throw new Error('Missing required PayPal secrets: PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET');
-}
+import axios from 'axios';
 
-// PayPal API base URL
-const PAYPAL_API_BASE = process.env.NODE_ENV === 'production'
-  ? 'https://api-m.paypal.com'
-  : 'https://api-m.sandbox.paypal.com';
+// PayPal Configuration
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID!;
+const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET!;
+const PAYPAL_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://api.paypal.com' 
+  : 'https://api.sandbox.paypal.com';
 
-// Get PayPal access token
-async function getPayPalAccessToken(): Promise<string> {
-  const clientId = process.env.PAYPAL_CLIENT_ID?.trim();
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET?.trim();
-  
-  if (!clientId || !clientSecret) {
-    throw new Error('Missing PayPal credentials');
+// PayPal Access Token Cache
+let cachedToken: { token: string; expiresAt: number } | null = null;
+
+/**
+ * Get PayPal Access Token - Fixes 401 Authentication Error
+ */
+export async function getPayPalAccessToken(): Promise<string> {
+  // Check if we have a valid cached token
+  if (cachedToken && Date.now() < cachedToken.expiresAt) {
+    return cachedToken.token;
   }
-  
-  const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-  
-  console.log('PayPal API Base URL:', PAYPAL_API_BASE);
-  console.log('PayPal Client ID first 10 chars:', clientId.substring(0, 10));
-  console.log('PayPal Client ID full length:', clientId.length);
-  console.log('PayPal Secret first 10 chars:', clientSecret.substring(0, 10));
-  console.log('PayPal Secret full length:', clientSecret.length);
-  console.log('Auth string length:', auth.length);
-  console.log('Environment:', process.env.NODE_ENV || 'development');
-  
+
   try {
-    const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${auth}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'application/json',
-      },
-      body: 'grant_type=client_credentials'
-    });
+    // Encode credentials properly - this is often where the 401 error originates
+    const credentials = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString('base64');
     
-    const responseText = await response.text();
-    console.log('PayPal auth response status:', response.status);
-    console.log('PayPal auth response:', responseText);
+    const response = await axios.post(
+      `${PAYPAL_BASE_URL}/v1/oauth2/token`,
+      'grant_type=client_credentials', // Form-encoded body
+      {
+        headers: {
+          'Authorization': `Basic ${credentials}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+        },
+        timeout: 10000, // 10 second timeout
+      }
+    );
+
+    const { access_token, expires_in } = response.data;
     
-    if (!response.ok) {
-      throw new Error(`Failed to get PayPal access token: ${response.status} ${response.statusText} - ${responseText}`);
-    }
-    
-    const data = JSON.parse(responseText);
+    // Cache the token with expiry buffer (subtract 5 minutes for safety)
+    cachedToken = {
+      token: access_token,
+      expiresAt: Date.now() + (expires_in * 1000) - 300000, // expires_in is in seconds
+    };
+
     console.log('PayPal access token obtained successfully');
-    return data.access_token;
-  } catch (error) {
-    console.error('PayPal auth request failed:', error);
-    throw error;
+    return access_token;
+
+  } catch (error: any) {
+    console.error('PayPal Authentication Error:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+    });
+
+    // Clear cached token on auth failure
+    cachedToken = null;
+    
+    throw new Error(`PayPal authentication failed: ${error.response?.data?.error_description || error.message}`);
   }
 }
 
-// Create a product first (required for plans)
-export async function createProduct() {
+/**
+ * Create PayPal Subscription Plan
+ */
+export async function createPayPalSubscriptionPlan() {
   const accessToken = await getPayPalAccessToken();
-  
-  const productData = {
-    name: "Music Streaming Service",
-    description: "Premium music streaming subscription service",
-    type: "SERVICE",
-    category: "DIGITAL_MEDIA_BOOKS_MOVIES_MUSIC"
-  };
-
-  const response = await fetch(`${PAYPAL_API_BASE}/v1/catalogs/products`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`,
-      'Accept': 'application/json',
-      'Prefer': 'return=representation'
-    },
-    body: JSON.stringify(productData)
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to create PayPal product: ${error}`);
-  }
-
-  return await response.json();
-}
-
-// Create a subscription plan (this would typically be done once)
-export async function createSubscriptionPlan() {
-  const accessToken = await getPayPalAccessToken();
-  
-  // First create a product
-  const product = await createProduct();
   
   const planData = {
-    product_id: product.id,
-    name: "Music Streaming Premium Plan",
-    description: "Monthly premium music streaming subscription",
-    status: "ACTIVE",
+    product_id: 'MELOSTREAM_PREMIUM', // You'll need to create this product first
+    name: 'MeloStream Premium Annual',
+    description: 'Annual subscription for MeloStream Premium features',
+    status: 'ACTIVE',
     billing_cycles: [
       {
         frequency: {
-          interval_unit: "MONTH",
-          interval_count: 1
+          interval_unit: 'YEAR',
+          interval_count: 1,
         },
-        tenure_type: "REGULAR",
+        tenure_type: 'REGULAR',
         sequence: 1,
-        total_cycles: 0,
+        total_cycles: 0, // 0 = infinite
         pricing_scheme: {
           fixed_price: {
-            value: "9.99",
-            currency_code: "USD"
-          }
-        }
-      }
+            value: '25.00',
+            currency_code: 'USD',
+          },
+        },
+      },
     ],
     payment_preferences: {
       auto_bill_outstanding: true,
-      setup_fee: {
-        value: "0",
-        currency_code: "USD"
+      setup_fee_failure_action: 'CONTINUE',
+      payment_failure_threshold: 3,
+    },
+  };
+
+  try {
+    const response = await axios.post(
+      `${PAYPAL_BASE_URL}/v1/billing/plans`,
+      planData,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Prefer': 'return=representation',
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.error('PayPal Plan Creation Error:', error.response?.data);
+    throw new Error(`Failed to create PayPal subscription plan: ${error.response?.data?.message || error.message}`);
+  }
+}
+
+/**
+ * Create PayPal Product (prerequisite for subscription plan)
+ */
+export async function createPayPalProduct() {
+  const accessToken = await getPayPalAccessToken();
+  
+  const productData = {
+    id: 'MELOSTREAM_PREMIUM',
+    name: 'MeloStream Premium',
+    description: 'Premium music streaming service with unlimited access',
+    type: 'SERVICE',
+    category: 'SOFTWARE',
+  };
+
+  try {
+    const response = await axios.post(
+      `${PAYPAL_BASE_URL}/v1/catalogs/products`,
+      productData,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error: any) {
+    // Product might already exist, check for specific error
+    if (error.response?.data?.details?.[0]?.issue === 'DUPLICATE_RESOURCE_ID') {
+      console.log('PayPal product already exists, continuing...');
+      return { id: 'MELOSTREAM_PREMIUM' };
+    }
+    
+    console.error('PayPal Product Creation Error:', error.response?.data);
+    throw new Error(`Failed to create PayPal product: ${error.response?.data?.message || error.message}`);
+  }
+}
+
+/**
+ * Get Subscription Details
+ */
+export async function getPayPalSubscription(subscriptionId: string) {
+  const accessToken = await getPayPalAccessToken();
+  
+  try {
+    const response = await axios.get(
+      `${PAYPAL_BASE_URL}/v1/billing/subscriptions/${subscriptionId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.error('PayPal Subscription Fetch Error:', error.response?.data);
+    throw new Error(`Failed to fetch PayPal subscription: ${error.response?.data?.message || error.message}`);
+  }
+}
+
+/**
+ * Cancel PayPal Subscription
+ */
+export async function cancelPayPalSubscription(subscriptionId: string, reason: string = 'User requested cancellation') {
+  const accessToken = await getPayPalAccessToken();
+  
+  try {
+    const response = await axios.post(
+      `${PAYPAL_BASE_URL}/v1/billing/subscriptions/${subscriptionId}/cancel`,
+      {
+        reason: reason,
       },
-      setup_fee_failure_action: "CONTINUE",
-      payment_failure_threshold: 3
-    },
-    taxes: {
-      percentage: "0",
-      inclusive: false
-    }
-  };
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      }
+    );
 
-  const response = await fetch(`${PAYPAL_API_BASE}/v1/billing/plans`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`,
-      'Accept': 'application/json',
-      'Prefer': 'return=representation'
-    },
-    body: JSON.stringify(planData)
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to create PayPal plan: ${error}`);
+    return response.status === 204; // PayPal returns 204 No Content on successful cancellation
+  } catch (error: any) {
+    console.error('PayPal Subscription Cancellation Error:', error.response?.data);
+    throw new Error(`Failed to cancel PayPal subscription: ${error.response?.data?.message || error.message}`);
   }
-
-  return await response.json();
 }
 
-// Create a subscription for a user
-export async function createSubscription(planId: string, userEmail: string) {
+/**
+ * Verify PayPal Webhook Signature (for production security)
+ */
+export async function verifyPayPalWebhook(headers: any, body: string, webhookId: string): Promise<boolean> {
   const accessToken = await getPayPalAccessToken();
   
-  const subscriptionData = {
-    plan_id: planId,
-    subscriber: {
-      email_address: userEmail
-    },
-    application_context: {
-      brand_name: "Music Streaming Platform",
-      locale: "en-US",
-      shipping_preference: "NO_SHIPPING",
-      user_action: "SUBSCRIBE_NOW",
-      payment_method: {
-        payer_selected: "PAYPAL",
-        payee_preferred: "IMMEDIATE_PAYMENT_REQUIRED"
-      },
-      return_url: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000'}/subscription-success`,
-      cancel_url: `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000'}/subscriptions`
-    }
+  const verificationData = {
+    auth_algo: headers['paypal-auth-algo'],
+    cert_id: headers['paypal-cert-id'],
+    transmission_id: headers['paypal-transmission-id'],
+    transmission_sig: headers['paypal-transmission-sig'],
+    transmission_time: headers['paypal-transmission-time'],
+    webhook_id: webhookId,
+    webhook_event: JSON.parse(body),
   };
 
-  const response = await fetch(`${PAYPAL_API_BASE}/v1/billing/subscriptions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`,
-      'Accept': 'application/json',
-      'Prefer': 'return=representation'
-    },
-    body: JSON.stringify(subscriptionData)
-  });
+  try {
+    const response = await axios.post(
+      `${PAYPAL_BASE_URL}/v1/notifications/verify-webhook-signature`,
+      verificationData,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      }
+    );
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to create PayPal subscription: ${error}`);
+    return response.data.verification_status === 'SUCCESS';
+  } catch (error: any) {
+    console.error('PayPal Webhook Verification Error:', error.response?.data);
+    return false;
   }
-
-  return await response.json();
 }
 
-// Get subscription details
-export async function getSubscription(subscriptionId: string) {
-  const accessToken = await getPayPalAccessToken();
-  
-  const response = await fetch(`${PAYPAL_API_BASE}/v1/billing/subscriptions/${subscriptionId}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`,
-      'Accept': 'application/json'
-    }
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to get PayPal subscription: ${error}`);
+// Helper function to initialize PayPal products and plans
+export async function initializePayPalPlans() {
+  try {
+    console.log('Initializing PayPal products and plans...');
+    
+    // Create product first
+    await createPayPalProduct();
+    
+    // Create subscription plan
+    const plan = await createPayPalSubscriptionPlan();
+    
+    console.log('PayPal initialization complete. Plan ID:', plan.id);
+    return plan.id;
+  } catch (error) {
+    console.error('PayPal initialization failed:', error);
+    throw error;
   }
-
-  return await response.json();
-}
-
-// Cancel a subscription
-export async function cancelSubscription(subscriptionId: string, reason: string = "User requested cancellation") {
-  const accessToken = await getPayPalAccessToken();
-  
-  const cancelData = {
-    reason: reason
-  };
-
-  const response = await fetch(`${PAYPAL_API_BASE}/v1/billing/subscriptions/${subscriptionId}/cancel`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`,
-      'Accept': 'application/json'
-    },
-    body: JSON.stringify(cancelData)
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to cancel PayPal subscription: ${error}`);
-  }
-
-  return response.status === 204; // PayPal returns 204 No Content on successful cancellation
 }

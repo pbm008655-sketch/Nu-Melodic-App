@@ -1,128 +1,249 @@
-import { useEffect, useRef, useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import React, { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, CreditCard, CheckCircle, XCircle } from 'lucide-react';
 
-interface PayPalCheckoutProps {
-  amount: number;
-  onSuccess?: () => void;
-  onError?: (error: any) => void;
-}
-
+// PayPal SDK types
 declare global {
   interface Window {
-    paypal?: any;
+    paypal?: {
+      Buttons: (config: any) => { render: (selector: string) => void };
+    };
   }
 }
 
-export default function PayPalCheckout({ amount, onSuccess, onError }: PayPalCheckoutProps) {
+export default function PayPalCheckout() {
   const { toast } = useToast();
-  const paypalRef = useRef<HTMLDivElement>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [isPayPalLoaded, setIsPayPalLoaded] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  useEffect(() => {
-    const loadPayPalScript = () => {
-      if (window.paypal) {
-        renderPayPalButton();
-        return;
+  // Fetch PayPal Plan ID from server
+  const { data: planData, isLoading: planLoading } = useQuery({
+    queryKey: ['/api/paypal/plan-id'],
+    queryFn: async () => {
+      const res = await fetch('/api/paypal/plan-id');
+      if (!res.ok) throw new Error('Could not fetch PayPal plan.');
+      return res.json();
+    },
+    enabled: !!user && !user.isPremium,
+  });
+
+  // Get subscription status
+  const { data: subscriptionStatus, isLoading: statusLoading } = useQuery({
+    queryKey: ['/api/paypal/subscription-status'],
+     queryFn: async () => {
+      const res = await fetch('/api/paypal/subscription-status');
+      if (!res.ok) throw new Error('Could not fetch subscription status.');
+      return res.json();
+    },
+    enabled: !!user?.isPremium,
+  });
+
+  // Subscription success mutation
+  const subscriptionMutation = useMutation({
+    mutationFn: async (data: { subscriptionId: string; orderID?: string }) => {
+      const response = await fetch('/api/paypal/subscription-success', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Subscription failed');
       }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success!',
+        description: 'Welcome to MeloStream Premium! You now have unlimited access.',
+      });
+      // Invalidate queries to refetch user and subscription data
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/paypal/subscription-status'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Subscription Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setIsProcessing(false);
+    },
+  });
 
-      const script = document.createElement('script');
-      script.src = 'https://www.paypal.com/sdk/js?client-id=sandbox&currency=USD&intent=subscription';
-      script.onload = () => {
-        setIsLoaded(true);
-        renderPayPalButton();
-      };
-      script.onerror = () => {
-        toast({
-          title: "PayPal Loading Error",
-          description: "Failed to load PayPal. Please refresh the page.",
-          variant: "destructive",
-        });
-        onError?.("Failed to load PayPal SDK");
-      };
-      document.head.appendChild(script);
+  // Cancel subscription mutation
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/paypal/cancel-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Cancellation failed');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Subscription Cancelled',
+        description: data.message,
+      });
+       // Invalidate queries to refetch user and subscription data
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/paypal/subscription-status'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Cancellation Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Load PayPal SDK
+  useEffect(() => {
+    if (!planData?.planId || isPayPalLoaded || user?.isPremium) return;
+
+    const script = document.createElement('script');
+    script.src = `https://www.paypal.com/sdk/js?client-id=${import.meta.env.VITE_PAYPAL_CLIENT_ID}&vault=true&intent=subscription`;
+    script.async = true;
+    
+    script.onload = () => setIsPayPalLoaded(true);
+    
+    script.onerror = () => {
+      toast({
+        title: 'PayPal Loading Error',
+        description: 'Failed to load PayPal SDK. Please refresh and try again.',
+        variant: 'destructive',
+      });
     };
 
-    const renderPayPalButton = () => {
-      if (!window.paypal || !paypalRef.current) return;
+    document.body.appendChild(script);
 
-      window.paypal.Buttons({
-        style: {
-          layout: 'vertical',
-          color: 'blue',
-          shape: 'rect',
-          label: 'subscribe'
-        },
-        createSubscription: function(data: any, actions: any) {
-          return actions.subscription.create({
-            'plan_id': 'P-1234567890', // This would be your PayPal plan ID
-            'subscriber': {
-              'name': {
-                'given_name': 'Music',
-                'surname': 'Lover'
-              }
-            }
-          });
-        },
-        onApprove: async function(data: any, actions: any) {
-          try {
-            // Call your backend to handle the subscription
-            const response = await fetch('/api/paypal-subscription-success', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              credentials: 'include',
-              body: JSON.stringify({
-                subscriptionID: data.subscriptionID,
-                orderID: data.orderID
-              })
+    return () => {
+      // Check if script is still in the body before trying to remove
+      if (script.parentNode) {
+        document.body.removeChild(script);
+      }
+    };
+  }, [planData?.planId, isPayPalLoaded, toast, user?.isPremium]);
+
+  // Initialize PayPal Buttons
+  useEffect(() => {
+    if (!isPayPalLoaded || !window.paypal || !planData?.planId) return;
+
+    const paypalButtonContainer = document.getElementById('paypal-button-container');
+    if (paypalButtonContainer && paypalButtonContainer.childElementCount === 0) {
+      try {
+        window.paypal.Buttons({
+          createSubscription: (data: any, actions: any) => {
+            return actions.subscription.create({
+              'plan_id': planData.planId,
             });
-
-            if (response.ok) {
-              queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-              toast({
-                title: "Subscription Activated!",
-                description: "Welcome to Premium! You now have unlimited access.",
-              });
-              onSuccess?.();
-            } else {
-              throw new Error('Backend processing failed');
-            }
-          } catch (error) {
-            console.error('PayPal subscription error:', error);
+          },
+          onApprove: async (data: any, actions: any) => {
+            setIsProcessing(true);
+            toast({ title: 'Processing Subscription...', description: 'Please wait while we confirm your payment.' });
+            subscriptionMutation.mutate({
+              subscriptionId: data.subscriptionID,
+              orderID: data.orderID,
+            });
+          },
+          onError: (err: any) => {
+            console.error('PayPal Button Error:', err);
             toast({
-              title: "Subscription Error", 
-              description: "Failed to activate subscription. Please contact support.",
-              variant: "destructive",
+              title: 'Payment Error',
+              description: 'An error occurred with PayPal. Please try again.',
+              variant: 'destructive',
             });
-            onError?.(error);
-          }
-        },
-        onError: function(err: any) {
-          console.error('PayPal error:', err);
-          toast({
-            title: "Payment Error",
-            description: "There was an issue processing your payment. Please try again.",
-            variant: "destructive",
-          });
-          onError?.(err);
-        }
-      }).render(paypalRef.current);
-    };
+            setIsProcessing(false);
+          },
+        }).render('#paypal-button-container');
+      } catch (error) {
+        console.error("Failed to render PayPal Buttons:", error);
+      }
+    }
+  }, [isPayPalLoaded, planData?.planId, subscriptionMutation, toast]);
 
-    loadPayPalScript();
-  }, [amount, onSuccess, onError, toast]);
+  if (user?.isPremium) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>PayPal Subscription</CardTitle>
+          <CardDescription>Manage your MeloStream Premium subscription.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {statusLoading ? (
+            <div className="flex items-center space-x-2">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Loading subscription status...</span>
+            </div>
+          ) : subscriptionStatus?.hasSubscription ? (
+            <div>
+              <div className="flex items-center text-green-600 mb-4">
+                <CheckCircle className="h-5 w-5 mr-2" />
+                <p>Your subscription is active.</p>
+              </div>
+              <p className="text-sm text-gray-500 mb-1">Status: <span className="font-medium text-black">{subscriptionStatus.status}</span></p>
+              <p className="text-sm text-gray-500">Subscription ID: <span className="font-medium text-black">{subscriptionStatus.subscriptionId}</span></p>
+              <Button
+                variant="destructive"
+                className="w-full mt-6"
+                onClick={() => cancelMutation.mutate()}
+                disabled={cancelMutation.isPending}
+              >
+                {cancelMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
+                Cancel Subscription
+              </Button>
+            </div>
+          ) : (
+             <div className="flex items-center text-gray-600">
+                <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+                <p>Your Premium access is active (via another payment method).</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="paypal-checkout-container">
-      <div ref={paypalRef} className="paypal-button-container" />
-      {!isLoaded && (
-        <div className="flex items-center justify-center p-4">
-          <div className="animate-spin w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full" />
-          <span className="ml-2 text-zinc-400">Loading PayPal...</span>
-        </div>
-      )}
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Upgrade with PayPal</CardTitle>
+        <CardDescription>Get unlimited, ad-free listening for $25/year.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {planLoading || isProcessing ? (
+          <div className="flex justify-center items-center h-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="ml-3 text-lg">
+              {isProcessing ? 'Finalizing your subscription...' : 'Preparing checkout...'}
+            </p>
+          </div>
+        ) : (
+          <div id="paypal-button-container" className="min-h-[100px]">
+            {!isPayPalLoaded && (
+               <div className="flex justify-center items-center h-20">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="ml-3 text-lg">Loading PayPal...</p>
+               </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
