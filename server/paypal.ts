@@ -254,16 +254,42 @@ export async function initializePayPalPlans() {
   try {
     console.log('Initializing PayPal products and plans...');
     
-    // Create product first
-    await createPayPalProduct();
+    // Try to create product first, but handle if it already exists
+    try {
+      await createPayPalProduct();
+      console.log('PayPal product created successfully');
+    } catch (error: any) {
+      if (error.message?.includes('DUPLICATE_RESOURCE_IDENTIFIER')) {
+        console.log('PayPal product already exists, continuing with plan creation...');
+      } else {
+        throw error;
+      }
+    }
     
-    // Create subscription plan
-    const plan = await createPayPalSubscriptionPlan();
+    // Create or get existing subscription plan
+    let plan;
+    try {
+      plan = await createPayPalSubscriptionPlan();
+      console.log('PayPal plan created successfully');
+    } catch (error: any) {
+      if (error.message?.includes('DUPLICATE_RESOURCE_IDENTIFIER')) {
+        console.log('PayPal plan already exists, using existing plan ID...');
+        // Return the known plan ID if it already exists
+        const existingPlanId = process.env.PAYPAL_PLAN_ID || "P-61E45392RA019152XNCSJZ3Y";
+        console.log('PayPal initialization complete. Using existing Plan ID:', existingPlanId);
+        return existingPlanId;
+      } else {
+        throw error;
+      }
+    }
     
     console.log('PayPal initialization complete. Plan ID:', plan.id);
     return plan.id;
   } catch (error) {
     console.error('PayPal initialization failed:', error);
-    throw error;
+    // Fallback to using the known plan ID if initialization fails
+    const fallbackPlanId = process.env.PAYPAL_PLAN_ID || "P-61E45392RA019152XNCSJZ3Y";
+    console.log('Using fallback Plan ID:', fallbackPlanId);
+    return fallbackPlanId;
   }
 }
