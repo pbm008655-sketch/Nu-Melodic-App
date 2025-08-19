@@ -116,13 +116,31 @@ export default function PayPalCheckout() {
   useEffect(() => {
     if (!planData?.planId || isPayPalLoaded || user?.isPremium) return;
 
+    const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+    console.log('PayPal Client ID check:', clientId ? 'Present' : 'Missing');
+    
+    if (!clientId) {
+      toast({
+        title: 'PayPal Configuration Error',
+        description: 'PayPal Client ID is not configured. Please contact support.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const script = document.createElement('script');
-    script.src = `https://www.paypal.com/sdk/js?client-id=${import.meta.env.VITE_PAYPAL_CLIENT_ID}&vault=true&intent=subscription`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&vault=true&intent=subscription`;
     script.async = true;
     
-    script.onload = () => setIsPayPalLoaded(true);
+    console.log('Loading PayPal SDK with URL:', script.src);
     
-    script.onerror = () => {
+    script.onload = () => {
+      console.log('PayPal SDK loaded successfully');
+      setIsPayPalLoaded(true);
+    };
+    
+    script.onerror = (error) => {
+      console.error('PayPal SDK loading error:', error);
       toast({
         title: 'PayPal Loading Error',
         description: 'Failed to load PayPal SDK. Please refresh and try again.',
