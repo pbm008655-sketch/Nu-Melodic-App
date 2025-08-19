@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import Sidebar from "@/components/sidebar";
 import MobileMenu from "@/components/mobile-menu";
 import Player from "@/components/player";
+import PayPalCheckout from "@/components/paypal-checkout";
 import { Check, Crown, XCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -183,42 +184,66 @@ export default function SubscriptionsPage() {
                     </ul>
                   </CardContent>
                   <CardFooter className="space-y-4">
-                    <Button 
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
-                      onClick={async () => {
-                        setIsProcessing(true);
-                        try {
-                          const res = await fetch('/api/upgrade-to-premium', { 
-                            method: 'POST',
-                            credentials: 'include'
-                          });
-                          
-                          if (res.ok) {
-                            queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-                            toast({
-                              title: "Subscription Activated!",
-                              description: "Welcome to Premium! You now have unlimited access.",
-                            });
-                          } else {
-                            throw new Error('Failed to upgrade');
-                          }
-                        } catch (error) {
+                    <div className="w-full">
+                      <PayPalCheckout 
+                        amount={25}
+                        onSuccess={() => {
                           toast({
-                            title: "Subscription Error",
-                            description: "Failed to activate subscription. Please try again.",
+                            title: "Subscription Activated!",
+                            description: "Welcome to Premium! You now have unlimited access.",
+                          });
+                        }}
+                        onError={(error) => {
+                          console.error('PayPal checkout error:', error);
+                          toast({
+                            title: "Payment Error",
+                            description: "There was an issue processing your payment. Please try again.",
                             variant: "destructive",
                           });
-                        } finally {
-                          setIsProcessing(false);
-                        }
-                      }}
-                      disabled={isProcessing}
-                    >
-                      <div className="w-4 h-4 bg-white rounded flex items-center justify-center">
-                        <span className="text-blue-600 text-xs font-bold">P</span>
-                      </div>
-                      {isProcessing ? "Processing..." : "Subscribe with PayPal"}
-                    </Button>
+                        }}
+                      />
+                    </div>
+                    
+                    <div className="w-full pt-2 border-t border-zinc-800">
+                      <Button 
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                        onClick={async () => {
+                          setIsProcessing(true);
+                          try {
+                            const res = await fetch('/api/upgrade-to-premium', { 
+                              method: 'POST',
+                              credentials: 'include'
+                            });
+                            
+                            if (res.ok) {
+                              queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+                              toast({
+                                title: "Subscription Activated!",
+                                description: "Welcome to Premium! You now have unlimited access.",
+                              });
+                            } else {
+                              throw new Error('Failed to upgrade');
+                            }
+                          } catch (error) {
+                            toast({
+                              title: "Subscription Error",
+                              description: "Failed to activate subscription. Please try again.",
+                              variant: "destructive",
+                            });
+                          } finally {
+                            setIsProcessing(false);
+                          }
+                        }}
+                        disabled={isProcessing}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <div className="w-4 h-4 bg-white rounded flex items-center justify-center">
+                          <span className="text-blue-600 text-xs font-bold">P</span>
+                        </div>
+                        {isProcessing ? "Processing..." : "Quick Upgrade (Test)"}
+                      </Button>
+                    </div>
                   </CardFooter>
                 </Card>
               </div>

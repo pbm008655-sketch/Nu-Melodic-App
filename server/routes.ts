@@ -684,6 +684,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PayPal subscription success endpoint
+  app.post('/api/paypal-subscription-success', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const { subscriptionID, orderID } = req.body;
+      const userId = req.user!.id;
+
+      // Update user to premium status with PayPal subscription
+      await storage.updateUserPremiumStatus(userId, true);
+      await storage.updatePaypalInfo(userId, {
+        paypalSubscriptionId: subscriptionID || `paypal-sub-${Date.now()}`,
+        paymentProvider: 'paypal'
+      });
+
+      console.log(`PayPal subscription activated for user ${userId}: ${subscriptionID}`);
+      
+      res.json({
+        success: true,
+        message: "Subscription activated successfully"
+      });
+    } catch (error: any) {
+      console.error('Error processing PayPal subscription:', error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to process subscription" 
+      });
+    }
+  });
+
   // PAYPAL PAYMENT ROUTES
   
 
