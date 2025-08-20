@@ -71,14 +71,14 @@ export async function createPayPalSubscriptionPlan() {
   const accessToken = await getPayPalAccessToken();
   
   const planData = {
-    product_id: 'MELOSTREAM_PREMIUM_MONTHLY', // New product for monthly billing
-    name: 'MeloStream Premium Monthly',
-    description: 'Monthly subscription for MeloStream Premium features',
+    product_id: 'MELOSTREAM_PREMIUM', // You'll need to create this product first
+    name: 'MeloStream Premium Annual',
+    description: 'Annual subscription for MeloStream Premium features',
     status: 'ACTIVE',
     billing_cycles: [
       {
         frequency: {
-          interval_unit: 'MONTH',
+          interval_unit: 'YEAR',
           interval_count: 1,
         },
         tenure_type: 'REGULAR',
@@ -86,8 +86,8 @@ export async function createPayPalSubscriptionPlan() {
         total_cycles: 0, // 0 = infinite
         pricing_scheme: {
           fixed_price: {
-            value: '9.99',
-            currency_code: 'GBP',
+            value: '25.00',
+            currency_code: 'USD',
           },
         },
       },
@@ -127,7 +127,7 @@ export async function createPayPalProduct() {
   const accessToken = await getPayPalAccessToken();
   
   const productData = {
-    id: 'MELOSTREAM_PREMIUM_MONTHLY',
+    id: 'MELOSTREAM_PREMIUM',
     name: 'MeloStream Premium',
     description: 'Premium music streaming service with unlimited access',
     type: 'SERVICE',
