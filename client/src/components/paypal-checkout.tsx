@@ -21,13 +21,14 @@ export default function PayPalCheckout() {
   const queryClient = useQueryClient();
   const [isPayPalLoaded, setIsPayPalLoaded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
-  // Fetch PayPal Plan ID from server
+  // Fetch PayPal Plans from server
   const { data: planData, isLoading: planLoading } = useQuery({
     queryKey: ['/api/paypal/plan-id'],
     queryFn: async () => {
       const res = await fetch('/api/paypal/plan-id');
-      if (!res.ok) throw new Error('Could not fetch PayPal plan.');
+      if (!res.ok) throw new Error('Could not fetch PayPal plans.');
       return res.json();
     },
     enabled: !!user && !user.isPremium,
@@ -112,9 +113,18 @@ export default function PayPalCheckout() {
     },
   });
 
+  // Set default selected plan when data loads
+  useEffect(() => {
+    if (planData?.plans && !selectedPlan) {
+      // Default to intro plan if available, otherwise regular plan
+      const defaultPlan = planData.plans.find((p: any) => p.isIntro) || planData.plans[0];
+      setSelectedPlan(defaultPlan?.id);
+    }
+  }, [planData, selectedPlan]);
+
   // Load PayPal SDK
   useEffect(() => {
-    if (!planData?.planId || isPayPalLoaded || user?.isPremium) return;
+    if (!planData?.plans || isPayPalLoaded || user?.isPremium) return;
 
     const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
     console.log('PayPal Client ID check:', clientId ? 'Present' : 'Missing');
@@ -156,19 +166,22 @@ export default function PayPalCheckout() {
         document.body.removeChild(script);
       }
     };
-  }, [planData?.planId, isPayPalLoaded, toast, user?.isPremium]);
+  }, [planData?.plans, isPayPalLoaded, toast, user?.isPremium]);
 
   // Initialize PayPal Buttons
   useEffect(() => {
-    if (!isPayPalLoaded || !window.paypal || !planData?.planId) return;
+    if (!isPayPalLoaded || !window.paypal || !selectedPlan) return;
 
     const paypalButtonContainer = document.getElementById('paypal-button-container');
-    if (paypalButtonContainer && paypalButtonContainer.childElementCount === 0) {
+    if (paypalButtonContainer) {
+      // Clear existing buttons
+      paypalButtonContainer.innerHTML = '';
+      
       try {
         window.paypal.Buttons({
           createSubscription: (data: any, actions: any) => {
             return actions.subscription.create({
-              'plan_id': planData.planId,
+              'plan_id': selectedPlan,
             });
           },
           onApprove: async (data: any, actions: any) => {
@@ -193,7 +206,7 @@ export default function PayPalCheckout() {
         console.error("Failed to render PayPal Buttons:", error);
       }
     }
-  }, [isPayPalLoaded, planData?.planId, subscriptionMutation, toast]);
+  }, [isPayPalLoaded, selectedPlan, subscriptionMutation, toast]);
 
   if (user?.isPremium) {
     return (
@@ -241,7 +254,7 @@ export default function PayPalCheckout() {
     <Card>
       <CardHeader>
         <CardTitle>Upgrade with PayPal</CardTitle>
-        <CardDescription>Get unlimited, ad-free listening for $25/year.</CardDescription>
+        <CardDescription>Choose your MeloStream Premium plan and get unlimited, ad-free listening.</CardDescription>
       </CardHeader>
       <CardContent>
         {planLoading || isProcessing ? (
@@ -252,13 +265,55 @@ export default function PayPalCheckout() {
             </p>
           </div>
         ) : (
-          <div id="paypal-button-container" className="min-h-[100px]">
-            {!isPayPalLoaded && (
-               <div className="flex justify-center items-center h-20">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="ml-3 text-lg">Loading PayPal...</p>
-               </div>
+          <div>
+            {/* Plan Selection */}
+            {planData?.plans && planData.plans.length > 1 && (
+              <div className="mb-6">
+                <h3 className="font-semibold mb-3">Choose Your Plan</h3>
+                <div className="space-y-3">
+                  {planData.plans.map((plan: any) => (
+                    <div 
+                      key={plan.id}
+                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                        selectedPlan === plan.id ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setSelectedPlan(plan.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium">{plan.name}</h4>
+                            {plan.isIntro && (
+                              <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">
+                                Limited Time!
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600">{plan.description}</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold">{plan.price}</div>
+                          <div className="text-sm text-gray-500">per {plan.period}</div>
+                          {plan.isIntro && (
+                            <div className="text-xs text-green-600 font-medium">Save 60%!</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
+            
+            {/* PayPal Button */}
+            <div id="paypal-button-container" className="min-h-[100px]">
+              {!isPayPalLoaded && (
+                 <div className="flex justify-center items-center h-20">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="ml-3 text-lg">Loading PayPal...</p>
+                 </div>
+              )}
+            </div>
           </div>
         )}
       </CardContent>

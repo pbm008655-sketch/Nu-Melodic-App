@@ -121,6 +121,62 @@ export async function createPayPalSubscriptionPlan() {
 }
 
 /**
+ * Create PayPal Introductory Subscription Plan - $9.99 Annual
+ */
+export async function createPayPalIntroductoryPlan() {
+  const accessToken = await getPayPalAccessToken();
+  
+  const planData = {
+    product_id: 'MELOSTREAM_PREMIUM',
+    name: 'MeloStream Premium Intro Annual',
+    description: 'Limited-time introductory annual subscription for MeloStream Premium features - $9.99/year',
+    status: 'ACTIVE',
+    billing_cycles: [
+      {
+        frequency: {
+          interval_unit: 'YEAR',
+          interval_count: 1,
+        },
+        tenure_type: 'REGULAR',
+        sequence: 1,
+        total_cycles: 0, // 0 = infinite
+        pricing_scheme: {
+          fixed_price: {
+            value: '9.99',
+            currency_code: 'USD',
+          },
+        },
+      },
+    ],
+    payment_preferences: {
+      auto_bill_outstanding: true,
+      setup_fee_failure_action: 'CONTINUE',
+      payment_failure_threshold: 3,
+    },
+  };
+
+  try {
+    const response = await axios.post(
+      `${PAYPAL_BASE_URL}/v1/billing/plans`,
+      planData,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Prefer': 'return=representation',
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.error('PayPal Introductory Plan Creation Error:', error.response?.data);
+    throw new Error(`Failed to create PayPal introductory plan: ${error.response?.data?.message || error.message}`);
+  }
+}
+
+/**
  * Create PayPal Product (prerequisite for subscription plan)
  */
 export async function createPayPalProduct() {
@@ -266,30 +322,47 @@ export async function initializePayPalPlans() {
       }
     }
     
-    // Create or get existing subscription plan
-    let plan;
+    // Create regular subscription plan (keep existing stable plan)
+    let regularPlan;
     try {
-      plan = await createPayPalSubscriptionPlan();
-      console.log('PayPal plan created successfully');
+      regularPlan = await createPayPalSubscriptionPlan();
+      console.log('PayPal regular plan created successfully');
     } catch (error: any) {
       if (error.message?.includes('DUPLICATE_RESOURCE_IDENTIFIER')) {
-        console.log('PayPal plan already exists, using existing plan ID...');
-        // Return the known plan ID if it already exists
-        const existingPlanId = process.env.PAYPAL_PLAN_ID || "P-61E45392RA019152XNCSJZ3Y";
-        console.log('PayPal initialization complete. Using existing Plan ID:', existingPlanId);
-        return existingPlanId;
+        console.log('PayPal regular plan already exists, using existing plan ID...');
+        regularPlan = { id: process.env.PAYPAL_PLAN_ID || "P-61E45392RA019152XNCSJZ3Y" };
       } else {
         throw error;
       }
     }
     
-    console.log('PayPal initialization complete. Plan ID:', plan.id);
-    return plan.id;
+    // Create introductory plan
+    let introPlan;
+    try {
+      introPlan = await createPayPalIntroductoryPlan();
+      console.log('PayPal introductory plan created successfully');
+    } catch (error: any) {
+      if (error.message?.includes('DUPLICATE_RESOURCE_IDENTIFIER')) {
+        console.log('PayPal introductory plan already exists...');
+        introPlan = { id: "INTRO_PLAN_FALLBACK" }; // Will need to set actual ID
+      } else {
+        console.log('Could not create introductory plan, continuing with regular plan only');
+        introPlan = null;
+      }
+    }
+    
+    const planData = {
+      regularPlanId: regularPlan.id,
+      introPlanId: introPlan?.id || null
+    };
+    
+    console.log('PayPal initialization complete. Plans:', planData);
+    return planData;
   } catch (error) {
     console.error('PayPal initialization failed:', error);
     // Fallback to using the known plan ID if initialization fails
     const fallbackPlanId = process.env.PAYPAL_PLAN_ID || "P-61E45392RA019152XNCSJZ3Y";
     console.log('Using fallback Plan ID:', fallbackPlanId);
-    return fallbackPlanId;
+    return { regularPlanId: fallbackPlanId, introPlanId: null };
   }
 }

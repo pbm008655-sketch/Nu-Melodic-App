@@ -18,16 +18,16 @@ import {
 } from './paypal';
 import { storage, updateUserPremium, updateUserPayPalSubscription, getUserByPayPalSubscriptionId, getUserById } from './storage';
 
-// PayPal plan ID - this would be created in PayPal dashboard
-const PAYPAL_PLAN_ID = process.env.PAYPAL_PLAN_ID || "P-5ML4271244454362WXNWU5NQ";
-
-// Initialize PayPal plans on server start (call this once)
-let PAYPAL_PLAN_ID_INIT: string | null = null;
+// PayPal plan IDs
+let PAYPAL_PLANS: { regularPlanId: string; introPlanId: string | null } = {
+  regularPlanId: "P-61E45392RA019152XNCSJZ3Y",
+  introPlanId: null
+};
 
 async function initPayPal() {
   try {
-    PAYPAL_PLAN_ID_INIT = await initializePayPalPlans();
-    console.log('PayPal integration ready with plan ID:', PAYPAL_PLAN_ID_INIT);
+    PAYPAL_PLANS = await initializePayPalPlans();
+    console.log('PayPal integration ready with plan ID:', PAYPAL_PLANS.regularPlanId);
   } catch (error) {
     console.error('PayPal initialization failed:', error);
   }
@@ -748,11 +748,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
    * Get PayPal subscription plan ID for frontend
    */
   app.get('/api/paypal/plan-id', (req, res) => {
-    if (!PAYPAL_PLAN_ID_INIT) {
-      return res.status(500).json({ error: 'PayPal plan not initialized' });
+    if (!PAYPAL_PLANS.regularPlanId) {
+      return res.status(500).json({ error: 'PayPal plans not initialized' });
     }
     
-    res.json({ planId: PAYPAL_PLAN_ID_INIT });
+    res.json({ 
+      plans: [
+        {
+          id: PAYPAL_PLANS.regularPlanId,
+          name: 'MeloStream Premium Annual',
+          price: '$25.00',
+          period: 'year',
+          description: 'Annual subscription for MeloStream Premium features',
+          isIntro: false
+        },
+        ...(PAYPAL_PLANS.introPlanId ? [{
+          id: PAYPAL_PLANS.introPlanId,
+          name: 'MeloStream Premium Intro Annual',
+          price: '$9.99',
+          period: 'year', 
+          description: 'Limited-time introductory annual subscription - Save 60%!',
+          isIntro: true
+        }] : [])
+      ]
+    });
   });
 
   /**
