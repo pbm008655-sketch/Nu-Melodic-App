@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage, updateUserPremium, updateUserPayPalSubscription, getUserByPayPalSubscriptionId, getUserById } from './storage';
 import { setupAuth } from "./auth";
 import { importPersonalTracks } from "./add-personal-tracks";
 import { getStorageInfo, formatBytes } from "./storage-monitor";
@@ -16,20 +16,28 @@ import {
   verifyPayPalWebhook,
   initializePayPalPlans 
 } from './paypal';
-import { storage, updateUserPremium, updateUserPayPalSubscription, getUserByPayPalSubscriptionId, getUserById } from './storage';
 
-// PayPal plan IDs
+// PayPal plan IDs - For demonstration, manually setting the intro plan
+// In production, both plans would be created in PayPal dashboard
 let PAYPAL_PLANS: { regularPlanId: string; introPlanId: string | null } = {
   regularPlanId: "P-61E45392RA019152XNCSJZ3Y",
-  introPlanId: null
+  introPlanId: "P-61E45392RA019152XNCSJZ3Y" // Using same plan for demo - in production would be different plan ID
 };
 
 async function initPayPal() {
   try {
-    PAYPAL_PLANS = await initializePayPalPlans();
-    console.log('PayPal integration ready with plan ID:', PAYPAL_PLANS.regularPlanId);
+    const result = await initializePayPalPlans();
+    if (result.regularPlanId) {
+      // Only update the regular plan ID, keep manual intro plan
+      PAYPAL_PLANS.regularPlanId = result.regularPlanId;
+      if (result.introPlanId) {
+        PAYPAL_PLANS.introPlanId = result.introPlanId;
+      }
+    }
+    console.log('PayPal integration ready with plans:', PAYPAL_PLANS);
   } catch (error) {
     console.error('PayPal initialization failed:', error);
+    console.log('Using fallback plans:', PAYPAL_PLANS);
   }
 }
 

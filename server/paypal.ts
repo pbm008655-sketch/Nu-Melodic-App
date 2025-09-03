@@ -344,7 +344,9 @@ export async function initializePayPalPlans() {
     } catch (error: any) {
       if (error.message?.includes('DUPLICATE_RESOURCE_IDENTIFIER')) {
         console.log('PayPal introductory plan already exists...');
-        introPlan = { id: "INTRO_PLAN_FALLBACK" }; // Will need to set actual ID
+        // For now, we'll manually create a second plan with a known ID
+        // You would need to manually create this in PayPal dashboard or use a different approach
+        introPlan = null; // Disable intro plan for now since creation failed
       } else {
         console.log('Could not create introductory plan, continuing with regular plan only');
         introPlan = null;
