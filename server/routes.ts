@@ -17,11 +17,10 @@ import {
   initializePayPalPlans 
 } from './paypal';
 
-// PayPal plan IDs - For demonstration, manually setting the intro plan
-// In production, both plans would be created in PayPal dashboard
+// PayPal plan ID - Single plan with $9.99 annual pricing
 let PAYPAL_PLANS: { regularPlanId: string; introPlanId: string | null } = {
   regularPlanId: "P-61E45392RA019152XNCSJZ3Y",
-  introPlanId: "P-61E45392RA019152XNCSJZ3Y" // Using same plan for demo - in production would be different plan ID
+  introPlanId: null // Single plan approach
 };
 
 async function initPayPal() {
@@ -765,19 +764,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         {
           id: PAYPAL_PLANS.regularPlanId,
           name: 'MeloStream Premium Annual',
-          price: '$25.00',
-          period: 'year',
-          description: 'Annual subscription for MeloStream Premium features',
-          isIntro: false
-        },
-        ...(PAYPAL_PLANS.introPlanId ? [{
-          id: PAYPAL_PLANS.introPlanId,
-          name: 'MeloStream Premium Intro Annual',
           price: '$9.99',
-          period: 'year', 
-          description: 'Limited-time introductory annual subscription - Save 60%!',
-          isIntro: true
-        }] : [])
+          period: 'year',
+          description: 'Annual subscription for MeloStream Premium features - Early adopter pricing!',
+          isIntro: false
+        }
       ]
     });
   });

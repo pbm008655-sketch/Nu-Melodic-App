@@ -254,7 +254,7 @@ export default function PayPalCheckout() {
     <Card>
       <CardHeader>
         <CardTitle>Upgrade with PayPal</CardTitle>
-        <CardDescription>Choose your MeloStream Premium plan and get unlimited, ad-free listening.</CardDescription>
+        <CardDescription>Get unlimited, ad-free listening for just $9.99/year - Early adopter pricing!</CardDescription>
       </CardHeader>
       <CardContent>
         {planLoading || isProcessing ? (

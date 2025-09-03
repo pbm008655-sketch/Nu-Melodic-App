@@ -160,7 +160,7 @@ export default function SubscriptionsPage() {
                   <CardHeader>
                     <CardTitle>Get More with Premium</CardTitle>
                     <CardDescription className="text-zinc-300">
-                      $25.00 for a full year - No more preview limits!
+                      $9.99 for a full year - Early adopter pricing!
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -186,7 +186,7 @@ export default function SubscriptionsPage() {
                   <CardFooter className="space-y-4">
                     <div className="w-full">
                       <PayPalCheckout 
-                        amount={25}
+                        amount={9.99}
                         onSuccess={() => {
                           toast({
                             title: "Subscription Activated!",
