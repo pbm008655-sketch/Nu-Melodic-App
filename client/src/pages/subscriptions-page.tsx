@@ -106,7 +106,7 @@ export default function SubscriptionsPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-zinc-400">Price</span>
-                      <span className="font-medium">$25.00 per year</span>
+                      <span className="font-medium">$9.99 per year</span>
                     </div>
                     {user.premiumExpiry && (
                       <div className="flex justify-between">
@@ -185,23 +185,7 @@ export default function SubscriptionsPage() {
                   </CardContent>
                   <CardFooter className="space-y-4">
                     <div className="w-full">
-                      <PayPalCheckout 
-                        amount={9.99}
-                        onSuccess={() => {
-                          toast({
-                            title: "Subscription Activated!",
-                            description: "Welcome to Premium! You now have unlimited access.",
-                          });
-                        }}
-                        onError={(error) => {
-                          console.error('PayPal checkout error:', error);
-                          toast({
-                            title: "Payment Error",
-                            description: "There was an issue processing your payment. Please try again.",
-                            variant: "destructive",
-                          });
-                        }}
-                      />
+                      <PayPalCheckout />
                     </div>
                     
                     <div className="w-full pt-2 border-t border-zinc-800">

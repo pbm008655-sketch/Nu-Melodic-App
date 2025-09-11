@@ -1,8 +1,8 @@
-# MeloStream - Personal Music Streaming Service
+# NU MELODIC - Personal Music Streaming Service
 
 ## Overview
 
-MeloStream is a full-stack music streaming application built with React, Express, and PostgreSQL. It provides users with the ability to stream music, create playlists, and offers premium subscription features. The application includes comprehensive music playback functionality, user authentication, payment processing through Stripe and PayPal, and administrative tools for content management.
+NU MELODIC is a full-stack music streaming application built with React, Express, and PostgreSQL. It provides users with the ability to stream music, create playlists, and offers premium subscription features. The application includes comprehensive music playback functionality, user authentication, payment processing through Stripe and PayPal, and administrative tools for content management.
 
 ## User Preferences
 

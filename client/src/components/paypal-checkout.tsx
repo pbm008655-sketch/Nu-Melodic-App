@@ -64,7 +64,7 @@ export default function PayPalCheckout() {
     onSuccess: () => {
       toast({
         title: 'Success!',
-        description: 'Welcome to MeloStream Premium! You now have unlimited access.',
+        description: 'Welcome to NU MELODIC Premium! You now have unlimited access.',
       });
       // Invalidate queries to refetch user and subscription data
       queryClient.invalidateQueries({ queryKey: ['/api/user'] });
@@ -213,7 +213,7 @@ export default function PayPalCheckout() {
       <Card>
         <CardHeader>
           <CardTitle>PayPal Subscription</CardTitle>
-          <CardDescription>Manage your MeloStream Premium subscription.</CardDescription>
+          <CardDescription>Manage your NU MELODIC Premium subscription.</CardDescription>
         </CardHeader>
         <CardContent>
           {statusLoading ? (

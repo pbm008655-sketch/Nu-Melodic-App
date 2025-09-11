@@ -25,7 +25,7 @@ export default function Sidebar() {
       {/* Header Section - Fixed */}
       <div className="p-6 flex-shrink-0">
         <h1 className="font-heading font-bold text-2xl mb-8 flex items-center">
-          <Music className="h-6 w-6 mr-2 text-primary" /> MeloStream
+          <img src="@assets/Image-1_1757586353329.jpg" alt="NU MELODIC" className="h-8 w-auto mr-3" />
         </h1>
         
         <nav>
