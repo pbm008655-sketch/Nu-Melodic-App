@@ -37,7 +37,7 @@ export default function MobileMenu() {
       <div className="md:hidden bg-zinc-900 p-4 flex justify-between items-center sticky top-0 z-10">
         <Link href="/">
           <div className="font-heading font-bold text-xl flex items-center cursor-pointer">
-            <img src="@assets/Image-1_1757586353329.jpg" alt="NU MELODIC" className="h-6 w-auto" />
+            <img src="/nu-melodic-logo.jpg" alt="NU MELODIC" className="h-8 w-auto" />
           </div>
         </Link>
         <button 
