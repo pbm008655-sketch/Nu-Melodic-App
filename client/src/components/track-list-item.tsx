@@ -42,15 +42,24 @@ export function TrackListItem({ track, album, index, showAlbum = false, playlist
   
   const addToPlaylistMutation = useMutation({
     mutationFn: async ({ playlistId, trackId }: { playlistId: number; trackId: number }) => {
-      await apiRequest("POST", `/api/playlists/${playlistId}/tracks`, { trackId });
+      console.log(`Adding track ${trackId} to playlist ${playlistId}`);
+      const response = await apiRequest("POST", `/api/playlists/${playlistId}/tracks`, { trackId });
+      console.log(`Add track response:`, response);
+      return response;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      console.log(`Successfully added track ${variables.trackId} to playlist ${variables.playlistId}`);
+      // Invalidate playlist queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["/api/playlists"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/playlists/${variables.playlistId}`] });
+      
       toast({
         title: "Track added",
         description: "Track added to playlist successfully",
       });
     },
     onError: (error) => {
+      console.error("Failed to add track to playlist:", error);
       toast({
         title: "Error",
         description: error.message,
