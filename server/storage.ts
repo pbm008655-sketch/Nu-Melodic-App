@@ -1,4 +1,4 @@
-import { albums, tracks, playlists, playlistTracks, users, trackPlays, type User, type InsertUser, type Album, type Track, type Playlist, type PlaylistTrack, type TrackPlay } from "@shared/schema";
+import { albums, tracks, playlists, playlistTracks, users, trackPlays, userFavorites, type User, type InsertUser, type Album, type Track, type Playlist, type PlaylistTrack, type TrackPlay, type UserFavorite } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, sql, inArray, and, lt, isNotNull, desc, asc, or, like } from "drizzle-orm";
 import createMemoryStore from "memorystore";
@@ -51,6 +51,12 @@ export interface IStorage {
   getPlaysByTimeRange(startDate: Date, endDate: Date): Promise<{date: string; plays: number}[]>;
   getUserListeningHistory(userId: number, limit?: number): Promise<{track: Track; album: Album; playedAt: Date}[]>;
   
+  // User favorites methods
+  getUserFavorites(userId: number): Promise<Track[]>;
+  isTrackFavorited(userId: number, trackId: number): Promise<boolean>;
+  addToFavorites(userId: number, trackId: number): Promise<UserFavorite>;
+  removeFromFavorites(userId: number, trackId: number): Promise<boolean>;
+  
   sessionStore: any; // Type for session store
 }
 
@@ -62,6 +68,7 @@ export class MemStorage implements IStorage {
   private playlists: Map<number, Playlist>;
   private playlistTracks: Map<number, PlaylistTrack>;
   private trackPlays: Map<number, TrackPlay>;
+  private userFavorites: Map<number, UserFavorite>;
   
   userId: number;
   albumId: number;
@@ -69,6 +76,7 @@ export class MemStorage implements IStorage {
   playlistId: number;
   playlistTrackId: number;
   trackPlayId: number;
+  userFavoriteId: number;
   sessionStore: any;
 
   constructor() {
@@ -78,6 +86,7 @@ export class MemStorage implements IStorage {
     this.playlists = new Map();
     this.playlistTracks = new Map();
     this.trackPlays = new Map();
+    this.userFavorites = new Map();
     
     this.userId = 1;
     this.albumId = 1;
@@ -85,6 +94,7 @@ export class MemStorage implements IStorage {
     this.playlistId = 1;
     this.playlistTrackId = 1;
     this.trackPlayId = 1;
+    this.userFavoriteId = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
@@ -556,6 +566,52 @@ export class MemStorage implements IStorage {
       };
     });
   }
+
+  // User favorites methods
+  async getUserFavorites(userId: number): Promise<Track[]> {
+    const userFavoritesList = Array.from(this.userFavorites.values())
+      .filter(fav => fav.userId === userId)
+      .sort((a, b) => b.likedAt.getTime() - a.likedAt.getTime()); // Newest first
+
+    return userFavoritesList.map(fav => this.tracks.get(fav.trackId)!).filter(Boolean);
+  }
+
+  async isTrackFavorited(userId: number, trackId: number): Promise<boolean> {
+    return Array.from(this.userFavorites.values())
+      .some(fav => fav.userId === userId && fav.trackId === trackId);
+  }
+
+  async addToFavorites(userId: number, trackId: number): Promise<UserFavorite> {
+    // Check if already favorited
+    const existing = Array.from(this.userFavorites.values())
+      .find(fav => fav.userId === userId && fav.trackId === trackId);
+    
+    if (existing) {
+      return existing;
+    }
+
+    const id = this.userFavoriteId++;
+    const newFavorite: UserFavorite = {
+      id,
+      userId,
+      trackId,
+      likedAt: new Date()
+    };
+
+    this.userFavorites.set(id, newFavorite);
+    return newFavorite;
+  }
+
+  async removeFromFavorites(userId: number, trackId: number): Promise<boolean> {
+    const favorite = Array.from(this.userFavorites.values())
+      .find(fav => fav.userId === userId && fav.trackId === trackId);
+
+    if (!favorite) {
+      return false;
+    }
+
+    return this.userFavorites.delete(favorite.id);
+  }
 }
 
 // Database storage implementation
@@ -933,6 +989,76 @@ export class DatabaseStorage implements IStorage {
     );
     
     return history;
+  }
+
+  // User favorites methods
+  async getUserFavorites(userId: number): Promise<Track[]> {
+    const favoriteRecords = await db
+      .select()
+      .from(userFavorites)
+      .where(eq(userFavorites.userId, userId))
+      .orderBy(sql`${userFavorites.likedAt} desc`);
+
+    const trackIds = favoriteRecords.map(fav => fav.trackId);
+    if (trackIds.length === 0) return [];
+
+    const favoriteTracks = await db
+      .select()
+      .from(tracks)
+      .where(sql`${tracks.id} = ANY(${trackIds})`);
+
+    return favoriteTracks;
+  }
+
+  async isTrackFavorited(userId: number, trackId: number): Promise<boolean> {
+    const favorite = await db
+      .select()
+      .from(userFavorites)
+      .where(and(
+        eq(userFavorites.userId, userId),
+        eq(userFavorites.trackId, trackId)
+      ))
+      .limit(1);
+
+    return favorite.length > 0;
+  }
+
+  async addToFavorites(userId: number, trackId: number): Promise<UserFavorite> {
+    // Check if already favorited
+    const existing = await this.isTrackFavorited(userId, trackId);
+    if (existing) {
+      // Return the existing favorite
+      const existingFavorite = await db
+        .select()
+        .from(userFavorites)
+        .where(and(
+          eq(userFavorites.userId, userId),
+          eq(userFavorites.trackId, trackId)
+        ))
+        .limit(1);
+      return existingFavorite[0];
+    }
+
+    const [newFavorite] = await db
+      .insert(userFavorites)
+      .values({
+        userId,
+        trackId,
+      })
+      .returning();
+
+    return newFavorite;
+  }
+
+  async removeFromFavorites(userId: number, trackId: number): Promise<boolean> {
+    const result = await db
+      .delete(userFavorites)
+      .where(and(
+        eq(userFavorites.userId, userId),
+        eq(userFavorites.trackId, trackId)
+      ));
+
+    return result.count > 0;
   }
 }
 

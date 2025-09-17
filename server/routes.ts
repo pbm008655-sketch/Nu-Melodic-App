@@ -4,7 +4,7 @@ import { storage, updateUserPremium, updateUserPayPalSubscription, getUserByPayP
 import { setupAuth } from "./auth";
 import { importPersonalTracks } from "./add-personal-tracks";
 import { getStorageInfo, formatBytes } from "./storage-monitor";
-import { insertPlaylistSchema, insertTrackPlaySchema } from "@shared/schema";
+import { insertPlaylistSchema, insertTrackPlaySchema, insertUserFavoriteSchema } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import fs from "fs";
@@ -1234,6 +1234,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
     const history = await storage.getUserListeningHistory(req.user!.id, limit);
     res.json(history);
+  });
+
+  // USER FAVORITES ROUTES - Protected Routes
+  // Get user's favorite tracks
+  app.get("/api/favorites", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const favorites = await storage.getUserFavorites(req.user!.id);
+      res.json(favorites);
+    } catch (error) {
+      console.error("Error getting user favorites:", error);
+      res.status(500).json({ message: "Failed to get favorites" });
+    }
+  });
+
+  // Check if a track is favorited by the user
+  app.get("/api/tracks/:id/is-favorited", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const trackId = parseInt(req.params.id);
+    if (isNaN(trackId)) {
+      return res.status(400).json({ message: "Invalid track ID" });
+    }
+
+    try {
+      const isFavorited = await storage.isTrackFavorited(req.user!.id, trackId);
+      res.json({ isFavorited });
+    } catch (error) {
+      console.error("Error checking if track is favorited:", error);
+      res.status(500).json({ message: "Failed to check favorite status" });
+    }
+  });
+
+  // Add track to favorites
+  app.post("/api/favorites/:trackId", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const trackId = parseInt(req.params.trackId);
+    if (isNaN(trackId)) {
+      return res.status(400).json({ message: "Invalid track ID" });
+    }
+
+    try {
+      // Verify track exists
+      const track = await storage.getTrack(trackId);
+      if (!track) {
+        return res.status(404).json({ message: "Track not found" });
+      }
+
+      const favorite = await storage.addToFavorites(req.user!.id, trackId);
+      res.status(201).json(favorite);
+    } catch (error) {
+      console.error("Error adding track to favorites:", error);
+      res.status(500).json({ message: "Failed to add track to favorites" });
+    }
+  });
+
+  // Remove track from favorites
+  app.delete("/api/favorites/:trackId", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const trackId = parseInt(req.params.trackId);
+    if (isNaN(trackId)) {
+      return res.status(400).json({ message: "Invalid track ID" });
+    }
+
+    try {
+      const removed = await storage.removeFromFavorites(req.user!.id, trackId);
+      if (!removed) {
+        return res.status(404).json({ message: "Track not found in favorites" });
+      }
+
+      res.json({ message: "Track removed from favorites" });
+    } catch (error) {
+      console.error("Error removing track from favorites:", error);
+      res.status(500).json({ message: "Failed to remove track from favorites" });
+    }
   });
   
   // ADMIN ROUTES - For adding personal albums and tracks
