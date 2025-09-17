@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Play, Pause, Heart, Plus, MoreHorizontal, Sliders, Download, Crown } from "lucide-react";
+import { Play, Pause, Heart, Plus, MoreHorizontal, Download, Crown } from "lucide-react";
 import { Track, Album } from "@shared/schema";
 import { usePlayer } from "@/hooks/use-player";
 import { 
@@ -202,16 +202,6 @@ export function TrackListItem({ track, album, index, showAlbum = false, playlist
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-zinc-800 border-zinc-700 text-white">
-              <DropdownMenuItem
-                onClick={() => navigate(`/mixer/${track.id}`)}
-                className="cursor-pointer flex items-center gap-2"
-              >
-                <Sliders className="h-4 w-4" />
-                <span>Open in Audio Mixer</span>
-              </DropdownMenuItem>
-              
-              <DropdownMenuSeparator />
-              
               {playlistId ? (
                 <DropdownMenuItem 
                   onClick={() => removeFromPlaylistMutation.mutate({ playlistId, trackId: track.id })}
