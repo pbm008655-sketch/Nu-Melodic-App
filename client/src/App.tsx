@@ -11,6 +11,7 @@ import NotFound from "./pages/not-found";
 import AuthPage from "./pages/auth-page";
 import AlbumPage from "./pages/album-page";
 import PlaylistPage from "./pages/playlist-page";
+import FavoritesPage from "./pages/favorites-page";
 import SubscriptionsPage from "./pages/subscriptions-page";
 import AnalyticsDashboardPage from "./pages/analytics-dashboard-page";
 import AdminPage from "./pages/admin-page";
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/album/:id" component={AlbumPage} />
       <ProtectedRoute path="/playlist/:id" component={PlaylistPage} />
+      <ProtectedRoute path="/favorites" component={FavoritesPage} />
       <ProtectedRoute path="/subscriptions" component={SubscriptionsPage} />
       <ProtectedRoute path="/analytics" component={AnalyticsDashboardPage} />
       <ProtectedRoute path="/admin" component={AdminPage} />
