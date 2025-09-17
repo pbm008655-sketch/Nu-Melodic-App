@@ -58,6 +58,13 @@ export const trackPlays = pgTable("track_plays", {
   playedAt: timestamp("played_at", { mode: 'date' }).defaultNow().notNull(),
 });
 
+export const userFavorites = pgTable("user_favorites", {
+  id: serial("id").primaryKey(),
+  trackId: integer("track_id").notNull(),
+  userId: integer("user_id").notNull(),
+  likedAt: timestamp("liked_at", { mode: 'date' }).defaultNow().notNull(),
+});
+
 // Schema for user registration and login
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -83,6 +90,12 @@ export const insertTrackPlaySchema = createInsertSchema(trackPlays).pick({
   userId: true,
 });
 
+// Schema for liking a track
+export const insertUserFavoriteSchema = createInsertSchema(userFavorites).pick({
+  trackId: true,
+  userId: true,
+});
+
 // Schema for subscription
 export const subscriptionSchema = z.object({
   plan: z.enum(["free", "premium"]),
@@ -95,3 +108,4 @@ export type Track = typeof tracks.$inferSelect;
 export type Playlist = typeof playlists.$inferSelect;
 export type PlaylistTrack = typeof playlistTracks.$inferSelect;
 export type TrackPlay = typeof trackPlays.$inferSelect;
+export type UserFavorite = typeof userFavorites.$inferSelect;
