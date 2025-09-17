@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Play, Pause, Heart, Plus, MoreHorizontal, Download, Crown } from "lucide-react";
+import { Play, Pause, Heart, Plus, MoreHorizontal, Crown } from "lucide-react";
 import { Track, Album } from "@shared/schema";
 import { usePlayer } from "@/hooks/use-player";
 import { 
@@ -15,7 +15,6 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { DownloadButton } from "@/components/download-button";
 
 interface TrackListItemProps {
   track: Track;
@@ -182,14 +181,6 @@ export function TrackListItem({ track, album, index, showAlbum = false, playlist
           >
             <Heart className="h-4 w-4" />
           </Button>
-          
-          <DownloadButton
-            track={track}
-            album={album}
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-zinc-400 hover:text-white hover:text-primary"
-          />
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
