@@ -1005,7 +1005,7 @@ export class DatabaseStorage implements IStorage {
     const favoriteTracks = await db
       .select()
       .from(tracks)
-      .where(sql`${tracks.id} = ANY(${trackIds})`);
+      .where(inArray(tracks.id, trackIds));
 
     return favoriteTracks;
   }
