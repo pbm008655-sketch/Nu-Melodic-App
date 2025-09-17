@@ -38,6 +38,56 @@ export function TrackListItem({ track, album, index, showAlbum = false, playlist
     queryKey: ["/api/playlists"],
     enabled: !!user,
   });
+
+  // Check if track is favorited
+  const { data: isFavorited, isLoading: isFavoritedLoading } = useQuery<{ isFavorited: boolean }>({
+    queryKey: ["/api/tracks", track.id, "is-favorited"],
+    enabled: !!user && !!track.id,
+  });
+
+  // Add to favorites mutation
+  const addToFavoritesMutation = useMutation({
+    mutationFn: async (trackId: number) => {
+      await apiRequest("POST", `/api/favorites/${trackId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tracks", track.id, "is-favorited"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
+      toast({
+        title: "Added to favorites",
+        description: `"${track.title}" added to your favorites`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Remove from favorites mutation
+  const removeFromFavoritesMutation = useMutation({
+    mutationFn: async (trackId: number) => {
+      await apiRequest("DELETE", `/api/favorites/${trackId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tracks", track.id, "is-favorited"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/favorites"] });
+      toast({
+        title: "Removed from favorites",
+        description: `"${track.title}" removed from your favorites`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
   
   const addToPlaylistMutation = useMutation({
     mutationFn: async ({ playlistId, trackId }: { playlistId: number; trackId: number }) => {
@@ -130,6 +180,23 @@ export function TrackListItem({ track, album, index, showAlbum = false, playlist
       }
     }
   };
+
+  const handleLikeClick = () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to add tracks to favorites",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isFavorited?.isFavorited) {
+      removeFromFavoritesMutation.mutate(track.id);
+    } else {
+      addToFavoritesMutation.mutate(track.id);
+    }
+  };
   
   return (
     <div 
@@ -177,9 +244,18 @@ export function TrackListItem({ track, album, index, showAlbum = false, playlist
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-8 w-8 text-zinc-400 hover:text-white"
+            className={`h-8 w-8 transition-colors ${
+              isFavorited?.isFavorited 
+                ? 'text-red-500 hover:text-red-400' 
+                : 'text-zinc-400 hover:text-white'
+            }`}
+            onClick={handleLikeClick}
+            disabled={isFavoritedLoading || addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
+            data-testid={`button-like-track-${track.id}`}
           >
-            <Heart className="h-4 w-4" />
+            <Heart 
+              className={`h-4 w-4 ${isFavorited?.isFavorited ? 'fill-current' : ''}`} 
+            />
           </Button>
           
           <DropdownMenu>
