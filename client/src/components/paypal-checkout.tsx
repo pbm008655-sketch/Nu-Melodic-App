@@ -126,7 +126,10 @@ export default function PayPalCheckout() {
   useEffect(() => {
     if (!planData?.plans || isPayPalLoaded || user?.isPremium) return;
 
-    const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+    // Use live credentials in production, sandbox in development
+    const clientId = import.meta.env.PROD 
+      ? import.meta.env.VITE_PAYPAL_LIVE_CLIENT_ID 
+      : import.meta.env.VITE_PAYPAL_CLIENT_ID;
     console.log('PayPal Client ID check:', clientId ? 'Present' : 'Missing');
     
     if (!clientId) {

@@ -2,10 +2,15 @@
 
 import axios from 'axios';
 
-// PayPal Configuration
-const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID!;
-const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET!;
-const PAYPAL_BASE_URL = process.env.NODE_ENV === 'production' 
+// PayPal Configuration - Support both sandbox and live environments
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const PAYPAL_CLIENT_ID = IS_PRODUCTION 
+  ? process.env.PAYPAL_LIVE_CLIENT_ID! 
+  : process.env.PAYPAL_CLIENT_ID!;
+const PAYPAL_CLIENT_SECRET = IS_PRODUCTION 
+  ? process.env.PAYPAL_LIVE_CLIENT_SECRET! 
+  : process.env.PAYPAL_CLIENT_SECRET!;
+const PAYPAL_BASE_URL = IS_PRODUCTION 
   ? 'https://api.paypal.com' 
   : 'https://api.sandbox.paypal.com';
 
@@ -70,10 +75,12 @@ export async function getPayPalAccessToken(): Promise<string> {
 export async function createPayPalSubscriptionPlan() {
   const accessToken = await getPayPalAccessToken();
   
+  // Use different product IDs for live vs sandbox
+  const productId = IS_PRODUCTION ? 'NUMELODIC_PREMIUM_LIVE' : 'MELOSTREAM_PREMIUM';
   const planData = {
-    product_id: 'MELOSTREAM_PREMIUM', // You'll need to create this product first
-    name: 'MeloStream Premium Annual',
-    description: 'Annual subscription for MeloStream Premium features',
+    product_id: productId,
+    name: 'NU MELODIC Premium Annual',
+    description: 'Annual subscription for NU MELODIC Premium features',
     status: 'ACTIVE',
     billing_cycles: [
       {
@@ -126,10 +133,12 @@ export async function createPayPalSubscriptionPlan() {
 export async function createPayPalIntroductoryPlan() {
   const accessToken = await getPayPalAccessToken();
   
+  // Use different product IDs for live vs sandbox
+  const productId = IS_PRODUCTION ? 'NUMELODIC_PREMIUM_LIVE' : 'MELOSTREAM_PREMIUM';
   const planData = {
-    product_id: 'MELOSTREAM_PREMIUM',
-    name: 'MeloStream Premium Intro Annual',
-    description: 'Limited-time introductory annual subscription for MeloStream Premium features - $9.99/year',
+    product_id: productId,
+    name: 'NU MELODIC Premium Intro Annual',
+    description: 'Limited-time introductory annual subscription for NU MELODIC Premium features - $9.99/year',
     status: 'ACTIVE',
     billing_cycles: [
       {
@@ -182,9 +191,11 @@ export async function createPayPalIntroductoryPlan() {
 export async function createPayPalProduct() {
   const accessToken = await getPayPalAccessToken();
   
+  // Use different product IDs for live vs sandbox to avoid conflicts
+  const productId = IS_PRODUCTION ? 'NUMELODIC_PREMIUM_LIVE' : 'MELOSTREAM_PREMIUM';
   const productData = {
-    id: 'MELOSTREAM_PREMIUM',
-    name: 'MeloStream Premium',
+    id: productId,
+    name: 'NU MELODIC Premium',
     description: 'Premium music streaming service with unlimited access',
     type: 'SERVICE',
     category: 'SOFTWARE',
@@ -208,7 +219,8 @@ export async function createPayPalProduct() {
     // Product might already exist, check for specific error
     if (error.response?.data?.details?.[0]?.issue === 'DUPLICATE_RESOURCE_ID') {
       console.log('PayPal product already exists, continuing...');
-      return { id: 'MELOSTREAM_PREMIUM' };
+      const productId = IS_PRODUCTION ? 'NUMELODIC_PREMIUM_LIVE' : 'MELOSTREAM_PREMIUM';
+      return { id: productId };
     }
     
     console.error('PayPal Product Creation Error:', error.response?.data);
