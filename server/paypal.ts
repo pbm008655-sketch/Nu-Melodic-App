@@ -343,7 +343,15 @@ export async function initializePayPalPlans() {
     } catch (error: any) {
       if (error.message?.includes('DUPLICATE_RESOURCE_IDENTIFIER')) {
         console.log('PayPal regular plan already exists, using existing plan ID...');
-        regularPlan = { id: process.env.PAYPAL_PLAN_ID || "P-61E45392RA019152XNCSJZ3Y" };
+        const existingPlanId = IS_PRODUCTION 
+          ? process.env.PAYPAL_LIVE_PLAN_ID 
+          : process.env.PAYPAL_PLAN_ID || "P-61E45392RA019152XNCSJZ3Y";
+        
+        if (IS_PRODUCTION && !existingPlanId) {
+          throw new Error('No live PayPal plan ID configured for production environment');
+        }
+        
+        regularPlan = { id: existingPlanId };
       } else {
         throw error;
       }

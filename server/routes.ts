@@ -18,8 +18,12 @@ import {
 } from './paypal';
 
 // PayPal plan ID - Single plan with $9.99 annual pricing
-let PAYPAL_PLANS: { regularPlanId: string; introPlanId: string | null } = {
-  regularPlanId: "P-61E45392RA019152XNCSJZ3Y",
+// Environment-aware fallback - no hardcoded sandbox IDs in production
+const IS_PRODUCTION = process.env.PAYPAL_ENV === 'live' || process.env.NODE_ENV === 'production';
+const defaultPlanId = IS_PRODUCTION ? null : "P-61E45392RA019152XNCSJZ3Y";
+
+let PAYPAL_PLANS: { regularPlanId: string | null; introPlanId: string | null } = {
+  regularPlanId: defaultPlanId,
   introPlanId: null // Single plan approach
 };
 
