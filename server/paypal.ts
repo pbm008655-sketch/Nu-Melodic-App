@@ -3,7 +3,8 @@
 import axios from 'axios';
 
 // PayPal Configuration - Support both sandbox and live environments
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+// Use explicit PAYPAL_ENV flag or fallback to NODE_ENV
+const IS_PRODUCTION = process.env.PAYPAL_ENV === 'live' || process.env.NODE_ENV === 'production';
 const PAYPAL_CLIENT_ID = IS_PRODUCTION 
   ? process.env.PAYPAL_LIVE_CLIENT_ID! 
   : process.env.PAYPAL_CLIENT_ID!;
@@ -374,9 +375,17 @@ export async function initializePayPalPlans() {
     return planData;
   } catch (error) {
     console.error('PayPal initialization failed:', error);
-    // Fallback to using the known plan ID if initialization fails
-    const fallbackPlanId = process.env.PAYPAL_PLAN_ID || "P-61E45392RA019152XNCSJZ3Y";
-    console.log('Using fallback Plan ID:', fallbackPlanId);
-    return { regularPlanId: fallbackPlanId, introPlanId: null };
+    // Fallback to using appropriate plan ID based on environment
+    const fallbackPlanId = IS_PRODUCTION 
+      ? process.env.PAYPAL_LIVE_PLAN_ID || null 
+      : process.env.PAYPAL_PLAN_ID || "P-61E45392RA019152XNCSJZ3Y";
+    
+    if (fallbackPlanId) {
+      console.log('Using fallback Plan ID:', fallbackPlanId);
+      return { regularPlanId: fallbackPlanId, introPlanId: null };
+    } else {
+      console.log('No fallback Plan ID available for production environment');
+      return { regularPlanId: null, introPlanId: null };
+    }
   }
 }
