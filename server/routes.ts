@@ -759,37 +759,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
    * Get PayPal subscription plan ID for frontend
    */
   app.get('/api/paypal/plan-id', (req, res) => {
-    if (!PAYPAL_PLANS.introPlanId && !PAYPAL_PLANS.regularPlanId) {
+    // Only offer the $9.99 introductory plan, fallback to regular plan if intro not available
+    const planId = PAYPAL_PLANS.introPlanId || PAYPAL_PLANS.regularPlanId;
+    
+    if (!planId) {
       return res.status(500).json({ error: 'PayPal plans not initialized' });
     }
     
-    const plans = [];
-    
-    // Add introductory plan if available (preferred)
-    if (PAYPAL_PLANS.introPlanId) {
-      plans.push({
-        id: PAYPAL_PLANS.introPlanId,
-        name: 'NU MELODIC Premium Intro Annual',
-        price: '$9.99',
-        period: 'year',
-        description: 'Limited-time introductory annual subscription - Early adopter pricing!',
-        isIntro: true
-      });
-    }
-    
-    // Add regular plan as backup
-    if (PAYPAL_PLANS.regularPlanId) {
-      plans.push({
-        id: PAYPAL_PLANS.regularPlanId,
-        name: 'NU MELODIC Premium Annual',
-        price: '$25.00',
-        period: 'year',
-        description: 'Annual subscription for NU MELODIC Premium features',
-        isIntro: false
-      });
-    }
-    
-    res.json({ plans });
+    res.json({ 
+      plans: [
+        {
+          id: planId,
+          name: 'NU MELODIC Premium Annual',
+          price: '$9.99',
+          period: 'year',
+          description: 'Annual subscription for NU MELODIC Premium features - Early adopter pricing!',
+          isIntro: true
+        }
+      ]
+    });
   });
 
   /**
@@ -928,7 +916,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create PayPal subscription plan (one-time setup)
   app.post("/api/create-paypal-plan", async (req, res) => {
     try {
-      const plan = await createSubscriptionPlan();
+      const plan = await createPayPalSubscriptionPlan();
       res.json({
         success: true,
         planId: plan.id,
@@ -1046,7 +1034,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get subscription details from PayPal
-      const subscription = await getSubscription(subscriptionId);
+      const subscription = await getPayPalSubscription(subscriptionId);
       
       if (subscription.status === 'ACTIVE') {
         // Update user premium status
@@ -1094,7 +1082,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Cancel the PayPal subscription
-      await cancelSubscription(user.paypalSubscriptionId, "User requested cancellation");
+      await cancelPayPalSubscription(user.paypalSubscriptionId, "User requested cancellation");
       
       // Update user status
       await storage.updateUserPremiumStatus(user.id, false, undefined);
