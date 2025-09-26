@@ -218,7 +218,8 @@ export async function createPayPalProduct() {
     return response.data;
   } catch (error: any) {
     // Product might already exist, check for specific error
-    if (error.response?.data?.details?.[0]?.issue === 'DUPLICATE_RESOURCE_ID') {
+    if (error.response?.data?.details?.[0]?.issue === 'DUPLICATE_RESOURCE_ID' || 
+        error.response?.data?.details?.[0]?.issue === 'DUPLICATE_RESOURCE_IDENTIFIER') {
       console.log('PayPal product already exists, continuing...');
       const productId = IS_PRODUCTION ? 'NUMELODIC_PREMIUM_LIVE' : 'MELOSTREAM_PREMIUM';
       return { id: productId };
