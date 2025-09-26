@@ -759,22 +759,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
    * Get PayPal subscription plan ID for frontend
    */
   app.get('/api/paypal/plan-id', (req, res) => {
-    if (!PAYPAL_PLANS.regularPlanId) {
+    if (!PAYPAL_PLANS.introPlanId && !PAYPAL_PLANS.regularPlanId) {
       return res.status(500).json({ error: 'PayPal plans not initialized' });
     }
     
-    res.json({ 
-      plans: [
-        {
-          id: PAYPAL_PLANS.regularPlanId,
-          name: 'MeloStream Premium Annual',
-          price: '$9.99',
-          period: 'year',
-          description: 'Annual subscription for MeloStream Premium features - Early adopter pricing!',
-          isIntro: false
-        }
-      ]
-    });
+    const plans = [];
+    
+    // Add introductory plan if available (preferred)
+    if (PAYPAL_PLANS.introPlanId) {
+      plans.push({
+        id: PAYPAL_PLANS.introPlanId,
+        name: 'NU MELODIC Premium Intro Annual',
+        price: '$9.99',
+        period: 'year',
+        description: 'Limited-time introductory annual subscription - Early adopter pricing!',
+        isIntro: true
+      });
+    }
+    
+    // Add regular plan as backup
+    if (PAYPAL_PLANS.regularPlanId) {
+      plans.push({
+        id: PAYPAL_PLANS.regularPlanId,
+        name: 'NU MELODIC Premium Annual',
+        price: '$25.00',
+        period: 'year',
+        description: 'Annual subscription for NU MELODIC Premium features',
+        isIntro: false
+      });
+    }
+    
+    res.json({ plans });
   });
 
   /**
