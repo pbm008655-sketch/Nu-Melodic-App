@@ -17,6 +17,7 @@ The client-side is built with React and TypeScript using Vite as the build tool.
 - **Routing**: Wouter for lightweight client-side routing
 - **Audio Management**: Custom global audio manager to handle music playback across the application
 - **Authentication**: Context-based authentication system with protected routes
+- **PWA Support**: Progressive Web App capabilities with offline support, installability on iOS and Android devices
 
 ### Backend Architecture
 The server uses Express.js with TypeScript and follows a RESTful API design:
@@ -52,6 +53,15 @@ Two-tier user system with premium subscription support:
 - Free users get 30-second preview access
 - Premium users get full track access and additional features
 - Download functionality for premium users
+
+### Progressive Web App (PWA) Features
+NU MELODIC is now a fully installable Progressive Web App:
+- **Installable on Mobile**: Users can install the app on iOS (Safari) and Android devices
+- **Offline Support**: Service worker caching for core app functionality
+- **App-like Experience**: Standalone display mode, custom splash screen, and theme colors
+- **Install Prompts**: Smart install prompts for both iOS and Android with dismissible UI
+- **Manifest Configuration**: Complete PWA manifest with app metadata and icons
+- **No App Store Required**: Direct installation from browser without App Store/Play Store approval
 
 ## External Dependencies
 
