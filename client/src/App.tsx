@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "./hooks/use-auth";
 import { PlayerProvider } from "./hooks/use-player";
 import { ProtectedRoute } from "./lib/protected-route";
+import InstallPWAPrompt from "./components/install-pwa-prompt";
 
 import HomePage from "./pages/home-page";
 import NotFound from "./pages/not-found";
@@ -55,6 +56,7 @@ function App() {
         <PlayerProvider>
           <Router />
           <Toaster />
+          <InstallPWAPrompt />
         </PlayerProvider>
       </AuthProvider>
     </QueryClientProvider>
