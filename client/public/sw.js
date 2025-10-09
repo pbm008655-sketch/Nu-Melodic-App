@@ -1,8 +1,8 @@
-const CACHE_NAME = 'nu-melodic-v1';
+const CACHE_NAME = 'nu-melodic-v2';
 const urlsToCache = [
   '/',
   '/manifest.json',
-  '/nu-melodic-logo.jpg'
+  '/nu-melodic-icon-512.png'
 ];
 
 // Install service worker and cache assets
@@ -11,7 +11,9 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        return cache.addAll(urlsToCache).catch(err => {
+          console.log('Cache addAll failed:', err);
+        });
       })
   );
   self.skipWaiting();
@@ -19,6 +21,13 @@ self.addEventListener('install', (event) => {
 
 // Fetch assets from cache when offline
 self.addEventListener('fetch', (event) => {
+  // Don't cache API calls or audio files
+  if (event.request.url.includes('/api/') || 
+      event.request.url.includes('.mp3') || 
+      event.request.url.includes('.wav')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
