@@ -1,4 +1,4 @@
-import { albums, tracks, playlists, playlistTracks, users, trackPlays, userFavorites, type User, type InsertUser, type Album, type Track, type Playlist, type PlaylistTrack, type TrackPlay, type UserFavorite } from "@shared/schema";
+import { albums, tracks, playlists, playlistTracks, users, trackPlays, userFavorites, passwordResetTokens, type User, type InsertUser, type Album, type Track, type Playlist, type PlaylistTrack, type TrackPlay, type UserFavorite, type PasswordResetToken } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, sql, inArray, and, lt, isNotNull, desc, asc, or, like } from "drizzle-orm";
 import createMemoryStore from "memorystore";
@@ -20,6 +20,7 @@ export interface IStorage {
   updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined>;
   updateStripeInfo(userId: number, data: { stripeCustomerId?: string, stripeSubscriptionId?: string }): Promise<User | undefined>;
   updatePaypalInfo(userId: number, data: { paypalSubscriptionId?: string, paymentProvider?: string }): Promise<User | undefined>;
+  updateUserPassword(userId: number, hashedPassword: string): Promise<void>;
   
   getAllAlbums(): Promise<Album[]>;
   getAlbum(id: number): Promise<Album | undefined>;
@@ -56,6 +57,11 @@ export interface IStorage {
   isTrackFavorited(userId: number, trackId: number): Promise<boolean>;
   addToFavorites(userId: number, trackId: number): Promise<UserFavorite>;
   removeFromFavorites(userId: number, trackId: number): Promise<boolean>;
+  
+  // Password reset methods
+  createPasswordResetToken(data: { userId: number; token: string; expiresAt: Date }): Promise<PasswordResetToken>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  deletePasswordResetToken(token: string): Promise<void>;
   
   sessionStore: any; // Type for session store
 }
@@ -1060,6 +1066,35 @@ export class DatabaseStorage implements IStorage {
 
     return result.count > 0;
   }
+
+  async updateUserPassword(userId: number, hashedPassword: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, userId));
+  }
+
+  async createPasswordResetToken(data: { userId: number; token: string; expiresAt: Date }): Promise<PasswordResetToken> {
+    const [token] = await db
+      .insert(passwordResetTokens)
+      .values(data)
+      .returning();
+    return token;
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const [resetToken] = await db
+      .select()
+      .from(passwordResetTokens)
+      .where(eq(passwordResetTokens.token, token));
+    return resetToken || undefined;
+  }
+
+  async deletePasswordResetToken(token: string): Promise<void> {
+    await db
+      .delete(passwordResetTokens)
+      .where(eq(passwordResetTokens.token, token));
+  }
 }
 
 // Create a seed function for the database
@@ -1315,6 +1350,36 @@ export async function getSubscriptionAnalytics() {
     stripeSubscribers: stripeUsersResult[0].count,
     conversionRate: (premiumUsersResult[0].count / totalUsersResult[0].count) * 100,
   };
+}
+
+// Password reset token methods for DatabaseStorage
+export async function createPasswordResetTokenDb(data: { userId: number; token: string; expiresAt: Date }): Promise<PasswordResetToken> {
+  const [token] = await db
+    .insert(passwordResetTokens)
+    .values(data)
+    .returning();
+  return token;
+}
+
+export async function getPasswordResetTokenDb(token: string): Promise<PasswordResetToken | undefined> {
+  const [resetToken] = await db
+    .select()
+    .from(passwordResetTokens)
+    .where(eq(passwordResetTokens.token, token));
+  return resetToken || undefined;
+}
+
+export async function deletePasswordResetTokenDb(token: string): Promise<void> {
+  await db
+    .delete(passwordResetTokens)
+    .where(eq(passwordResetTokens.token, token));
+}
+
+export async function updateUserPasswordDb(userId: number, hashedPassword: string): Promise<void> {
+  await db
+    .update(users)
+    .set({ password: hashedPassword })
+    .where(eq(users.id, userId));
 }
 
 // Immediately invoke async function to seed database

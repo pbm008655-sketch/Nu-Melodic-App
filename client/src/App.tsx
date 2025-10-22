@@ -16,6 +16,8 @@ import FavoritesPage from "./pages/favorites-page";
 import SubscriptionsPage from "./pages/subscriptions-page";
 import AnalyticsDashboardPage from "./pages/analytics-dashboard-page";
 import AdminPage from "./pages/admin-page";
+import ForgotPasswordPage from "./pages/forgot-password-page";
+import ResetPasswordPage from "./pages/reset-password-page";
 
 import CheckoutPage from "./pages/checkout-page";
 import SubscriptionSuccessPage from "./pages/subscription-success-page";
@@ -30,6 +32,9 @@ function Router() {
     <Switch>
       <ProtectedRoute path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/login" component={AuthPage} />
+      <Route path="/forgot-password" component={ForgotPasswordPage} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
       <ProtectedRoute path="/album/:id" component={AlbumPage} />
       <ProtectedRoute path="/playlist/:id" component={PlaylistPage} />
       <ProtectedRoute path="/favorites" component={FavoritesPage} />
