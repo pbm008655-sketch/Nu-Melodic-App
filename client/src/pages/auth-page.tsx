@@ -175,11 +175,11 @@ export default function AuthPage() {
                     </Button>
                   </form>
                 </Form>
-                <div className="text-center mt-4">
+                <div className="mt-6 pt-4 border-t border-zinc-700 text-center">
                   <Link href="/forgot-password">
-                    <span className="text-sm text-zinc-400 hover:text-primary transition-colors cursor-pointer inline-block" data-testid="link-forgot-password">
+                    <a className="text-sm text-primary hover:text-primary/80 transition-colors cursor-pointer">
                       Forgot your password?
-                    </span>
+                    </a>
                   </Link>
                 </div>
               </TabsContent>
