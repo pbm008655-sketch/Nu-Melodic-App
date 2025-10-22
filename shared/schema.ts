@@ -65,6 +65,14 @@ export const userFavorites = pgTable("user_favorites", {
   likedAt: timestamp("liked_at", { mode: 'date' }).defaultNow().notNull(),
 });
 
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at", { mode: 'date' }).notNull(),
+  createdAt: timestamp("created_at", { mode: 'date' }).defaultNow().notNull(),
+});
+
 // Schema for user registration and login
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -101,6 +109,16 @@ export const subscriptionSchema = z.object({
   plan: z.enum(["free", "premium"]),
 });
 
+// Schema for password reset
+export const requestPasswordResetSchema = z.object({
+  email: z.string().email(),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string(),
+  newPassword: z.string().min(6),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Album = typeof albums.$inferSelect;
@@ -109,3 +127,4 @@ export type Playlist = typeof playlists.$inferSelect;
 export type PlaylistTrack = typeof playlistTracks.$inferSelect;
 export type TrackPlay = typeof trackPlays.$inferSelect;
 export type UserFavorite = typeof userFavorites.$inferSelect;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
