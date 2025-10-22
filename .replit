@@ -54,4 +54,4 @@ args = "npm run dev"
 waitForPort = 5000
 
 [agent]
-integrations = ["javascript_stripe==1.0.0", "styling_shadcn==1.0.0"]
+integrations = ["javascript_stripe:1.0.0", "styling_shadcn:1.0.0", "resend:1.0.0"]
