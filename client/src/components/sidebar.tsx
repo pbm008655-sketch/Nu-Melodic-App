@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Home, Search, Heart, PlusCircle, Music, BarChart, Settings, LogOut } from "lucide-react";
+import { Home, Heart, PlusCircle, Music, BarChart, Settings, LogOut } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -81,14 +81,6 @@ export default function Sidebar() {
                 <div className={`flex items-center ${isActive("/") ? "text-primary" : "text-zinc-300 hover:text-white"} transition-colors cursor-pointer`}>
                   <Home className="h-5 w-5 mr-3" />
                   <span>Home</span>
-                </div>
-              </Link>
-            </li>
-            <li>
-              <Link href="#">
-                <div className="flex items-center text-zinc-300 hover:text-white transition-colors cursor-pointer">
-                  <Search className="h-5 w-5 mr-3" />
-                  <span>Search</span>
                 </div>
               </Link>
             </li>
