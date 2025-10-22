@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -173,14 +173,12 @@ export default function AuthPage() {
                     >
                       {loginMutation.isPending ? "Signing in..." : "Sign in"}
                     </Button>
-                    <div className="text-center mt-4">
-                      <a 
-                        href="/forgot-password" 
-                        className="text-sm text-zinc-400 hover:text-primary transition-colors"
-                        data-testid="link-forgot-password"
-                      >
-                        Forgot your password?
-                      </a>
+                    <div className="text-center">
+                      <Link href="/forgot-password">
+                        <span className="text-sm text-zinc-400 hover:text-primary transition-colors cursor-pointer inline-block" data-testid="link-forgot-password">
+                          Forgot your password?
+                        </span>
+                      </Link>
                     </div>
                   </form>
                 </Form>
