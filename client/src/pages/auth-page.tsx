@@ -175,14 +175,16 @@ export default function AuthPage() {
                     </Button>
                   </form>
                 </Form>
-                <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                  <a 
-                    href="/forgot-password" 
-                    style={{ color: '#10b981', fontSize: '14px', textDecoration: 'underline' }}
-                    data-testid="link-forgot-password"
-                  >
-                    Forgot your password?
-                  </a>
+                <div className="mt-4 text-center">
+                  <Link href="/forgot-password">
+                    <Button 
+                      variant="link" 
+                      className="text-primary hover:text-primary/80 p-0 h-auto text-sm"
+                      data-testid="link-forgot-password"
+                    >
+                      Forgot your password?
+                    </Button>
+                  </Link>
                 </div>
               </TabsContent>
               
