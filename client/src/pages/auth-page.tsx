@@ -247,6 +247,14 @@ export default function AuthPage() {
                     >
                       {registerMutation.isPending ? "Creating account..." : "Create account"}
                     </Button>
+                    
+                    <div className="text-center">
+                      <Link href="/forgot-password">
+                        <span className="text-primary hover:text-primary/80 text-sm cursor-pointer underline" data-testid="link-forgot-password-register">
+                          Forgot your password?
+                        </span>
+                      </Link>
+                    </div>
                   </form>
                 </Form>
               </TabsContent>
