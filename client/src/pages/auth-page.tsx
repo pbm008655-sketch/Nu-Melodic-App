@@ -173,19 +173,16 @@ export default function AuthPage() {
                     >
                       {loginMutation.isPending ? "Signing in..." : "Sign in"}
                     </Button>
+                    
+                    <div className="text-center">
+                      <Link href="/forgot-password">
+                        <span className="text-primary hover:text-primary/80 text-sm cursor-pointer underline" data-testid="link-forgot-password">
+                          Forgot your password?
+                        </span>
+                      </Link>
+                    </div>
                   </form>
                 </Form>
-                <div className="mt-4 text-center">
-                  <Link href="/forgot-password">
-                    <Button 
-                      variant="link" 
-                      className="text-primary hover:text-primary/80 p-0 h-auto text-sm"
-                      data-testid="link-forgot-password"
-                    >
-                      Forgot your password?
-                    </Button>
-                  </Link>
-                </div>
               </TabsContent>
               
               <TabsContent value="register">
