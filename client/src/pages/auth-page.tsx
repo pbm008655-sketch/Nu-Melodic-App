@@ -174,10 +174,10 @@ export default function AuthPage() {
                       {loginMutation.isPending ? "Signing in..." : "Sign in"}
                     </Button>
                   </form>
-                  <div className="mt-4 text-center">
+                  <div style={{ marginTop: '16px', textAlign: 'center' }}>
                     <a 
                       href="/forgot-password" 
-                      className="text-primary hover:underline text-sm block"
+                      style={{ color: '#10b981', fontSize: '14px', textDecoration: 'underline' }}
                       data-testid="link-forgot-password"
                     >
                       Forgot your password?
