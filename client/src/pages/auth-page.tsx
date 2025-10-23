@@ -175,6 +175,16 @@ export default function AuthPage() {
                     </Button>
                   </form>
                 </Form>
+                <div className="mt-4 text-center">
+                  <Button 
+                    variant="link" 
+                    className="p-0 text-primary h-auto text-sm" 
+                    onClick={() => window.location.href = '/forgot-password'}
+                    data-testid="link-forgot-password"
+                  >
+                    Forgot your password?
+                  </Button>
+                </div>
               </TabsContent>
               
               <TabsContent value="register">
@@ -243,19 +253,6 @@ export default function AuthPage() {
                 </Form>
               </TabsContent>
             </Tabs>
-            
-            {activeTab === "login" && (
-              <div className="mt-4 text-center">
-                <Button 
-                  variant="link" 
-                  className="p-0 text-primary h-auto text-sm" 
-                  onClick={() => window.location.href = '/forgot-password'}
-                  data-testid="link-forgot-password"
-                >
-                  Forgot your password?
-                </Button>
-              </div>
-            )}
             
             <div className="mt-6 pt-6 border-t border-zinc-800 text-center text-zinc-400 text-sm">
               <p>
