@@ -137,7 +137,7 @@ export default function AuthPage() {
                 <TabsTrigger value="register">Register</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="login">
+              <TabsContent value="login" className="space-y-4">
                 <Form {...loginForm}>
                   <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                     <FormField
@@ -174,16 +174,16 @@ export default function AuthPage() {
                       {loginMutation.isPending ? "Signing in..." : "Sign in"}
                     </Button>
                   </form>
-                  <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                    <a 
-                      href="/forgot-password" 
-                      style={{ color: '#10b981', fontSize: '14px', textDecoration: 'underline' }}
-                      data-testid="link-forgot-password"
-                    >
-                      Forgot your password?
-                    </a>
-                  </div>
                 </Form>
+                <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                  <a 
+                    href="/forgot-password" 
+                    style={{ color: '#10b981', fontSize: '14px', textDecoration: 'underline' }}
+                    data-testid="link-forgot-password"
+                  >
+                    Forgot your password?
+                  </a>
+                </div>
               </TabsContent>
               
               <TabsContent value="register">
