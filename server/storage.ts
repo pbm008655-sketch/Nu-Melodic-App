@@ -75,6 +75,7 @@ export class MemStorage implements IStorage {
   private playlistTracks: Map<number, PlaylistTrack>;
   private trackPlays: Map<number, TrackPlay>;
   private userFavorites: Map<number, UserFavorite>;
+  private passwordResetTokens: Map<string, PasswordResetToken>;
   
   userId: number;
   albumId: number;
@@ -83,6 +84,7 @@ export class MemStorage implements IStorage {
   playlistTrackId: number;
   trackPlayId: number;
   userFavoriteId: number;
+  passwordResetTokenId: number;
   sessionStore: any;
 
   constructor() {
@@ -93,6 +95,7 @@ export class MemStorage implements IStorage {
     this.playlistTracks = new Map();
     this.trackPlays = new Map();
     this.userFavorites = new Map();
+    this.passwordResetTokens = new Map();
     
     this.userId = 1;
     this.albumId = 1;
@@ -101,6 +104,7 @@ export class MemStorage implements IStorage {
     this.playlistTrackId = 1;
     this.trackPlayId = 1;
     this.userFavoriteId = 1;
+    this.passwordResetTokenId = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
@@ -617,6 +621,43 @@ export class MemStorage implements IStorage {
     }
 
     return this.userFavorites.delete(favorite.id);
+  }
+
+  // Password reset methods
+  async updateUserPassword(userId: number, hashedPassword: string): Promise<void> {
+    const user = this.users.get(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
+    const updatedUser: User = {
+      ...user,
+      password: hashedPassword
+    };
+    
+    this.users.set(userId, updatedUser);
+  }
+
+  async createPasswordResetToken(data: { userId: number; token: string; expiresAt: Date }): Promise<PasswordResetToken> {
+    const id = this.passwordResetTokenId++;
+    const resetToken: PasswordResetToken = {
+      id,
+      userId: data.userId,
+      token: data.token,
+      expiresAt: data.expiresAt,
+      createdAt: new Date()
+    };
+    
+    this.passwordResetTokens.set(data.token, resetToken);
+    return resetToken;
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    return this.passwordResetTokens.get(token);
+  }
+
+  async deletePasswordResetToken(token: string): Promise<void> {
+    this.passwordResetTokens.delete(token);
   }
 }
 
