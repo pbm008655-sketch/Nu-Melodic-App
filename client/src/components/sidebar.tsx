@@ -92,14 +92,16 @@ export default function Sidebar() {
                 </div>
               </Link>
             </li>
-            <li>
-              <Link href="/analytics">
-                <div className={`flex items-center ${isActive("/analytics") ? "text-primary" : "text-zinc-300 hover:text-white"} transition-colors cursor-pointer`}>
-                  <BarChart className="h-5 w-5 mr-3" />
-                  <span>Analytics</span>
-                </div>
-              </Link>
-            </li>
+            {user?.id === 1 && (
+              <li>
+                <Link href="/analytics">
+                  <div className={`flex items-center ${isActive("/analytics") ? "text-primary" : "text-zinc-300 hover:text-white"} transition-colors cursor-pointer`}>
+                    <BarChart className="h-5 w-5 mr-3" />
+                    <span>Analytics</span>
+                  </div>
+                </Link>
+              </li>
+            )}
             {user?.id === 1 && (
               <li>
                 <Link href="/admin">
