@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Playlist, Track, Album } from "@shared/schema";
 import Sidebar from "@/components/sidebar";
@@ -7,7 +7,7 @@ import MobileMenu from "@/components/mobile-menu";
 import Player from "@/components/player";
 import { TrackListItem } from "@/components/track-list-item";
 import { usePlayer } from "@/hooks/use-player";
-import { Play, Pause, Clock3, Music2, Shuffle, PlayCircle } from "lucide-react";
+import { Play, Pause, Clock3, Music2, Shuffle, PlayCircle, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -114,6 +114,13 @@ export default function PlaylistPage() {
           
           {/* Playlist Header */}
           <div className="bg-gradient-to-b from-zinc-800 to-zinc-950 p-4 md:p-8">
+            <div className="flex justify-end mb-4 md:hidden">
+              <Link href="/">
+                <Button variant="ghost" size="icon" className="rounded-full bg-zinc-900 hover:bg-zinc-800">
+                  <Home className="h-5 w-5" />
+                </Button>
+              </Link>
+            </div>
             <div className="flex flex-col md:flex-row items-center">
               <div className="w-40 h-40 bg-zinc-800 rounded-md flex items-center justify-center shadow-lg">
                 {playlist.coverUrl ? (

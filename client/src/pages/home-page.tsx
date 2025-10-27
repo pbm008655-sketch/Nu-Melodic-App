@@ -9,7 +9,7 @@ import { AlbumCard } from "@/components/album-card";
 import { TrackListItem } from "@/components/track-list-item";
 import { useAuth } from "@/hooks/use-auth";
 import { usePlayer } from "@/hooks/use-player";
-import { ChevronLeft, ChevronRight, Bell, User, Play, Pause, Crown, Shuffle, PlayCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home, Play, Pause, Crown, Shuffle, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -83,14 +83,6 @@ export default function HomePage() {
                   </button>
                 </div>
                 <h2 className="text-2xl md:text-3xl font-heading font-bold">Home</h2>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Button variant="ghost" size="icon" className="rounded-full bg-zinc-900 hover:bg-zinc-800">
-                  <Bell className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="rounded-full bg-zinc-900 hover:bg-zinc-800">
-                  <User className="h-5 w-5" />
-                </Button>
               </div>
             </div>
           </div>
