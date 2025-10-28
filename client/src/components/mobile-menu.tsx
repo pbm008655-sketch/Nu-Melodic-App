@@ -87,26 +87,10 @@ export default function MobileMenu() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="#">
-                    <div className="flex items-center text-zinc-300 text-lg cursor-pointer">
-                      <Search className="w-5 h-5 mr-3" />
-                      <span>Search</span>
-                    </div>
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#">
-                    <div className="flex items-center text-zinc-300 text-lg cursor-pointer">
-                      <Library className="w-5 h-5 mr-3" />
-                      <span>Your Library</span>
-                    </div>
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#">
-                    <div className="flex items-center text-zinc-300 text-lg cursor-pointer">
+                  <Link href="/favorites">
+                    <div className={`flex items-center text-lg ${isActive("/favorites") ? "text-primary" : "text-white"} cursor-pointer`}>
                       <Heart className="w-5 h-5 mr-3" />
-                      <span>Liked Songs</span>
+                      <span>Your Favourites</span>
                     </div>
                   </Link>
                 </li>
