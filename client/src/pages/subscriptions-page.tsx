@@ -4,6 +4,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import Sidebar from "@/components/sidebar";
+import MobileMenu from "@/components/mobile-menu";
 import Player from "@/components/player";
 import PayPalCheckout from "@/components/paypal-checkout";
 import { Check, Crown, XCircle, AlertCircle } from "lucide-react";
@@ -56,6 +57,8 @@ export default function SubscriptionsPage() {
         <Sidebar />
         
         <div className="flex-1 overflow-y-auto pb-24">
+          <MobileMenu />
+          
           {/* Header */}
           <div className="bg-gradient-to-b from-zinc-800 to-zinc-950 p-4 md:p-8">
             <h1 className="text-2xl md:text-3xl font-heading font-bold flex items-center">

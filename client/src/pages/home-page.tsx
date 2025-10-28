@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Album, Track } from "@shared/schema";
 import Sidebar from "@/components/sidebar";
+import MobileMenu from "@/components/mobile-menu";
 import Player from "@/components/player";
 import { AlbumCard } from "@/components/album-card";
 import { TrackListItem } from "@/components/track-list-item";
@@ -46,6 +47,8 @@ export default function HomePage() {
         <Sidebar />
         
         <div className="flex-1 overflow-y-auto pb-24">
+          <MobileMenu />
+
           {/* Preview Mode Banner */}
           {isPreviewMode && (
             <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/30 mx-4 my-4 p-4 rounded-lg">
