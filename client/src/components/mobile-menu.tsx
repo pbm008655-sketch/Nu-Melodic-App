@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { X, Home, Search, Library, Heart, Crown, User, Menu, LogOut } from "lucide-react";
+import { X, Home, Heart, Crown, Menu, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { Playlist } from "@shared/schema";
