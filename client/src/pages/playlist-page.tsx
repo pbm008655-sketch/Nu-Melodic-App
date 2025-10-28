@@ -3,7 +3,6 @@ import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Playlist, Track, Album } from "@shared/schema";
 import Sidebar from "@/components/sidebar";
-import MobileMenu from "@/components/mobile-menu";
 import Player from "@/components/player";
 import { TrackListItem } from "@/components/track-list-item";
 import { usePlayer } from "@/hooks/use-player";
@@ -47,8 +46,6 @@ export default function PlaylistPage() {
         <div className="flex flex-1 overflow-hidden">
           <Sidebar />
           <div className="flex-1 overflow-y-auto pb-24">
-            <MobileMenu />
-            
             <div className="bg-gradient-to-b from-zinc-800 to-zinc-950 p-8">
               <div className="flex flex-col md:flex-row items-center mb-6">
                 <Skeleton className="w-40 h-40 rounded-md" />
@@ -110,8 +107,6 @@ export default function PlaylistPage() {
         <Sidebar />
         
         <div className="flex-1 overflow-y-auto pb-24">
-          <MobileMenu />
-          
           {/* Playlist Header */}
           <div className="bg-gradient-to-b from-zinc-800 to-zinc-950 p-4 md:p-8">
             <div className="flex justify-end mb-4 md:hidden">
