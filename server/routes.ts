@@ -454,6 +454,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ album, tracks });
   });
 
+  // Delete an album (admin only)
+  app.delete("/api/albums/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user?.id !== 1) {
+      return res.status(401).json({ message: "Unauthorized. Only admin can delete albums." });
+    }
+
+    const albumId = parseInt(req.params.id);
+    if (isNaN(albumId)) {
+      return res.status(400).json({ message: "Invalid album ID" });
+    }
+
+    try {
+      const album = await storage.getAlbum(albumId);
+      if (!album) {
+        return res.status(404).json({ message: "Album not found" });
+      }
+
+      const success = await storage.deleteAlbum(albumId);
+      if (success) {
+        res.status(200).json({ message: "Album deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete album" });
+      }
+    } catch (error) {
+      console.error("Error deleting album:", error);
+      res.status(500).json({ message: "Failed to delete album" });
+    }
+  });
+
   // Get featured albums
   app.get("/api/featured-albums", async (_req, res) => {
     const featuredAlbums = await storage.getFeaturedAlbums();
@@ -525,6 +554,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       })
     );
     res.json(tracksWithAlbums);
+  });
+
+  // Delete a track (admin only)
+  app.delete("/api/tracks/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user?.id !== 1) {
+      return res.status(401).json({ message: "Unauthorized. Only admin can delete tracks." });
+    }
+
+    const trackId = parseInt(req.params.id);
+    if (isNaN(trackId)) {
+      return res.status(400).json({ message: "Invalid track ID" });
+    }
+
+    try {
+      const track = await storage.getTrack(trackId);
+      if (!track) {
+        return res.status(404).json({ message: "Track not found" });
+      }
+
+      const success = await storage.deleteTrack(trackId);
+      if (success) {
+        res.status(200).json({ message: "Track deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete track" });
+      }
+    } catch (error) {
+      console.error("Error deleting track:", error);
+      res.status(500).json({ message: "Failed to delete track" });
+    }
   });
 
   // PLAYLIST ROUTES - Protected Routes

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Play, Pause, Heart, Plus, MoreHorizontal, Crown } from "lucide-react";
+import { Play, Pause, Heart, Plus, MoreHorizontal, Crown, Trash2 } from "lucide-react";
 import { Track, Album } from "@shared/schema";
 import { usePlayer } from "@/hooks/use-player";
 import { 
@@ -127,6 +127,32 @@ export function TrackListItem({ track, album, index, showAlbum = false, playlist
       toast({
         title: "Error",
         description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteTrackMutation = useMutation({
+    mutationFn: async (trackId: number) => {
+      const response = await apiRequest('DELETE', `/api/tracks/${trackId}`);
+      if (!response.ok) {
+        throw new Error('Failed to delete track');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Track deleted",
+        description: "The track has been successfully deleted",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/albums'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tracks'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete track",
         variant: "destructive",
       });
     },
@@ -297,6 +323,23 @@ export function TrackListItem({ track, album, index, showAlbum = false, playlist
                       No playlists found
                     </DropdownMenuItem>
                   )}
+                </>
+              )}
+              
+              {user?.id === 1 && (
+                <>
+                  <DropdownMenuSeparator className="bg-zinc-700" />
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      if (confirm(`Are you sure you want to delete "${track.title}"? This action cannot be undone.`)) {
+                        deleteTrackMutation.mutate(track.id);
+                      }
+                    }}
+                    className="cursor-pointer text-red-400 focus:text-red-300 focus:bg-red-900/20"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Track
+                  </DropdownMenuItem>
                 </>
               )}
             </DropdownMenuContent>

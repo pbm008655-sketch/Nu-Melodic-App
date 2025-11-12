@@ -1,21 +1,65 @@
 import { useState } from "react";
-import { useParams, Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useParams, Link, useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Album, Track } from "@shared/schema";
 import Sidebar from "@/components/sidebar";
 import MobileMenu from "@/components/mobile-menu";
 import Player from "@/components/player";
 import { TrackListItem } from "@/components/track-list-item";
 import { usePlayer } from "@/hooks/use-player";
-import { Play, Pause, Clock3, Music2, Shuffle, PlayCircle, Home } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { Play, Pause, Clock3, Music2, Shuffle, PlayCircle, Home, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function AlbumPage() {
   const params = useParams<{ id: string }>();
   const albumId = parseInt(params.id);
+  const [, setLocation] = useLocation();
   
+  const { user } = useAuth();
+  const { toast } = useToast();
   const { currentTrack, isPlaying, togglePlay, playAlbum, playAll, playRandom } = usePlayer();
+  
+  const deleteAlbumMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest('DELETE', `/api/albums/${id}`);
+      if (!response.ok) {
+        throw new Error('Failed to delete album');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Album deleted",
+        description: "The album has been successfully deleted",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/albums'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/featured-albums'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/recent-albums'] });
+      setLocation('/');
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete album",
+        variant: "destructive",
+      });
+    },
+  });
   
   const {
     data: albumData,
@@ -181,6 +225,37 @@ export default function AlbumPage() {
                   >
                     <Shuffle className="h-4 w-4 mr-2" /> Random
                   </Button>
+                  
+                  {user?.id === 1 && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="destructive"
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" /> Delete Album
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Album?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete "{album.title}" and all of its tracks. 
+                            This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteAlbumMutation.mutate(albumId)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
               </div>
             </div>

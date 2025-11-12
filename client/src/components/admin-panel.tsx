@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -7,11 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Album } from "@shared/schema";
+import { Album, Track } from "@shared/schema";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Upload, Music, FileAudio, File } from "lucide-react";
+import { AlertCircle, Upload, Music, FileAudio, File, Trash2, Disc } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { Link } from "wouter";
 
 export function AdminPanel() {
   const { toast } = useToast();
@@ -508,9 +509,10 @@ export function AdminPanel() {
   return (
     <div>
       <Tabs defaultValue="create">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="create">Create Album</TabsTrigger>
           <TabsTrigger value="import">Bulk Import</TabsTrigger>
+          <TabsTrigger value="manage">Manage Albums</TabsTrigger>
         </TabsList>
         
         <TabsContent value="create">
@@ -860,7 +862,117 @@ export function AdminPanel() {
             </CardContent>
           </Card>
         </TabsContent>
+        
+        <TabsContent value="manage">
+          <ManageAlbumsTab />
+        </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function ManageAlbumsTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const { data: albums = [], isLoading } = useQuery<Album[]>({
+    queryKey: ['/api/albums'],
+  });
+  
+  const deleteAlbumMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest('DELETE', `/api/albums/${id}`);
+      if (!response.ok) {
+        throw new Error('Failed to delete album');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Album deleted",
+        description: "The album has been successfully deleted",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/albums'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/featured-albums'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/recent-albums'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete album",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-center text-muted-foreground">Loading albums...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Manage Albums</CardTitle>
+        <CardDescription>
+          View and delete existing albums. Each album includes all its tracks.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {albums.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Disc className="mx-auto h-12 w-12 mb-2 opacity-50" />
+            <p>No albums found</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {albums.map((album) => (
+              <div
+                key={album.id}
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  {album.coverUrl && (
+                    <img
+                      src={album.coverUrl}
+                      alt={album.title}
+                      className="w-12 h-12 rounded object-cover flex-shrink-0"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <Link href={`/album/${album.id}`}>
+                      <h3 className="font-medium truncate hover:underline cursor-pointer">
+                        {album.title}
+                      </h3>
+                    </Link>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {album.artist}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to delete "${album.title}" and all its tracks? This action cannot be undone.`)) {
+                      deleteAlbumMutation.mutate(album.id);
+                    }
+                  }}
+                  disabled={deleteAlbumMutation.isPending}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

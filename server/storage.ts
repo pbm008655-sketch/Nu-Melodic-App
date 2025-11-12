@@ -27,6 +27,7 @@ export interface IStorage {
   getFeaturedAlbums(limit?: number): Promise<Album[]>;
   getRecentAlbums(limit?: number): Promise<Album[]>;
   createAlbum(album: Omit<Album, 'id'>): Promise<Album>;
+  deleteAlbum(id: number): Promise<boolean>;
   clearAlbumsAndTracks(): Promise<void>; // Method to clear all albums and tracks
   
   getAllTracks(): Promise<Track[]>;
@@ -34,6 +35,7 @@ export interface IStorage {
   getTracksByAlbumId(albumId: number): Promise<Track[]>;
   getFeaturedTracks(limit?: number): Promise<Track[]>;
   createTrack(track: Omit<Track, 'id'>): Promise<Track>;
+  deleteTrack(id: number): Promise<boolean>;
   
   getUserPlaylists(userId: number): Promise<Playlist[]>;
   getPlaylist(id: number): Promise<Playlist | undefined>;
@@ -399,6 +401,57 @@ export class MemStorage implements IStorage {
     
     this.tracks.set(id, newTrack);
     return newTrack;
+  }
+
+  async deleteAlbum(id: number): Promise<boolean> {
+    // Get all tracks for this album first
+    const albumTracks = Array.from(this.tracks.values()).filter(t => t.albumId === id);
+    const trackIds = albumTracks.map(t => t.id);
+    
+    // Delete all dependent data for the album's tracks
+    for (const trackId of trackIds) {
+      // Delete track plays
+      Array.from(this.trackPlays.values())
+        .filter(tp => tp.trackId === trackId)
+        .forEach(tp => this.trackPlays.delete(tp.id));
+      
+      // Delete user favorites
+      Array.from(this.userFavorites.values())
+        .filter(uf => uf.trackId === trackId)
+        .forEach(uf => this.userFavorites.delete(uf.id));
+      
+      // Delete playlist tracks
+      Array.from(this.playlistTracks.values())
+        .filter(pt => pt.trackId === trackId)
+        .forEach(pt => this.playlistTracks.delete(pt.id));
+      
+      // Delete the track
+      this.tracks.delete(trackId);
+    }
+    
+    // Finally delete the album
+    return this.albums.delete(id);
+  }
+
+  async deleteTrack(id: number): Promise<boolean> {
+    // Delete all dependent data for this track
+    // Delete track plays
+    Array.from(this.trackPlays.values())
+      .filter(tp => tp.trackId === id)
+      .forEach(tp => this.trackPlays.delete(tp.id));
+    
+    // Delete user favorites
+    Array.from(this.userFavorites.values())
+      .filter(uf => uf.trackId === id)
+      .forEach(uf => this.userFavorites.delete(uf.id));
+    
+    // Delete playlist tracks
+    Array.from(this.playlistTracks.values())
+      .filter(pt => pt.trackId === id)
+      .forEach(pt => this.playlistTracks.delete(pt.id));
+    
+    // Delete the track itself
+    return this.tracks.delete(id);
   }
 
   async getUserPlaylists(userId: number): Promise<Playlist[]> {
@@ -826,6 +879,47 @@ export class DatabaseStorage implements IStorage {
       .values(track)
       .returning();
     return newTrack;
+  }
+
+  async deleteAlbum(id: number): Promise<boolean> {
+    // Get all tracks for this album first
+    const albumTracks = await this.getTracksByAlbumId(id);
+    const trackIds = albumTracks.map(t => t.id);
+    
+    if (trackIds.length > 0) {
+      // Delete all dependent data for the album's tracks
+      // Delete track plays
+      await db.delete(trackPlays).where(inArray(trackPlays.trackId, trackIds));
+      
+      // Delete user favorites
+      await db.delete(userFavorites).where(inArray(userFavorites.trackId, trackIds));
+      
+      // Delete playlist tracks
+      await db.delete(playlistTracks).where(inArray(playlistTracks.trackId, trackIds));
+      
+      // Delete the tracks themselves
+      await db.delete(tracks).where(inArray(tracks.id, trackIds));
+    }
+    
+    // Finally delete the album
+    const result = await db.delete(albums).where(eq(albums.id, id));
+    return true;
+  }
+
+  async deleteTrack(id: number): Promise<boolean> {
+    // Delete all dependent data for this track
+    // Delete track plays
+    await db.delete(trackPlays).where(eq(trackPlays.trackId, id));
+    
+    // Delete user favorites
+    await db.delete(userFavorites).where(eq(userFavorites.trackId, id));
+    
+    // Delete playlist tracks
+    await db.delete(playlistTracks).where(eq(playlistTracks.trackId, id));
+    
+    // Delete the track itself
+    const result = await db.delete(tracks).where(eq(tracks.id, id));
+    return true;
   }
 
   async getUserPlaylists(userId: number): Promise<Playlist[]> {
