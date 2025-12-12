@@ -19,6 +19,7 @@ import {
   verifyPayPalWebhook,
   initializePayPalPlans 
 } from './paypal';
+import { setupAlexaEndpoint } from './alexa';
 
 // PayPal plan ID - Single plan with $9.99 annual pricing
 // Environment-aware fallback - no hardcoded sandbox IDs in production
@@ -57,6 +58,9 @@ const coverUploadDir = path.join(process.cwd(), 'public', 'covers');
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
+  
+  // Set up Alexa skill endpoint
+  setupAlexaEndpoint(app);
   
   // Admin route for clearing all albums and tracks
   app.post('/api/admin/clear-albums', async (req, res) => {
