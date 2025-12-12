@@ -6,8 +6,149 @@ import path from 'path';
 import fs from 'fs';
 import uploadRouter from './upload-router';
 import chunkedUploader from './chunked-uploader';
+import Alexa from 'ask-sdk-core';
+import { ExpressAdapter } from 'ask-sdk-express-adapter';
+import { storage } from './storage';
 
 const app = express();
+
+// Register Alexa endpoint BEFORE body parsers (SDK needs raw body)
+const LaunchRequestHandler = {
+  canHandle(handlerInput: Alexa.HandlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
+  },
+  handle(handlerInput: Alexa.HandlerInput) {
+    return handlerInput.responseBuilder
+      .speak('Welcome to NU Melodic! You can ask me to play music, tell you about featured albums, or get information about your playlists. What would you like to do?')
+      .reprompt('Would you like to hear about featured albums or play some music?')
+      .getResponse();
+  }
+};
+
+const PlayMusicIntentHandler = {
+  canHandle(handlerInput: Alexa.HandlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'PlayMusicIntent';
+  },
+  async handle(handlerInput: Alexa.HandlerInput) {
+    try {
+      const featuredTracks = await storage.getFeaturedTracks();
+      if (featuredTracks.length > 0) {
+        const track = featuredTracks[0];
+        return handlerInput.responseBuilder.speak(`Now playing ${track.title}. Enjoy your music on NU Melodic!`).getResponse();
+      }
+      return handlerInput.responseBuilder.speak('I couldn\'t find any featured tracks right now.').getResponse();
+    } catch {
+      return handlerInput.responseBuilder.speak('Sorry, I had trouble accessing your music library.').getResponse();
+    }
+  }
+};
+
+const GetFeaturedAlbumsIntentHandler = {
+  canHandle(handlerInput: Alexa.HandlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'GetFeaturedAlbumsIntent';
+  },
+  async handle(handlerInput: Alexa.HandlerInput) {
+    try {
+      const albums = await storage.getFeaturedAlbums();
+      if (albums.length > 0) {
+        const albumNames = albums.slice(0, 3).map(a => a.title).join(', ');
+        return handlerInput.responseBuilder
+          .speak(`Here are some featured albums: ${albumNames}.`)
+          .reprompt('Would you like to hear more?')
+          .getResponse();
+      }
+      return handlerInput.responseBuilder.speak('There are no featured albums at the moment.').getResponse();
+    } catch {
+      return handlerInput.responseBuilder.speak('Sorry, I had trouble getting the featured albums.').getResponse();
+    }
+  }
+};
+
+const GetRecentAlbumsIntentHandler = {
+  canHandle(handlerInput: Alexa.HandlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'GetRecentAlbumsIntent';
+  },
+  async handle(handlerInput: Alexa.HandlerInput) {
+    try {
+      const albums = await storage.getRecentAlbums();
+      if (albums.length > 0) {
+        const albumNames = albums.slice(0, 3).map(a => `${a.title} by ${a.artist}`).join(', ');
+        return handlerInput.responseBuilder.speak(`Recently added albums include: ${albumNames}.`).getResponse();
+      }
+      return handlerInput.responseBuilder.speak('There are no recent albums at the moment.').getResponse();
+    } catch {
+      return handlerInput.responseBuilder.speak('Sorry, I couldn\'t get the recent albums.').getResponse();
+    }
+  }
+};
+
+const HelpIntentHandler = {
+  canHandle(handlerInput: Alexa.HandlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
+  },
+  handle(handlerInput: Alexa.HandlerInput) {
+    return handlerInput.responseBuilder
+      .speak('You can say: tell me about featured albums, what are the recent albums, or play music.')
+      .reprompt('What would you like to do?')
+      .getResponse();
+  }
+};
+
+const CancelAndStopIntentHandler = {
+  canHandle(handlerInput: Alexa.HandlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+      && (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.CancelIntent'
+        || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
+  },
+  handle(handlerInput: Alexa.HandlerInput) {
+    return handlerInput.responseBuilder.speak('Thanks for using NU Melodic. Goodbye!').getResponse();
+  }
+};
+
+const SessionEndedRequestHandler = {
+  canHandle(handlerInput: Alexa.HandlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'SessionEndedRequest';
+  },
+  handle(handlerInput: Alexa.HandlerInput) {
+    return handlerInput.responseBuilder.getResponse();
+  }
+};
+
+const AlexaErrorHandler = {
+  canHandle() { return true; },
+  handle(handlerInput: Alexa.HandlerInput) {
+    return handlerInput.responseBuilder
+      .speak('Sorry, I had trouble doing what you asked. Please try again.')
+      .reprompt('Please try again.')
+      .getResponse();
+  }
+};
+
+const alexaSkill = Alexa.SkillBuilders.custom()
+  .addRequestHandlers(
+    LaunchRequestHandler,
+    PlayMusicIntentHandler,
+    GetFeaturedAlbumsIntentHandler,
+    GetRecentAlbumsIntentHandler,
+    HelpIntentHandler,
+    CancelAndStopIntentHandler,
+    SessionEndedRequestHandler
+  )
+  .addErrorHandlers(AlexaErrorHandler)
+  .create();
+
+const alexaAdapter = new ExpressAdapter(alexaSkill, false, false);
+
+app.post('/api/alexa', alexaAdapter.getRequestHandlers());
+app.get('/api/alexa', (req, res) => {
+  res.json({ status: 'Alexa endpoint is active', message: 'Use POST for Alexa requests' });
+});
+console.log('Alexa skill endpoint registered at /api/alexa (before body parsers)');
+
 app.use(express.json({ limit: '5gb' }));
 app.use(express.urlencoded({ extended: true, limit: '5gb' }));
 
