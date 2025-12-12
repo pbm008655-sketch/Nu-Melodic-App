@@ -12,10 +12,8 @@ import { storage } from './storage';
 
 const app = express();
 
-// Base URL for audio files - use production URL
-const AUDIO_BASE_URL = process.env.REPLIT_DEV_DOMAIN 
-  ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-  : 'https://music-stream-pro-pbm2.replit.app';
+// Base URL for audio files - always use production URL for Alexa
+const AUDIO_BASE_URL = 'https://music-stream-pro-pbm2.replit.app';
 
 // Simple in-memory state for audio playback (single user app)
 interface PlaybackState {
