@@ -62,6 +62,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up Alexa skill endpoint
   setupAlexaEndpoint(app);
   
+  // Direct Alexa test endpoint (backup)
+  app.get('/api/alexa-test', (req, res) => {
+    res.json({ status: 'Alexa endpoint ready', timestamp: new Date().toISOString() });
+  });
+  
   // Admin route for clearing all albums and tracks
   app.post('/api/admin/clear-albums', async (req, res) => {
     // Check if user is authenticated
