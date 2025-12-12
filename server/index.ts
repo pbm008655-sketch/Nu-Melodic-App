@@ -32,12 +32,17 @@ const PlayMusicIntentHandler = {
   },
   async handle(handlerInput: Alexa.HandlerInput) {
     try {
-      const featuredTracks = await storage.getFeaturedTracks();
-      if (featuredTracks.length > 0) {
-        const track = featuredTracks[0];
-        return handlerInput.responseBuilder.speak(`Now playing ${track.title}. Enjoy your music on NU Melodic!`).getResponse();
+      // Try featured tracks first, then fall back to any available tracks
+      let tracks = await storage.getFeaturedTracks();
+      if (tracks.length === 0) {
+        tracks = await storage.getAllTracks();
       }
-      return handlerInput.responseBuilder.speak('I couldn\'t find any featured tracks right now.').getResponse();
+      if (tracks.length > 0) {
+        const randomIndex = Math.floor(Math.random() * Math.min(tracks.length, 10));
+        const track = tracks[randomIndex];
+        return handlerInput.responseBuilder.speak(`Now playing ${track.title} by ${track.artist}. Enjoy your music on NU Melodic!`).getResponse();
+      }
+      return handlerInput.responseBuilder.speak('I couldn\'t find any tracks in your library right now.').getResponse();
     } catch {
       return handlerInput.responseBuilder.speak('Sorry, I had trouble accessing your music library.').getResponse();
     }
