@@ -196,11 +196,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const alexaAdapter = new ExpressAdapter(alexaSkill, false, false);
 
-  app.post('/alexa', alexaAdapter.getRequestHandlers());
-  app.get('/alexa', (req, res) => {
+  app.post('/api/alexa', alexaAdapter.getRequestHandlers());
+  app.get('/api/alexa', (req, res) => {
     res.json({ status: 'Alexa endpoint is active', message: 'Use POST for Alexa requests' });
   });
-  console.log('Alexa skill endpoint registered at /alexa');
+  console.log('Alexa skill endpoint registered at /api/alexa');
   
   // Direct Alexa test endpoint (backup)
   app.get('/api/alexa-test', (req, res) => {
