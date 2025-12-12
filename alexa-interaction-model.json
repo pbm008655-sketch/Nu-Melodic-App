@@ -1,0 +1,78 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "nu melodic",
+      "intents": [
+        {
+          "name": "PlayMusicIntent",
+          "slots": [],
+          "samples": [
+            "play music",
+            "play a song",
+            "play something",
+            "start playing",
+            "play some music",
+            "play me a song",
+            "start the music",
+            "play a track",
+            "play featured music",
+            "what can I listen to"
+          ]
+        },
+        {
+          "name": "GetFeaturedAlbumsIntent",
+          "slots": [],
+          "samples": [
+            "what are the featured albums",
+            "tell me about featured albums",
+            "show me featured albums",
+            "featured albums",
+            "what albums are featured",
+            "list featured albums",
+            "what's featured",
+            "show featured",
+            "popular albums",
+            "best albums"
+          ]
+        },
+        {
+          "name": "GetRecentAlbumsIntent",
+          "slots": [],
+          "samples": [
+            "what are the recent albums",
+            "tell me about recent albums",
+            "show me recent albums",
+            "recent albums",
+            "new albums",
+            "latest albums",
+            "what's new",
+            "newly added albums",
+            "what was recently added",
+            "show me what's new"
+          ]
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        }
+      ],
+      "types": []
+    }
+  }
+}
