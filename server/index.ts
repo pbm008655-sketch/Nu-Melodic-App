@@ -40,7 +40,10 @@ const PlayMusicIntentHandler = {
       if (tracks.length > 0) {
         const randomIndex = Math.floor(Math.random() * Math.min(tracks.length, 10));
         const track = tracks[randomIndex];
-        return handlerInput.responseBuilder.speak(`Now playing ${track.title} by ${track.artist}. Enjoy your music on NU Melodic!`).getResponse();
+        // Get artist from album
+        const album = await storage.getAlbum(track.albumId);
+        const artistName = album?.artist || 'Unknown Artist';
+        return handlerInput.responseBuilder.speak(`Now playing ${track.title} by ${artistName}. To listen, open the NU Melodic app on your device.`).getResponse();
       }
       return handlerInput.responseBuilder.speak('I couldn\'t find any tracks in your library right now.').getResponse();
     } catch {
