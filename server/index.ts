@@ -12,6 +12,22 @@ import { storage } from './storage';
 
 const app = express();
 
+// Base URL for audio files - use production URL
+const AUDIO_BASE_URL = process.env.REPLIT_DEV_DOMAIN 
+  ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+  : 'https://music-stream-pro-pbm2.replit.app';
+
+// Simple in-memory state for audio playback (single user app)
+interface PlaybackState {
+  trackId: number;
+  token: string;
+  audioUrl: string;
+  offsetInMilliseconds: number;
+  trackTitle: string;
+  artistName: string;
+}
+let currentPlaybackState: PlaybackState | null = null;
+
 // Register Alexa endpoint BEFORE body parsers (SDK needs raw body)
 const LaunchRequestHandler = {
   canHandle(handlerInput: Alexa.HandlerInput) {
@@ -19,8 +35,8 @@ const LaunchRequestHandler = {
   },
   handle(handlerInput: Alexa.HandlerInput) {
     return handlerInput.responseBuilder
-      .speak('Welcome to NU Melodic! You can ask me to play music, tell you about featured albums, or get information about your playlists. What would you like to do?')
-      .reprompt('Would you like to hear about featured albums or play some music?')
+      .speak('Welcome to NU Melodic! You can say play music to start streaming, or ask about featured albums.')
+      .reprompt('Say play music to start listening.')
       .getResponse();
   }
 };
@@ -32,7 +48,6 @@ const PlayMusicIntentHandler = {
   },
   async handle(handlerInput: Alexa.HandlerInput) {
     try {
-      // Try featured tracks first, then fall back to any available tracks
       let tracks = await storage.getFeaturedTracks();
       if (tracks.length === 0) {
         tracks = await storage.getAllTracks();
@@ -40,14 +55,37 @@ const PlayMusicIntentHandler = {
       if (tracks.length > 0) {
         const randomIndex = Math.floor(Math.random() * Math.min(tracks.length, 10));
         const track = tracks[randomIndex];
-        // Get artist from album
         const album = await storage.getAlbum(track.albumId);
         const artistName = album?.artist || 'Unknown Artist';
-        return handlerInput.responseBuilder.speak(`Now playing ${track.title} by ${artistName}. To listen, open the NU Melodic app on your device.`).getResponse();
+        
+        const audioUrl = `${AUDIO_BASE_URL}${track.audioUrl}`;
+        const token = `track-${track.id}-${Date.now()}`;
+        
+        // Store playback state for resume
+        currentPlaybackState = {
+          trackId: track.id,
+          token,
+          audioUrl,
+          offsetInMilliseconds: 0,
+          trackTitle: track.title,
+          artistName
+        };
+        
+        return handlerInput.responseBuilder
+          .speak(`Now playing ${track.title} by ${artistName}`)
+          .addAudioPlayerPlayDirective('REPLACE_ALL', audioUrl, token, 0, undefined, {
+            title: track.title,
+            subtitle: artistName,
+            art: album?.coverUrl ? {
+              sources: [{ url: `${AUDIO_BASE_URL}${album.coverUrl}` }]
+            } : undefined
+          })
+          .getResponse();
       }
       return handlerInput.responseBuilder.speak('I couldn\'t find any tracks in your library right now.').getResponse();
-    } catch {
-      return handlerInput.responseBuilder.speak('Sorry, I had trouble accessing your music library.').getResponse();
+    } catch (error) {
+      console.error('PlayMusicIntent error:', error);
+      return handlerInput.responseBuilder.speak('Sorry, I had trouble playing music.').getResponse();
     }
   }
 };
@@ -63,8 +101,8 @@ const GetFeaturedAlbumsIntentHandler = {
       if (albums.length > 0) {
         const albumNames = albums.slice(0, 3).map(a => a.title).join(', ');
         return handlerInput.responseBuilder
-          .speak(`Here are some featured albums: ${albumNames}.`)
-          .reprompt('Would you like to hear more?')
+          .speak(`Here are some featured albums: ${albumNames}. Say play music to start listening.`)
+          .reprompt('Would you like me to play some music?')
           .getResponse();
       }
       return handlerInput.responseBuilder.speak('There are no featured albums at the moment.').getResponse();
@@ -93,6 +131,79 @@ const GetRecentAlbumsIntentHandler = {
   }
 };
 
+// AudioPlayer Pause Intent
+const PauseIntentHandler = {
+  canHandle(handlerInput: Alexa.HandlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.PauseIntent';
+  },
+  handle(handlerInput: Alexa.HandlerInput) {
+    return handlerInput.responseBuilder
+      .addAudioPlayerStopDirective()
+      .getResponse();
+  }
+};
+
+// AudioPlayer Resume Intent
+const ResumeIntentHandler = {
+  canHandle(handlerInput: Alexa.HandlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.ResumeIntent';
+  },
+  async handle(handlerInput: Alexa.HandlerInput) {
+    // Resume from where we left off using stored state
+    if (currentPlaybackState) {
+      return handlerInput.responseBuilder
+        .speak(`Resuming ${currentPlaybackState.trackTitle}`)
+        .addAudioPlayerPlayDirective(
+          'REPLACE_ALL',
+          currentPlaybackState.audioUrl,
+          currentPlaybackState.token,
+          currentPlaybackState.offsetInMilliseconds,
+          undefined,
+          {
+            title: currentPlaybackState.trackTitle,
+            subtitle: currentPlaybackState.artistName
+          }
+        )
+        .getResponse();
+    }
+    
+    // No previous state, play a new track
+    try {
+      const tracks = await storage.getAllTracks();
+      if (tracks.length > 0) {
+        const randomIndex = Math.floor(Math.random() * Math.min(tracks.length, 10));
+        const track = tracks[randomIndex];
+        const album = await storage.getAlbum(track.albumId);
+        const artistName = album?.artist || 'Unknown Artist';
+        const audioUrl = `${AUDIO_BASE_URL}${track.audioUrl}`;
+        const token = `track-${track.id}-${Date.now()}`;
+        
+        currentPlaybackState = {
+          trackId: track.id,
+          token,
+          audioUrl,
+          offsetInMilliseconds: 0,
+          trackTitle: track.title,
+          artistName
+        };
+        
+        return handlerInput.responseBuilder
+          .speak(`Playing ${track.title}`)
+          .addAudioPlayerPlayDirective('REPLACE_ALL', audioUrl, token, 0, undefined, {
+            title: track.title,
+            subtitle: artistName
+          })
+          .getResponse();
+      }
+      return handlerInput.responseBuilder.speak('No tracks available.').getResponse();
+    } catch {
+      return handlerInput.responseBuilder.speak('Sorry, I couldn\'t resume playback.').getResponse();
+    }
+  }
+};
+
 const HelpIntentHandler = {
   canHandle(handlerInput: Alexa.HandlerInput) {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -100,8 +211,8 @@ const HelpIntentHandler = {
   },
   handle(handlerInput: Alexa.HandlerInput) {
     return handlerInput.responseBuilder
-      .speak('You can say: tell me about featured albums, what are the recent albums, or play music.')
-      .reprompt('What would you like to do?')
+      .speak('You can say play music to stream audio, or ask about featured albums and recent albums.')
+      .reprompt('Say play music to start listening.')
       .getResponse();
   }
 };
@@ -113,7 +224,79 @@ const CancelAndStopIntentHandler = {
         || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
   },
   handle(handlerInput: Alexa.HandlerInput) {
-    return handlerInput.responseBuilder.speak('Thanks for using NU Melodic. Goodbye!').getResponse();
+    return handlerInput.responseBuilder
+      .speak('Thanks for using NU Melodic. Goodbye!')
+      .addAudioPlayerStopDirective()
+      .getResponse();
+  }
+};
+
+// AudioPlayer Event Handlers
+const AudioPlayerEventHandler = {
+  canHandle(handlerInput: Alexa.HandlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope).startsWith('AudioPlayer.');
+  },
+  async handle(handlerInput: Alexa.HandlerInput) {
+    const audioPlayerEventName = Alexa.getRequestType(handlerInput.requestEnvelope);
+    const request = handlerInput.requestEnvelope.request as any;
+    console.log(`AudioPlayer event: ${audioPlayerEventName}`);
+    
+    switch (audioPlayerEventName) {
+      case 'AudioPlayer.PlaybackStarted':
+        break;
+      case 'AudioPlayer.PlaybackFinished':
+        // Clear state when playback finishes naturally
+        currentPlaybackState = null;
+        break;
+      case 'AudioPlayer.PlaybackStopped':
+        // Save the offset for resume
+        if (currentPlaybackState && request.offsetInMilliseconds !== undefined) {
+          currentPlaybackState.offsetInMilliseconds = request.offsetInMilliseconds;
+          console.log(`Saved offset: ${request.offsetInMilliseconds}ms`);
+        }
+        break;
+      case 'AudioPlayer.PlaybackNearlyFinished':
+        // Could queue the next track here for continuous playback
+        break;
+      case 'AudioPlayer.PlaybackFailed':
+        console.error('Playback failed:', request.error);
+        break;
+    }
+    return handlerInput.responseBuilder.getResponse();
+  }
+};
+
+// PlaybackController for physical buttons on Echo devices
+const PlaybackControllerHandler = {
+  canHandle(handlerInput: Alexa.HandlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope).startsWith('PlaybackController.');
+  },
+  async handle(handlerInput: Alexa.HandlerInput) {
+    const controllerEventName = Alexa.getRequestType(handlerInput.requestEnvelope);
+    console.log(`PlaybackController event: ${controllerEventName}`);
+    
+    if (controllerEventName === 'PlaybackController.PlayCommandIssued') {
+      // Play a random track
+      try {
+        const tracks = await storage.getAllTracks();
+        if (tracks.length > 0) {
+          const randomIndex = Math.floor(Math.random() * Math.min(tracks.length, 10));
+          const track = tracks[randomIndex];
+          const audioUrl = `${AUDIO_BASE_URL}${track.audioUrl}`;
+          const token = `track-${track.id}-${Date.now()}`;
+          
+          return handlerInput.responseBuilder
+            .addAudioPlayerPlayDirective('REPLACE_ALL', audioUrl, token, 0)
+            .getResponse();
+        }
+      } catch {
+        // Fall through
+      }
+    } else if (controllerEventName === 'PlaybackController.PauseCommandIssued') {
+      return handlerInput.responseBuilder.addAudioPlayerStopDirective().getResponse();
+    }
+    
+    return handlerInput.responseBuilder.getResponse();
   }
 };
 
@@ -128,10 +311,10 @@ const SessionEndedRequestHandler = {
 
 const AlexaErrorHandler = {
   canHandle() { return true; },
-  handle(handlerInput: Alexa.HandlerInput) {
+  handle(handlerInput: Alexa.HandlerInput, error: Error) {
+    console.error('Alexa error:', error);
     return handlerInput.responseBuilder
       .speak('Sorry, I had trouble doing what you asked. Please try again.')
-      .reprompt('Please try again.')
       .getResponse();
   }
 };
@@ -142,8 +325,12 @@ const alexaSkill = Alexa.SkillBuilders.custom()
     PlayMusicIntentHandler,
     GetFeaturedAlbumsIntentHandler,
     GetRecentAlbumsIntentHandler,
+    PauseIntentHandler,
+    ResumeIntentHandler,
     HelpIntentHandler,
     CancelAndStopIntentHandler,
+    AudioPlayerEventHandler,
+    PlaybackControllerHandler,
     SessionEndedRequestHandler
   )
   .addErrorHandlers(AlexaErrorHandler)
@@ -153,9 +340,9 @@ const alexaAdapter = new ExpressAdapter(alexaSkill, false, false);
 
 app.post('/api/alexa', alexaAdapter.getRequestHandlers());
 app.get('/api/alexa', (req, res) => {
-  res.json({ status: 'Alexa endpoint is active', message: 'Use POST for Alexa requests' });
+  res.json({ status: 'Alexa AudioPlayer endpoint active', message: 'Supports audio streaming' });
 });
-console.log('Alexa skill endpoint registered at /api/alexa (before body parsers)');
+console.log('Alexa skill with AudioPlayer registered at /api/alexa');
 
 app.use(express.json({ limit: '5gb' }));
 app.use(express.urlencoded({ extended: true, limit: '5gb' }));
