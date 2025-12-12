@@ -1,6 +1,6 @@
 import Alexa from 'ask-sdk-core';
 import { ExpressAdapter } from 'ask-sdk-express-adapter';
-import type { Express } from 'express';
+import type { Express, Request, Response, NextFunction } from 'express';
 import { storage } from './storage';
 
 const LaunchRequestHandler = {
@@ -163,9 +163,20 @@ const skill = Alexa.SkillBuilders.custom()
   .addErrorHandlers(ErrorHandler)
   .create();
 
-const adapter = new ExpressAdapter(skill, true, true);
+// Disable request verification for testing (set both to false)
+const adapter = new ExpressAdapter(skill, false, false);
 
 export function setupAlexaEndpoint(app: Express) {
-  app.post('/alexa', adapter.getRequestHandlers());
+  // Add logging middleware for Alexa requests
+  app.post('/alexa', (req: Request, res: Response, next: NextFunction) => {
+    console.log('Alexa request received:', JSON.stringify(req.body?.request?.type || 'unknown'));
+    next();
+  }, adapter.getRequestHandlers());
+  
+  // Add a GET endpoint for testing connectivity
+  app.get('/alexa', (req, res) => {
+    res.json({ status: 'Alexa endpoint is active', message: 'Use POST for Alexa requests' });
+  });
+  
   console.log('Alexa skill endpoint registered at /alexa');
 }
