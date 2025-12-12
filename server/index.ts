@@ -71,15 +71,19 @@ const PlayMusicIntentHandler = {
           artistName
         };
         
+        const metadata: any = {
+          title: track.title,
+          subtitle: artistName
+        };
+        if (album?.coverUrl) {
+          metadata.art = {
+            sources: [{ url: `${AUDIO_BASE_URL}${album.coverUrl}` }]
+          };
+        }
+        
         return handlerInput.responseBuilder
           .speak(`Now playing ${track.title} by ${artistName}`)
-          .addAudioPlayerPlayDirective('REPLACE_ALL', audioUrl, token, 0, undefined, {
-            title: track.title,
-            subtitle: artistName,
-            art: album?.coverUrl ? {
-              sources: [{ url: `${AUDIO_BASE_URL}${album.coverUrl}` }]
-            } : undefined
-          })
+          .addAudioPlayerPlayDirective('REPLACE_ALL', audioUrl, token, 0, undefined, metadata)
           .getResponse();
       }
       return handlerInput.responseBuilder.speak('I couldn\'t find any tracks in your library right now.').getResponse();
@@ -338,7 +342,10 @@ const alexaSkill = Alexa.SkillBuilders.custom()
 
 const alexaAdapter = new ExpressAdapter(alexaSkill, false, false);
 
-app.post('/api/alexa', alexaAdapter.getRequestHandlers());
+app.post('/api/alexa', (req, res, next) => {
+  console.log('Alexa request received');
+  next();
+}, alexaAdapter.getRequestHandlers());
 app.get('/api/alexa', (req, res) => {
   res.json({ status: 'Alexa AudioPlayer endpoint active', message: 'Supports audio streaming' });
 });
