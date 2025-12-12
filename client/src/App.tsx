@@ -26,6 +26,7 @@ import UploadTestPage from "./pages/upload-test-page";
 import ChunkedUploaderPage from "./pages/chunked-uploader-page";
 import StoragePage from "./pages/storage-page";
 import StorageTestPage from "./pages/storage-test-page";
+import PrivacyPolicy from "./pages/privacy-policy";
 
 function Router() {
   return (
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/login" component={AuthPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
       <ProtectedRoute path="/album/:id" component={AlbumPage} />
       <ProtectedRoute path="/playlist/:id" component={PlaylistPage} />
       <ProtectedRoute path="/favorites" component={FavoritesPage} />
