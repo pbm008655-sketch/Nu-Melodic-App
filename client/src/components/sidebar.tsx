@@ -246,6 +246,15 @@ export default function Sidebar() {
             {user?.isPremium ? "Manage Subscription" : "Upgrade to Premium"}
           </div>
         </Link>
+        
+        <div className="flex gap-3 text-xs text-zinc-500 mt-2">
+          <Link href="/privacy-policy">
+            <span className="hover:text-zinc-300 cursor-pointer" data-testid="link-sidebar-privacy">Privacy</span>
+          </Link>
+          <Link href="/terms-of-use">
+            <span className="hover:text-zinc-300 cursor-pointer" data-testid="link-sidebar-terms">Terms</span>
+          </Link>
+        </div>
       </div>
     </div>
   );

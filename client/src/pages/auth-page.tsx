@@ -274,6 +274,16 @@ export default function AuthPage() {
                 </Button>
               </p>
             </div>
+            
+            <div className="mt-4 text-center text-zinc-500 text-xs">
+              <Link href="/privacy-policy">
+                <span className="hover:text-zinc-300 cursor-pointer" data-testid="link-privacy-policy">Privacy Policy</span>
+              </Link>
+              <span className="mx-2">|</span>
+              <Link href="/terms-of-use">
+                <span className="hover:text-zinc-300 cursor-pointer" data-testid="link-terms-of-use">Terms of Use</span>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
