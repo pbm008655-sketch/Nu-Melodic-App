@@ -1,0 +1,119 @@
+Security Requirements for Alexa Skills
+ Note: Sign in to the developer console to build or publish your skill.
+To protect customer data, the cloud-based service for your skill must meet the Amazon security requirements. Review the following requirements before you submit your skill for certification.
+
+ Important: Amazon doesn't allow skills that offer anti-virus functionality.
+Alexa-hosted skills and skills hosted as AWS Lambda functions
+If you host your skill as Amazon Web Services (AWS) Lambda function or an Alexa-hosted skill, your skill code must verify that incoming requests are intended for your service, as discussed in Verify that the request came from your skill.
+
+Skills hosted as web services on your own endpoint
+If you host your skill on your own web services endpoint, the web service must meet the following requirements:
+
+The web service must present a valid, trusted certificate when the connection is established and must possess the corresponding private key. Amazon only trusts certificates signed by an Amazon-approved certificate authority.
+Self-signed certificates cannot be used for published skills.
+Your skill code must verify that incoming requests were sent by the Alexa service. You can do this by validating the request signature as discussed in Verify that the request was sent by Alexa.
+ Note: The Java library, provided with the Alexa Skills Kit, includes a disableRequestSignature flag in the SpeechletServlet class that you can use for testing. When you're ready to submit your skill for certification, if you used this flag, be sure to set it back to false.
+Your skill code must verify that incoming requests are intended for your service, as discussed in Verify that the request came from your skill.
+Skills that use account linking
+Account linking enables your skill to connect the customer's account in your system with their Amazon Alexa account. For more details, see Add Account Linking to Your Alexa Skill.
+
+If your custom skill implements account linking, verify that your skill follows all the instructions in Account Linking for Custom Skills. If your smart home, video, or music skill implements account linking, verify that your skill follows all the instructions in Account Linking for Smart Home and Other Domains.
+
+Your skill must meet the following account linking requirements:
+
+The skill's privacy policy and terms of use links must each open to a valid web page. Amazon displays these links on the skill detail page in the Alexa Skills Store and on the Alexa app.
+Account linking for Alexa skills uses the OAuth 2.0 authentication framework. If your skill uses account linking, you can use your own authorization server, Login with Amazon (LWA), or any OAuth 2.0 provider that has a certificate signed by an Amazon-approved certificate authority. For more details, see Requirements for Account Linking for Alexa Skills.
+The authorization server must display a log-in page for the user to sign in to your system. For more details, see Authorization URI requirements.
+If you're the owner of the authorization server, your skill must pass the following criteria:
+You must own the domain that presents the login page.
+The main domain URL of the login page must reflect your brand, skill, or developer name. In other words, if the URL for your skill is https://www.example.com/xyz, the example.com part of the URL must reflect the brand, skill, or developer name.
+The login page must indicate your brand, skill, or developer name in the form of text or an icon.
+The login page must be served over HTTPS.
+If you use the Login with Amazon authorization server, your skill must pass the following criteria:
+The login page URL must be from amazon.com and the page must be served over HTTPS.
+The login page must clearly communicate which third-party accounts are needed to link the account to the skill.
+You must clearly state the customer information that your skill collects and uses. This information can be on the login page or in your privacy policy.
+If you use another OAuth provider, your skill must pass the following criteria:
+You must own the domain that presents the landing page.
+The main domain URL of the landing page must reflect your brand, skill, or developer name. In other words, if the URL for your skill is https://www.example.com/xyz, the example.com part of the URL must reflect the brand, skill, or developer name.
+You must own the landing page that users are directed to when enabling your skill. This landing page must clearly communicate which third-party accounts are needed to link the account to the skill.
+The landing page must direct the user to the domain login page owned by the OAuth provider and must be served over HTTPS.
+You cannot directly handle, store, or transmit credentials on behalf of the user.
+When you submit your skill for certification, be sure to provide a valid set of account credentials with your testing instructions so that the certification team can verify account linking. Provide credentials for each locale that your skill supports. For more details, see Provide test account credentials.
+For a custom skill, if a user invokes an intent that requires authorization, but has not yet linked their account, the skill should return the LinkAccount card.
+For Connected Vehicle skills, you must prominently surface safety guidelines to users during the account linking flow.
+To meet this requirement, you can add the following warning to the account linking page with an optional link to more safety information:
+Warning: This skill allows you to use voice to trigger certain functions in the vehicle, like remote vehicle start and climate control. For more information, click <add url>.
+Skills that require voice codes
+If your skill provides financial services, allows purchases over $100, or lets the customer unlock or disarm a device, you must require the customer to set up a voice code before they can use that skill functionality. You can require a voice code for other types of skill features, such as opening garage doors and similar security-reducing actions.
+
+After the customer has established a voice code, you can provide an opt-out option. For customers who don't set up a voice code, you can provide the customer with reduced functionality of your skill.
+
+Voice code requirements
+Your skill must meet the following voice code requirements:
+
+The customer must have an opportunity to create the voice code during the account linking flow. The account linking page must include a reminder that it's a best practice to set a different voice code than the code used for other accounts or services.
+The voice code must consist of at least four digits.
+Your skill must require the customer to provide the voice code in every new skill session before any transaction completes and before the skill recites any sensitive customer information.
+After three consecutive incorrect voice code attempts, the skill must require the customer to re-link their account and create a new voice code.
+The skill must allow the customer to ask questions, such as "Lost my voice code," "Don't have a voice code," or "How do I reset my voice code?" In response, the skill must provide information about how to reset the voice code by voice and home card.
+The skill must not, at any time, display the voice code on home cards or screens.
+The account linking flow should remind the user to reset the voice code every 60 days.
+Voice code testing
+Your skill must pass the following tests to meet security requirements.
+
+Test	Expected Results
+Enable the skill and complete the account linking process.
+
+Verify that the account linking flow includes setting a voice code. In addition, verify that the voice code meets the voice code requirements.
+
+Invoke each intent that lets a customer use the skill functionality that requires a voice code.
+
+Verify that each request asks the customer to speak the voice code.
+
+Invoke each intent that lets a customer use the skill functionality that requires a voice code.
+
+When prompted for the voice code, speak an incorrect voice code.
+Provide an incorrect voice code at least three times.
+
+Verify the following functionality:
+
+The skill rejects the incorrect voice code and doesn't complete the requested action.
+After three consecutive incorrect voice code attempts, the skill instructs the customer to reset the voice code. Attempting a fourth request with the original, correct voice code now fails.
+If the skill offers reduced functionality when no voice code is set, follow these steps to test your skill:
+
+Disable the skill or log in to the Alexa app as an Alexa user who has not yet enabled the skill.
+Enable the skill, but don't set the voice code or opt out of the voice code requirement when prompted.
+Attempt to invoke the intents that let the customer use the skill functionality that requires a voice code.
+Verify the following functionality:
+
+The requests to perform the skill functionality that requires a voice code fail. The skill instructs the user to set a voice code to use these features.
+Features other than those that require a voice code do work normally without the voice code.
+Privacy requirements
+The skill must not:
+
+Contain references to or include malicious hacking, such as phishing or Trojans. This requirements includes rooting a device or circumventing Amazon's or any developer's digital rights management (DRM) software.
+Contain references to or include malicious user spying or tracking, including stalking, in the skill or skill metadata.
+Misuse customers' personally identifiable information or sensitive personal information.
+Collect personal information from end users without doing all the following:
+
+(i) provide a legally adequate privacy notice that will be displayed to end users on your skill's detail page,
+(ii) use the information in a way that end users have consented to,
+(iii) verify that your collection and use of that information complies with your privacy notice and all applicable laws, and
+(iv) collect and use the data only if it's required to support and improve the features and services that your skill provides.
+
+Examples of personal information include, but aren't limited to: full name, home address, email address, date of birth, and telephone number.
+
+Collect by voice or recite sensitive personally identifiable information, including, but not limited to, passport number, social security number, national identity number, full bank account number, or full credit/debit card number, or the equivalent in different locales.
+Recite any of the following information without giving the user an option to set up a four-digit security voice code during the account linking process: (i) full date of birth, (ii) driver license number, (iii) vehicle registration number, and (iv) insurance policy number.
+Recite publicly available information about individuals other than the skill user without including the source of the information in the skill description.
+Related topics
+Policy Requirements
+Functional Testing
+Voice Interface and User Experience Testing
+Submit Skills for Certification in the Alexa Developer Console
+Was this page helpful?
+Yes
+No
+Provide feedback
+Last updated: May 01, 2024
