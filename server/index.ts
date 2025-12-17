@@ -13,11 +13,18 @@ import { storage } from './storage';
 const app = express();
 
 // Serve static HTML pages explicitly (for Amazon Alexa certification)
+// Check both development (public/) and production (dist/public/) locations
 app.get('/privacy-policy.html', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'privacy-policy.html'));
+  const prodPath = path.join(process.cwd(), 'dist', 'public', 'privacy-policy.html');
+  const devPath = path.join(process.cwd(), 'public', 'privacy-policy.html');
+  const filePath = fs.existsSync(prodPath) ? prodPath : devPath;
+  res.sendFile(filePath);
 });
 app.get('/terms-of-use.html', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'public', 'terms-of-use.html'));
+  const prodPath = path.join(process.cwd(), 'dist', 'public', 'terms-of-use.html');
+  const devPath = path.join(process.cwd(), 'public', 'terms-of-use.html');
+  const filePath = fs.existsSync(prodPath) ? prodPath : devPath;
+  res.sendFile(filePath);
 });
 
 // Base URL for audio files - always use production URL for Alexa
