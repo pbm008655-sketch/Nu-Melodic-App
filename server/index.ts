@@ -12,6 +12,14 @@ import { storage } from './storage';
 
 const app = express();
 
+// Serve static HTML pages explicitly (for Amazon Alexa certification)
+app.get('/privacy-policy.html', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'privacy-policy.html'));
+});
+app.get('/terms-of-use.html', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'terms-of-use.html'));
+});
+
 // Base URL for audio files - always use production URL for Alexa
 const AUDIO_BASE_URL = 'https://music-stream-pro-pbm2.replit.app';
 
