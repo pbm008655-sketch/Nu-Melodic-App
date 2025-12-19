@@ -1,0 +1,137 @@
+Add Additional Locales of the Same Language to Custom Skills
+ Note: Sign in to the developer console to build or publish your skill.
+To expand your customer reach, you can add additional locales of the same language to your custom skill. For example, if you support American English (en_US), you can try to reach customers in different regions by adding UK English (en_GB) and India English (en_IN) locales to your custom skill.
+
+The following sections describe the features you can use to add additional locales of the same language to your custom skill. For conceptual information about how to use multiple locales in your custom skill, see Configure a Skill for Multiple Languages.
+
+About adding additional locales of the same language to your custom skills
+You can add additional locales of the same language to your custom skills by using one of the following features:
+
+Sync locales – Automatically duplicates your custom-skill locale assets to additional locales of the same language. When you use this feature, you choose a primary locale and a set of secondary locales. Your locales automatically sync every time you build your primary locale's interaction model or save a manifest change.
+Locale clone – Duplicates your custom-skill locale assets to additional locales of the same language. When you use this feature, you choose a primary locale and a set of secondary locales. Cloning occurs after you explicitly choose the clone option in the developer console. This feature doesn't continuously sync your locales automatically.
+Automated locale distribution – Automatically publishes existing custom-skill locale assets to other preconfigured locales of the same language without the need for certification.
+The following table describes when it might be appropriate for you to use each of these features.
+
+Feature	When to use	Eligibility criteria
+Sync locales
+
+You want to avoid manually cloning your locales to keep them in sync.
+You want to make continuous updates to your skill with changes that are applicable to all locales of the same language.
+You don't have to make specific locale changes or redevelop your locale.
+Your skill must meet the following criteria:
+
+
+Only custom skills are eligible.
+You have opted-in to use the feature.
+Your skill has a valid manifest.
+Your skill isn't a Multi-Capability Skill (MCS).
+Your skill doesn't use Alexa Conversations.
+Your skill doesn't use Alexa Blueprints.
+Locale clone
+
+You want to clone your locales manually to keep them in sync.
+You want to make continuous updates to your skill with changes that are applicable to all locales of the same language.
+You don't have to make specific locale changes or redevelop your locale.
+Your skill must meet the following criteria:
+
+
+Only custom skills are eligible.
+Your skill has a valid manifest.
+Your skill isn't a Multi-Capability Skill (MCS).
+Your skill doesn't use Alexa Conversations.
+Your skill doesn't use Alexa Blueprints.
+Automated locale distribution
+
+You want to publish existing custom skill locale assets automatically to other preconfigured locales of the same language.
+
+Your skill must meet the following criteria:
+
+
+You have opted-in to use the feature.
+Your skill passes the certification process.
+How to add additional locales of the same language to your custom skills
+Choose one of the following tabs for more details about how to use each of the features described in the previous section.
+
+Sync locales
+Locale clone
+Automated locale distribution
+ 
+Sync locales
+About sync locales
+The sync locales feature automatically triggers every time you build your primary locale's interaction model or save a manifest change. After you complete one of these actions, your secondary locales are then updated with your changes.
+
+Sync locales automatically triggers every time you build your primary locale's interaction model or save a manifest change. After you complete one of these actions, your secondary locales are then updated with your changes.
+
+ Important: The sync occurs when you update the interaction model for the primary locale. If you update the model for a secondary locale instead, the changes aren't built. This is because the primary locale always overrides the secondary locales when you use the sync locale feature. Make your changes to the primary locale instead.
+Use sync locales
+You control the sync locales feature with an opt-in toggle that's made available in the developer console on the Language Settings page.
+
+After you opt in, you choose a primary locale and a set of secondary locales from the menu made available in the developer console on the Language Settings page. When the sync locales feature triggers, it automatically copies your primary locale to the secondary locales you have selected.
+
+Sync locales runs in the background so you can continue to make updates to your skill. Due to this, sync locales might overwrite any manual updates that you have made to your secondary locale. If you want to make specific changes to your locale, opt out of the sync locales process. For more details about how to control opt-in and opt-out settings, see Use sync locales.
+
+ Note: For best results, don't use sync locales with skills that are already using automated locale distribution. In addition, don't try to delete your skill or submit your skill for certification while the sync locales sync is in progress.
+To enable sync locales for a new skill
+
+Sign in to the Alexa developer console.
+Click Create skill.
+Choose a skill name.
+Under the Primary locale heading, choose your primary language.
+To enable sync locales for the language, turn the Sync Locales toggle on.
+Finish choosing the remaining options to configure your skill as needed.
+Click Create skill.
+To enable sync locales for an existing skill
+
+Sign in to the Alexa developer console.
+From the list of existing skills, find the custom skill that you want to enable sync locales for, and then click to select that skill.
+In the top-left corner, from the drop-down menu, select Language Settings.
+In the list of languages, expand the section that contains the language you're configuring, for example, English.
+To enable sync locales for the language, turn the Sync Locales toggle on.
+Repeat steps four and five for any additional languages you want.
+Click Save.
+
+Your primary and secondary locales sync automatically each time you click Save.
+
+To disable sync locales on an existing skill
+
+Sign in to the Alexa developer console.
+From the list of existing skills, find the custom skill that you want to enable sync locales for, and then click to select that skill.
+In the top-left corner, from the drop-down menu, select Language Settings.
+In the list of language, expand the section that contains the language you are configuring, for example, English.
+To disable sync locales for the language, turn the Sync Locales toggle off.
+Repeat steps four and five for any additional languages required.
+Click Save.
+
+Your primary and secondary locales sync automatically each time you click Save.
+
+Sync locales notifications
+Sync locales notifies you of the results in the notifications center in the developer console. The following notifications are possible. The notification includes a View link to get more detail about the results.
+
+Notification	Details
+Sync locales for [Skill name] was successful
+
+[Skill name] skill is ineligible for sync locale
+
+Click the View link to see details. Refer back to the table in About adding additional locales of the same language to your custom skills for more about requirements to use sync locales.
+
+Sync locales for [Skill name] skill failed
+
+The sync locales process failed. For more details about how to fix this issue, click the View link provided in the notification.
+
+Sync locales for [skill name] skill was partially successful
+
+The sync locales process partially finished. For example, some locales might have cloned successfully, but others didn't. For more details about how to fix this issue, click the View link provided in the notification.
+
+Frequently asked questions
+Sync locales
+
+Automated locale distribution
+
+Related Topics
+Develop Skills in Multiple Languages
+Steps to Build a Custom Skill
+Was this page helpful?
+Yes
+No
+Provide feedback
+Last updated: Sep 10, 2024
