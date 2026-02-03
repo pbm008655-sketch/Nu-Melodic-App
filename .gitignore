@@ -4,3 +4,9 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Exclude large audio files from git (served from Replit directly)
+public/audio/*.wav
+public/audio/*.mp3
+public/covers/*
+public/temp/*
