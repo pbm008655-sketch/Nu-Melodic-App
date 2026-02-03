@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.numelodic.app',
+  appId: 'com.numelodic.musicapp',
   appName: 'NU MELODIC',
   webDir: 'dist/public',
   server: {
