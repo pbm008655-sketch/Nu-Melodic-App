@@ -11,7 +11,7 @@ workflows:
         BUNDLE_ID: "com.numelodic.musicapp"
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-      node: 18
+      node: 20
       xcode: latest
       cocoapods: default
     
