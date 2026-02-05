@@ -9,8 +9,6 @@ workflows:
     
     environment:
       ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.numelodic.musicapp
         provisioning_profiles:
           - profile_type: IOS_APP_STORE
             bundle_identifier: com.numelodic.musicapp
