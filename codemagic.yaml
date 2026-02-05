@@ -77,7 +77,7 @@ workflows:
             --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
             --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
             --private-key "$APP_STORE_CONNECT_PRIVATE_KEY" \
-            --certificate-key ~/.appstoreconnect/cert_key.pem \
+            --certificate-key "@file:$HOME/.appstoreconnect/cert_key.pem" \
             --create
       
       - name: Add certificates to keychain
