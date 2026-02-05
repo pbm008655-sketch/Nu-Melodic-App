@@ -67,8 +67,8 @@ workflows:
       
       - name: Generate certificate key
         script: |
-          # Generate RSA key for certificate creation
-          ssh-keygen -t rsa -b 2048 -m PEM -f ~/.appstoreconnect/cert_key.pem -N ""
+          # Generate RSA private key in PEM format for certificate creation
+          openssl genrsa -out ~/.appstoreconnect/cert_key.pem 2048
           
       - name: Fetch signing files
         script: |
