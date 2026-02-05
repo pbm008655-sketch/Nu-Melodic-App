@@ -26,31 +26,19 @@ workflows:
       
       - name: Add iOS platform
         script: |
-          # Create ios directory structure first
-          mkdir -p ios/App
+          # Add iOS platform (ignore pod install errors)
+          npx cap add ios 2>&1 || true
           
-          # Create Podfile with correct deployment target
-          cat > ios/App/Podfile << 'EOF'
-          require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'
+          # Fix deployment target in Podfile
+          cd ios/App
+          sed -i '' "s/platform :ios, '.*'/platform :ios, '14.0'/" Podfile
           
-          platform :ios, '14.0'
-          use_frameworks!
+          # Fix deployment target in Xcode project
+          find . -name "*.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 14.0;/g' {} \;
           
-          install! 'cocoapods', :disable_input_output_paths => true
-          
-          def capacitor_pods
-            pod 'Capacitor', :path => '../../node_modules/@capacitor/ios'
-            pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
-          end
-          
-          target 'App' do
-            capacitor_pods
-          end
-          EOF
-          
-          # Now add iOS platform
-          npx cap add ios || true
-          npx cap sync ios --deployment || true
+          # Copy web assets
+          cd ../..
+          npx cap copy ios
       
       - name: Install CocoaPods dependencies
         script: |
