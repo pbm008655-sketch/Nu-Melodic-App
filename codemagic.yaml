@@ -26,15 +26,22 @@ workflows:
       
       - name: Add iOS platform
         script: |
-          # Add iOS platform (ignore pod install errors)
+          # Set deployment target environment variable
+          export IPHONEOS_DEPLOYMENT_TARGET=16.0
+          
+          # Add iOS platform (ignore pod install errors during add)
           npx cap add ios 2>&1 || true
           
-          # Fix deployment target in Podfile
+          # Fix deployment target in Podfile  
           cd ios/App
-          sed -i '' "s/platform :ios, '.*'/platform :ios, '15.0'/" Podfile
+          sed -i '' "s/platform :ios, '.*'/platform :ios, '16.0'/" Podfile
+          cat Podfile
           
           # Fix deployment target in Xcode project
-          find . -name "*.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 15.0;/g' {} \;
+          find . -name "*.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 16.0;/g' {} \;
+          
+          # Remove Pods directory to force clean install
+          rm -rf Pods Podfile.lock
           
           # Copy web assets
           cd ../..
