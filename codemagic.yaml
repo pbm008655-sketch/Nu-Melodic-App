@@ -27,11 +27,21 @@ workflows:
       - name: Add iOS platform
         script: |
           npx cap add ios || true
+      
+      - name: Set iOS deployment target
+        script: |
+          cd ios/App
+          sed -i '' "s/platform :ios, '.*'/platform :ios, '14.0'/" Podfile
+          # Also update project settings
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = .*/IPHONEOS_DEPLOYMENT_TARGET = 14.0;/g' App.xcodeproj/project.pbxproj
+      
+      - name: Sync Capacitor
+        script: |
           npx cap sync ios
       
       - name: Install CocoaPods dependencies
         script: |
-          cd ios/App && pod install
+          cd ios/App && pod install --repo-update
       
       - name: Set up keychain
         script: |
