@@ -65,6 +65,11 @@ workflows:
           ls -la ~/.appstoreconnect/private_keys/
           head -1 ~/.appstoreconnect/private_keys/AuthKey_$APP_STORE_CONNECT_KEY_IDENTIFIER.p8
       
+      - name: Generate certificate key
+        script: |
+          # Generate RSA key for certificate creation
+          ssh-keygen -t rsa -b 2048 -m PEM -f ~/.appstoreconnect/cert_key.pem -N ""
+          
       - name: Fetch signing files
         script: |
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
@@ -72,6 +77,7 @@ workflows:
             --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
             --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
             --private-key "$APP_STORE_CONNECT_PRIVATE_KEY" \
+            --certificate-key ~/.appstoreconnect/cert_key.pem \
             --create
       
       - name: Add certificates to keychain
