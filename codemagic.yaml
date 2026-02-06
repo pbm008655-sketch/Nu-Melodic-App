@@ -70,6 +70,31 @@ workflows:
           # Generate RSA private key in PEM format for certificate creation
           openssl genrsa -out ~/.appstoreconnect/cert_key.pem 2048
           
+      - name: Revoke old certificates
+        script: |
+          app-store-connect list-certificates \
+            --type DISTRIBUTION IOS_DISTRIBUTION \
+            --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
+            --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
+            --private-key "$APP_STORE_CONNECT_PRIVATE_KEY" \
+            --json 2>/dev/null | python3 -c "
+          import sys, json
+          try:
+              certs = json.load(sys.stdin)
+              for cert in certs:
+                  print(cert.get('id', ''))
+          except:
+              pass
+          " | while read cert_id; do
+            if [ -n "$cert_id" ]; then
+              echo "Revoking certificate: $cert_id"
+              app-store-connect delete-certificate "$cert_id" \
+                --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
+                --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
+                --private-key "$APP_STORE_CONNECT_PRIVATE_KEY" 2>&1 || true
+            fi
+          done
+      
       - name: Fetch signing files
         script: |
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
