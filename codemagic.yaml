@@ -229,6 +229,16 @@ workflows:
         script: |
           xcode-project use-profiles
       
+      - name: Increment build number
+        script: |
+          cd ios/App
+          PLIST_PATH="App/Info.plist"
+          CURRENT_BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$PLIST_PATH" 2>/dev/null || echo "1")
+          NEW_BUILD=$((CURRENT_BUILD + 1))
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $NEW_BUILD" "$PLIST_PATH"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.$NEW_BUILD" "$PLIST_PATH"
+          echo "Updated build number to $NEW_BUILD"
+
       - name: Build ipa for distribution
         script: |
           xcode-project build-ipa \
