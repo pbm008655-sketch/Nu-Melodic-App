@@ -188,41 +188,94 @@ workflows:
           
       - name: Revoke old certificates
         script: |
-          echo "Listing all distribution certificates..."
-          CERT_LIST=$(app-store-connect list-certificates \
-            --type DISTRIBUTION IOS_DISTRIBUTION \
-            --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
-            --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
-            --private-key "$APP_STORE_CONNECT_PRIVATE_KEY" \
-            --json 2>&1) || true
-          echo "Certificate list output: $CERT_LIST"
+          echo "Revoking all existing distribution certificates..."
           
-          echo "$CERT_LIST" | python3 -c "
-          import sys, json
-          data = sys.stdin.read().strip()
+          # Use App Store Connect API directly via curl to list certificates
+          # First generate JWT token
+          python3 << 'PYEOF'
+          import json, time, base64, subprocess, os, urllib.request, urllib.error
+          
+          key_id = os.environ['APP_STORE_CONNECT_KEY_IDENTIFIER']
+          issuer_id = os.environ['APP_STORE_CONNECT_ISSUER_ID']
+          private_key = os.environ['APP_STORE_CONNECT_PRIVATE_KEY']
+          
+          # Write key to temp file
+          with open('/tmp/asc_key.p8', 'w') as f:
+              f.write(private_key)
+          
+          # Generate JWT using python
+          import hashlib, struct
+          
+          header = base64.urlsafe_b64encode(json.dumps({"alg":"ES256","kid":key_id,"typ":"JWT"}).encode()).rstrip(b'=').decode()
+          now = int(time.time())
+          payload = base64.urlsafe_b64encode(json.dumps({"iss":issuer_id,"iat":now,"exp":now+1200,"aud":"appstoreconnect-v1"}).encode()).rstrip(b'=').decode()
+          
+          signing_input = f"{header}.{payload}"
+          
+          # Use openssl to sign
+          proc = subprocess.run(
+              ['openssl', 'dgst', '-sha256', '-sign', '/tmp/asc_key.p8'],
+              input=signing_input.encode(),
+              capture_output=True
+          )
+          
+          if proc.returncode != 0:
+              print(f"OpenSSL error: {proc.stderr.decode()}")
+              exit(1)
+          
+          # Convert DER signature to raw r,s format for ES256
+          der_sig = proc.stdout
+          # Parse DER sequence
+          import struct
+          idx = 2  # skip SEQUENCE tag and length
+          if der_sig[1] & 0x80:
+              idx = 2 + (der_sig[1] & 0x7f)
+          
+          # Parse r
+          assert der_sig[idx] == 0x02
+          r_len = der_sig[idx+1]
+          r = der_sig[idx+2:idx+2+r_len]
+          idx = idx + 2 + r_len
+          
+          # Parse s
+          assert der_sig[idx] == 0x02
+          s_len = der_sig[idx+1]
+          s = der_sig[idx+2:idx+2+s_len]
+          
+          # Pad/trim to 32 bytes each
+          r = r[-32:].rjust(32, b'\x00')
+          s = s[-32:].rjust(32, b'\x00')
+          
+          signature = base64.urlsafe_b64encode(r + s).rstrip(b'=').decode()
+          token = f"{signing_input}.{signature}"
+          
+          # List certificates
+          url = "https://api.appstoreconnect.apple.com/v1/certificates?filter[certificateType]=DISTRIBUTION,IOS_DISTRIBUTION"
+          req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+          
           try:
-              certs = json.loads(data)
-              if isinstance(certs, list):
-                  for cert in certs:
-                      cert_id = cert.get('id', '')
-                      if cert_id:
-                          print(cert_id)
-          except Exception as e:
-              print(f'Parse error: {e}', file=sys.stderr)
-          " > /tmp/cert_ids.txt 2>&1 || true
+              resp = urllib.request.urlopen(req)
+              data = json.loads(resp.read().decode())
+              certs = data.get('data', [])
+              print(f"Found {len(certs)} certificates")
+              
+              for cert in certs:
+                  cert_id = cert['id']
+                  cert_name = cert.get('attributes', {}).get('name', 'unknown')
+                  print(f"Revoking certificate: {cert_id} ({cert_name})")
+                  
+                  del_url = f"https://api.appstoreconnect.apple.com/v1/certificates/{cert_id}"
+                  del_req = urllib.request.Request(del_url, method='DELETE', headers={"Authorization": f"Bearer {token}"})
+                  try:
+                      urllib.request.urlopen(del_req)
+                      print(f"  Revoked successfully")
+                  except urllib.error.HTTPError as e:
+                      print(f"  Revoke failed: {e.code} {e.read().decode()}")
+                      
+          except urllib.error.HTTPError as e:
+              print(f"List failed: {e.code} {e.read().decode()}")
           
-          echo "Found certificate IDs:"
-          cat /tmp/cert_ids.txt
-          
-          while IFS= read -r cert_id; do
-            if [ -n "$cert_id" ] && [[ ! "$cert_id" == *"error"* ]]; then
-              echo "Revoking certificate: $cert_id"
-              app-store-connect delete-certificate "$cert_id" \
-                --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
-                --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
-                --private-key "$APP_STORE_CONNECT_PRIVATE_KEY" 2>&1 || true
-            fi
-          done < /tmp/cert_ids.txt
+          PYEOF
           
           echo "Certificate cleanup complete"
       
