@@ -1,0 +1,102 @@
+
+Using Xcode 26.2 (17C52)
+Check App.xcworkspace build settings
+Execute "xcodebuild -workspace ios/App/App.xcworkspace -scheme App -showBuildSettings"
+
+Archive App.xcworkspace
+Execute "xcodebuild -workspace ios/App/App.xcworkspace -scheme App -archivePath /Users/builder/clone/build/ios/xcarchive/App_zqlr1jxf.xcarchive archive COMPILER_INDEX_STORE_ENABLE=NO DEVELOPMENT_TEAM=4CA8F748WY 'CODE_SIGN_IDENTITY=Apple Distribution' CODE_SIGN_STYLE=Manual"
+
+▸ Copying Pods-App-umbrella.h
+▸ Copying NSDictionary+CordovaPreferences.h
+▸ Copying CapacitorCordova.h
+▸ Copying CDVWebViewProcessPoolFactory.h
+▸ Copying CDVViewController.h
+▸ Copying CDVURLProtocol.h
+▸ Copying CDVScreenOrientationDelegate.h
+▸ Copying CDVPluginResult.h
+▸ Copying CDVPlugin+Resources.h
+▸ Copying CDVPlugin.h
+▸ Copying CDVPluginManager.h
+▸ Copying CDVInvokedUrlCommand.h
+▸ Copying CDVConfigParser.h
+▸ Copying CDVCommandDelegateImpl.h
+▸ Copying CDVCommandDelegate.h
+▸ Copying CDVAvailabilityDeprecated.h
+▸ Copying CDVAvailability.h
+▸ Copying CDV.h
+▸ Copying AppDelegate.h
+▸ Copying Capacitor.h
+▸ Copying CAPPluginMethod.h
+▸ Copying CAPPluginCall.h
+▸ Copying CAPPlugin.h
+▸ Copying CAPInstanceDescriptor.h
+▸ Copying CAPInstanceConfiguration.h
+▸ Copying CAPBridgedPlugin.h
+▸ Copying CAPBridgedJSTypes.h
+▸ Copying CAPBridgeViewController+CDVScreenOrientationDelegate.h
+▸ Copying /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/ArchiveIntermediates/App/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/CapacitorCordova.bundle/PrivacyInfo.xcprivacy
+▸ Processing ResourceBundle-CapacitorCordova-CapacitorCordova-Info.plist
+▸ Touching CapacitorCordova.bundle (in target 'CapacitorCordova-CapacitorCordova' from project 'Pods')
+▸ Processing CapacitorCordova-Info.plist
+▸ Copying /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/ArchiveIntermediates/App/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/Cordova.framework/CapacitorCordova.bundle
+▸ Compiling Cordova_vers.c
+▸ Compiling NSDictionary+CordovaPreferences.m
+▸ Compiling CapacitorCordova-dummy.m
+▸ Compiling CDVViewController.m
+▸ Compiling CDVURLProtocol.m
+▸ Compiling CDVPluginResult.m
+▸ Compiling CDVInvokedUrlCommand.m
+▸ Compiling CDVConfigParser.m
+▸ Compiling AppDelegate.m
+▸ Compiling CDVWebViewProcessPoolFactory.m
+▸ Compiling CDVPluginManager.m
+▸ Compiling CDVPlugin.m
+▸ Compiling CDVPlugin+Resources.m
+▸ Compiling CDVCommandDelegateImpl.m
+▸ Linking Cordova
+▸ Generating 'Cordova.framework.dSYM'
+▸ Touching Cordova.framework (in target 'CapacitorCordova' from project 'Pods')
+▸ Processing ResourceBundle-Capacitor-Capacitor-Info.plist
+▸ Copying /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/ArchiveIntermediates/App/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/Capacitor.bundle/PrivacyInfo.xcprivacy
+▸ Touching Capacitor.bundle (in target 'Capacitor-Capacitor' from project 'Pods')
+▸ Processing Capacitor-Info.plist
+▸ Copying /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/ArchiveIntermediates/App/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/Capacitor.framework/Capacitor.bundle
+▸ Copying /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/ArchiveIntermediates/App/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/Capacitor.framework/native-bridge.js
+▸ Compiling Capacitor_vers.c
+▸ Compiling Capacitor-dummy.m
+▸ Compiling CAPPluginCall.m
+▸ Compiling Pods_App_vers.c
+▸ Compiling UIStatusBarManager+CAPHandleTapAction.m
+▸ Compiling WKWebView+Capacitor.m
+▸ Compiling CAPPlugin.m
+▸ Compiling CAPInstanceDescriptor.m
+▸ Compiling CAPInstanceConfiguration.m
+▸ Compiling CAPPluginMethod.m
+▸ Compiling CAPBridgedJSTypes.m
+▸ Compiling CAPBridgeViewController+CDVScreenOrientationDelegate.m
+▸ Linking Capacitor
+▸ Generating 'Capacitor.framework.dSYM'
+▸ Touching Capacitor.framework (in target 'Capacitor' from project 'Pods')
+▸ Processing Pods-App-Info.plist
+▸ Compiling Pods-App-dummy.m
+▸ Touching Pods_App.framework (in target 'Pods-App' from project 'Pods')
+▸ Running script '[CP] Check Pods Manifest.lock'
+▸ Copying /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/ArchiveIntermediates/App/InstallationBuildProductsLocation/Applications/App.app/capacitor.config.json
+▸ Copying /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/ArchiveIntermediates/App/InstallationBuildProductsLocation/Applications/App.app/public
+▸ Copying /Users/builder/Library/Developer/Xcode/DerivedData/App-dfqlwfgrvlmjunbkfzimjqcghcbo/Build/Intermediates.noindex/ArchiveIntermediates/App/InstallationBuildProductsLocation/Applications/App.app/config.xml
+▸ Compiling Main.storyboard
+▸ Compiling LaunchScreen.storyboard
+▸ Linking App
+▸ Processing Info.plist
+▸ Running script '[CP] Embed Pods Frameworks'
+▸ Generating 'App.app.dSYM'
+▸ Touching App.app (in target 'App' from project 'App')
+    Run script build phase '[CP] Embed Pods Frameworks' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'App' from project 'App')
+▸ Archive Succeeded
+Successfully created archive at /Users/builder/clone/build/ios/xcarchive/App_zqlr1jxf.xcarchive
+Export /Users/builder/clone/build/ios/xcarchive/App_zqlr1jxf.xcarchive to build/ios/ipa
+Execute "xcodebuild -exportArchive -archivePath /Users/builder/clone/build/ios/xcarchive/App_zqlr1jxf.xcarchive -exportPath build/ios/ipa -exportOptionsPlist /Users/builder/export_options.plist COMPILER_INDEX_STORE_ENABLE=NO"
+
+▸ Export Succeeded
+Successfully exported ipa to build/ios/ipa/App.ipa
+Raw xcodebuild logs stored in /tmp/xcodebuild_logs/App.log

@@ -50,119 +50,23 @@ workflows:
       
       - name: Set app icon
         script: |
-          # Copy the 1024x1024 app icon into the iOS asset catalog
           ICON_SET="ios/App/App/Assets.xcassets/AppIcon.appiconset"
+          mkdir -p "$ICON_SET"
+          rm -f "$ICON_SET"/*.png "$ICON_SET/Contents.json"
           
-          # Copy icon as the single 1024x1024 icon (iOS 17+ uses single size)
-          cp ios-app-icon.png "$ICON_SET/AppIcon-1024x1024@1x.png"
-          
-          # Generate all required icon sizes for older iOS versions
           SIZES="20 29 40 58 60 76 80 87 120 152 167 180 1024"
           for SIZE in $SIZES; do
-            sips -z $SIZE $SIZE ios-app-icon.png --out "$ICON_SET/AppIcon-${SIZE}x${SIZE}.png" 2>/dev/null || true
+            sips -z $SIZE $SIZE ios-app-icon.png --out "$ICON_SET/AppIcon-${SIZE}x${SIZE}.png"
           done
           
-          # Write the Contents.json for the asset catalog
-          cat > "$ICON_SET/Contents.json" << 'ICONJSON'
-          {
-            "images" : [
-              {
-                "filename" : "AppIcon-40x40.png",
-                "idiom" : "universal",
-                "platform" : "ios",
-                "size" : "20x20",
-                "scale" : "2x"
-              },
-              {
-                "filename" : "AppIcon-60x60.png",
-                "idiom" : "universal",
-                "platform" : "ios",
-                "size" : "20x20",
-                "scale" : "3x"
-              },
-              {
-                "filename" : "AppIcon-58x58.png",
-                "idiom" : "universal",
-                "platform" : "ios",
-                "size" : "29x29",
-                "scale" : "2x"
-              },
-              {
-                "filename" : "AppIcon-87x87.png",
-                "idiom" : "universal",
-                "platform" : "ios",
-                "size" : "29x29",
-                "scale" : "3x"
-              },
-              {
-                "filename" : "AppIcon-80x80.png",
-                "idiom" : "universal",
-                "platform" : "ios",
-                "size" : "40x40",
-                "scale" : "2x"
-              },
-              {
-                "filename" : "AppIcon-120x120.png",
-                "idiom" : "universal",
-                "platform" : "ios",
-                "size" : "40x40",
-                "scale" : "3x"
-              },
-              {
-                "filename" : "AppIcon-120x120.png",
-                "idiom" : "universal",
-                "platform" : "ios",
-                "size" : "60x60",
-                "scale" : "2x"
-              },
-              {
-                "filename" : "AppIcon-180x180.png",
-                "idiom" : "universal",
-                "platform" : "ios",
-                "size" : "60x60",
-                "scale" : "3x"
-              },
-              {
-                "filename" : "AppIcon-76x76.png",
-                "idiom" : "ipad",
-                "platform" : "ios",
-                "size" : "76x76",
-                "scale" : "1x"
-              },
-              {
-                "filename" : "AppIcon-152x152.png",
-                "idiom" : "ipad",
-                "platform" : "ios",
-                "size" : "76x76",
-                "scale" : "2x"
-              },
-              {
-                "filename" : "AppIcon-167x167.png",
-                "idiom" : "ipad",
-                "platform" : "ios",
-                "size" : "83.5x83.5",
-                "scale" : "2x"
-              },
-              {
-                "filename" : "AppIcon-1024x1024.png",
-                "idiom" : "ios-marketing",
-                "platform" : "ios",
-                "size" : "1024x1024",
-                "scale" : "1x"
-              }
-            ],
-            "info" : {
-              "author" : "xcode",
-              "version" : 1
-            }
-          }
-          ICONJSON
+          cat > "$ICON_SET/Contents.json" <<'EOF'
+{"images":[{"filename":"AppIcon-40x40.png","idiom":"universal","platform":"ios","size":"20x20","scale":"2x"},{"filename":"AppIcon-60x60.png","idiom":"universal","platform":"ios","size":"20x20","scale":"3x"},{"filename":"AppIcon-58x58.png","idiom":"universal","platform":"ios","size":"29x29","scale":"2x"},{"filename":"AppIcon-87x87.png","idiom":"universal","platform":"ios","size":"29x29","scale":"3x"},{"filename":"AppIcon-80x80.png","idiom":"universal","platform":"ios","size":"40x40","scale":"2x"},{"filename":"AppIcon-120x120.png","idiom":"universal","platform":"ios","size":"40x40","scale":"3x"},{"filename":"AppIcon-120x120.png","idiom":"universal","platform":"ios","size":"60x60","scale":"2x"},{"filename":"AppIcon-180x180.png","idiom":"universal","platform":"ios","size":"60x60","scale":"3x"},{"filename":"AppIcon-20x20.png","idiom":"ipad","platform":"ios","size":"20x20","scale":"1x"},{"filename":"AppIcon-40x40.png","idiom":"ipad","platform":"ios","size":"20x20","scale":"2x"},{"filename":"AppIcon-29x29.png","idiom":"ipad","platform":"ios","size":"29x29","scale":"1x"},{"filename":"AppIcon-58x58.png","idiom":"ipad","platform":"ios","size":"29x29","scale":"2x"},{"filename":"AppIcon-40x40.png","idiom":"ipad","platform":"ios","size":"40x40","scale":"1x"},{"filename":"AppIcon-80x80.png","idiom":"ipad","platform":"ios","size":"40x40","scale":"2x"},{"filename":"AppIcon-76x76.png","idiom":"ipad","platform":"ios","size":"76x76","scale":"1x"},{"filename":"AppIcon-152x152.png","idiom":"ipad","platform":"ios","size":"76x76","scale":"2x"},{"filename":"AppIcon-167x167.png","idiom":"ipad","platform":"ios","size":"83.5x83.5","scale":"2x"},{"filename":"AppIcon-1024x1024.png","idiom":"ios-marketing","platform":"ios","size":"1024x1024","scale":"1x"}],"info":{"author":"xcode","version":1}}
+EOF
           
-          # Also copy as the main 1024 icon
-          cp ios-app-icon.png "$ICON_SET/AppIcon-1024x1024.png"
-          
-          echo "App icon set up successfully"
+          echo "=== App icon setup ==="
           ls -la "$ICON_SET/"
+          echo "=== Contents.json ==="
+          cat "$ICON_SET/Contents.json" | python3 -m json.tool
       
       - name: Install CocoaPods dependencies
         script: |
