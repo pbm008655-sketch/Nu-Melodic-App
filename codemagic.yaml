@@ -57,15 +57,10 @@ workflows:
           cp ios-icons/*.png "$ICON_SET/"
           cp ios-icons/Contents.json "$ICON_SET/"
           
-          echo "=== Verifying icon files ==="
-          ls -la "$ICON_SET/"
-          echo "=== Verifying Contents.json ==="
-          cat "$ICON_SET/Contents.json"
-          echo ""
-          echo "=== Verifying specific iPad icons ==="
-          file "$ICON_SET/AppIcon-152x152.png"
-          file "$ICON_SET/AppIcon-167x167.png"
-          file "$ICON_SET/AppIcon-1024x1024.png"
+          echo "=== Icon files copied ==="
+          ls "$ICON_SET/"
+          echo "=== Icon count ==="
+          ls "$ICON_SET/"/*.png | wc -l
       
       - name: Install CocoaPods dependencies
         script: |
