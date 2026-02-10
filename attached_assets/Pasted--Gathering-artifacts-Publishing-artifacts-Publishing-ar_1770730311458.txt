@@ -1,0 +1,237 @@
+== Gathering artifacts ==
+
+== Publishing artifacts ==
+
+Publishing artifact App.ipa
+Publishing artifact App.app.dSYM.zip
+Publishing artifact Capacitor.framework.dSYM.zip
+Publishing artifact Cordova.framework.dSYM.zip
+Publishing artifact Nu-Melodic-App_49_artifacts.zip
+Publishing App.ipa to App Store Connect
+> app-store-connect publish --path /Users/builder/clone/build/ios/ipa/App.ipa --key-id ******** --issuer-id ******** --private-key @env:APP_STORE_CONNECT_PUBLISHER_PRIVATE_KEY
+
+Publish "/Users/builder/clone/build/ios/ipa/App.ipa" to App Store Connect
+App name: NU MELODIC
+Bundle identifier: com.numelodic.musicapp
+Certificate expires: 2027-02-10T13:18:19.000+0000
+Distribution type: App Store
+Min OS version: 16.0
+Provisioned devices: N/A
+Provisions all devices: No
+Supported platforms: iPhoneOS
+Version code: 49
+Version: 1.0.49
+
+Upload "/Users/builder/clone/build/ios/ipa/App.ipa" to App Store Connect
+Running altool at path '/Applications/Xcode-26.2.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources/altool'...
+
+26.10.1 (171001)
+Running altool at path '/Applications/Xcode-26.2.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources/altool'...
+
+2026-02-10 13:30:56.047 ERROR: [ContentDelivery.Uploader.104E0AF90] 
+=======================================
+UPLOAD FAILED with 3 errors
+=======================================
+{
+  "os-version" : "Version 26.2 (Build 25C56)",
+  "product-errors" : [
+    {
+      "code" : 409,
+      "message" : "Validation failed",
+      "underlying-errors" : [
+        {
+          "code" : -19241,
+          "message" : "Validation failed",
+          "underlying-errors" : [
+
+          ],
+          "user-info" : {
+            "NSLocalizedDescription" : "Validation failed",
+            "NSLocalizedFailureReason" : "Missing required icon file. The bundle does not contain an app icon for iPad of exactly '167x167' pixels, in .png format for iOS versions supporting iPad Pro. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface.",
+            "code" : "STATE_ERROR.VALIDATION_ERROR",
+            "detail" : "Missing required icon file. The bundle does not contain an app icon for iPad of exactly '167x167' pixels, in .png format for iOS versions supporting iPad Pro. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface.",
+            "id" : "94ed5c78-9ef2-477c-a9be-1ab502d68eb4",
+            "status" : "409",
+            "title" : "Validation failed"
+          }
+        }
+      ],
+      "user-info" : {
+        "NSLocalizedDescription" : "Validation failed",
+        "NSLocalizedFailureReason" : "Missing required icon file. The bundle does not contain an app icon for iPad of exactly '167x167' pixels, in .png format for iOS versions supporting iPad Pro. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface. (ID: 94ed5c78-9ef2-477c-a9be-1ab502d68eb4)",
+        "NSUnderlyingError" : "Error Domain=IrisAPI Code=-19241 \"Validation failed\" UserInfo={status=409, detail=Missing required icon file. The bundle does not contain an app icon for iPad of exactly '167x167' pixels, in .png format for iOS versions supporting iPad Pro. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface., id=94ed5c78-9ef2-477c-a9be-1ab502d68eb4, code=STATE_ERROR.VALIDATION_ERROR, title=Validation failed, NSLocalizedFailureReason=Missing required icon file. The bundle does not contain an app icon for iPad of exactly '167x167' pixels, in .png format for iOS versions supporting iPad Pro. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface., NSLocalizedDescription=Validation failed}",
+        "iris-code" : "STATE_ERROR.VALIDATION_ERROR"
+      }
+    },
+    {
+      "code" : 409,
+      "message" : "Validation failed",
+      "underlying-errors" : [
+        {
+          "code" : -19241,
+          "message" : "Validation failed",
+          "underlying-errors" : [
+
+          ],
+          "user-info" : {
+            "NSLocalizedDescription" : "Validation failed",
+            "NSLocalizedFailureReason" : "Missing required icon file. The bundle does not contain an app icon for iPad of exactly '152x152' pixels, in .png format for iOS versions >= 10.0. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface.",
+            "code" : "STATE_ERROR.VALIDATION_ERROR",
+            "detail" : "Missing required icon file. The bundle does not contain an app icon for iPad of exactly '152x152' pixels, in .png format for iOS versions >= 10.0. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface.",
+            "id" : "b5442c52-61fc-4a05-a436-63708fdcbc7f",
+            "status" : "409",
+            "title" : "Validation failed"
+          }
+        }
+      ],
+      "user-info" : {
+        "NSLocalizedDescription" : "Validation failed",
+        "NSLocalizedFailureReason" : "Missing required icon file. The bundle does not contain an app icon for iPad of exactly '152x152' pixels, in .png format for iOS versions >= 10.0. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface. (ID: b5442c52-61fc-4a05-a436-63708fdcbc7f)",
+        "NSUnderlyingError" : "Error Domain=IrisAPI Code=-19241 \"Validation failed\" UserInfo={status=409, detail=Missing required icon file. The bundle does not contain an app icon for iPad of exactly '152x152' pixels, in .png format for iOS versions >= 10.0. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface., id=b5442c52-61fc-4a05-a436-63708fdcbc7f, code=STATE_ERROR.VALIDATION_ERROR, title=Validation failed, NSLocalizedFailureReason=Missing required icon file. The bundle does not contain an app icon for iPad of exactly '152x152' pixels, in .png format for iOS versions >= 10.0. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface., NSLocalizedDescription=Validation failed}",
+        "iris-code" : "STATE_ERROR.VALIDATION_ERROR"
+      }
+    },
+    {
+      "code" : 409,
+      "message" : "Validation failed",
+      "underlying-errors" : [
+        {
+          "code" : -19241,
+          "message" : "Validation failed",
+          "underlying-errors" : [
+
+          ],
+          "user-info" : {
+            "NSLocalizedDescription" : "Validation failed",
+            "NSLocalizedFailureReason" : "Missing app icon. Include a large app icon as a 1024 by 1024 pixel PNG for the 'Any Appearance' image well in the asset catalog of apps built for iOS or iPadOS. Without this icon, apps can't be submitted for review. For details, visit: https://developer.apple.com/documentation/xcode/configuring-your-app-icon.",
+            "code" : "STATE_ERROR.VALIDATION_ERROR",
+            "detail" : "Missing app icon. Include a large app icon as a 1024 by 1024 pixel PNG for the 'Any Appearance' image well in the asset catalog of apps built for iOS or iPadOS. Without this icon, apps can't be submitted for review. For details, visit: https://developer.apple.com/documentation/xcode/configuring-your-app-icon.",
+            "id" : "353844c1-3b50-4cd9-a6bc-ee74fadbebe8",
+            "status" : "409",
+            "title" : "Validation failed"
+          }
+        }
+      ],
+      "user-info" : {
+        "NSLocalizedDescription" : "Validation failed",
+        "NSLocalizedFailureReason" : "Missing app icon. Include a large app icon as a 1024 by 1024 pixel PNG for the 'Any Appearance' image well in the asset catalog of apps built for iOS or iPadOS. Without this icon, apps can't be submitted for review. For details, visit: https://developer.apple.com/documentation/xcode/configuring-your-app-icon. (ID: 353844c1-3b50-4cd9-a6bc-ee74fadbebe8)",
+        "NSUnderlyingError" : "Error Domain=IrisAPI Code=-19241 \"Validation failed\" UserInfo={status=409, detail=Missing app icon. Include a large app icon as a 1024 by 1024 pixel PNG for the 'Any Appearance' image well in the asset catalog of apps built for iOS or iPadOS. Without this icon, apps can't be submitted for review. For details, visit: https://developer.apple.com/documentation/xcode/configuring-your-app-icon., id=353844c1-3b50-4cd9-a6bc-ee74fadbebe8, code=STATE_ERROR.VALIDATION_ERROR, title=Validation failed, NSLocalizedFailureReason=Missing app icon. Include a large app icon as a 1024 by 1024 pixel PNG for the 'Any Appearance' image well in the asset catalog of apps built for iOS or iPadOS. Without this icon, apps can't be submitted for review. For details, visit: https://developer.apple.com/documentation/xcode/configuring-your-app-icon., NSLocalizedDescription=Validation failed}",
+        "iris-code" : "STATE_ERROR.VALIDATION_ERROR"
+      }
+    }
+  ],
+  "tool-path" : "/Applications/Xcode-26.2.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources",
+  "tool-version" : "26.10.1 (171001)"
+}
+
+Running altool at path '/Applications/Xcode-26.2.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources/altool'...
+
+2026-02-10 13:30:56.047 ERROR: [ContentDelivery.Uploader.104E0AF90] 
+=======================================
+UPLOAD FAILED with 3 errors
+=======================================
+{
+  "os-version" : "Version 26.2 (Build 25C56)",
+  "product-errors" : [
+    {
+      "code" : 409,
+      "message" : "Validation failed",
+      "underlying-errors" : [
+        {
+          "code" : -19241,
+          "message" : "Validation failed",
+          "underlying-errors" : [
+
+          ],
+          "user-info" : {
+            "NSLocalizedDescription" : "Validation failed",
+            "NSLocalizedFailureReason" : "Missing required icon file. The bundle does not contain an app icon for iPad of exactly '167x167' pixels, in .png format for iOS versions supporting iPad Pro. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface.",
+            "code" : "STATE_ERROR.VALIDATION_ERROR",
+            "detail" : "Missing required icon file. The bundle does not contain an app icon for iPad of exactly '167x167' pixels, in .png format for iOS versions supporting iPad Pro. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface.",
+            "id" : "94ed5c78-9ef2-477c-a9be-1ab502d68eb4",
+            "status" : "409",
+            "title" : "Validation failed"
+          }
+        }
+      ],
+      "user-info" : {
+        "NSLocalizedDescription" : "Validation failed",
+        "NSLocalizedFailureReason" : "Missing required icon file. The bundle does not contain an app icon for iPad of exactly '167x167' pixels, in .png format for iOS versions supporting iPad Pro. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface. (ID: 94ed5c78-9ef2-477c-a9be-1ab502d68eb4)",
+        "NSUnderlyingError" : "Error Domain=IrisAPI Code=-19241 \"Validation failed\" UserInfo={status=409, detail=Missing required icon file. The bundle does not contain an app icon for iPad of exactly '167x167' pixels, in .png format for iOS versions supporting iPad Pro. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface., id=94ed5c78-9ef2-477c-a9be-1ab502d68eb4, code=STATE_ERROR.VALIDATION_ERROR, title=Validation failed, NSLocalizedFailureReason=Missing required icon file. The bundle does not contain an app icon for iPad of exactly '167x167' pixels, in .png format for iOS versions supporting iPad Pro. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface., NSLocalizedDescription=Validation failed}",
+        "iris-code" : "STATE_ERROR.VALIDATION_ERROR"
+      }
+    },
+    {
+      "code" : 409,
+      "message" : "Validation failed",
+      "underlying-errors" : [
+        {
+          "code" : -19241,
+          "message" : "Validation failed",
+          "underlying-errors" : [
+
+          ],
+          "user-info" : {
+            "NSLocalizedDescription" : "Validation failed",
+            "NSLocalizedFailureReason" : "Missing required icon file. The bundle does not contain an app icon for iPad of exactly '152x152' pixels, in .png format for iOS versions >= 10.0. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface.",
+            "code" : "STATE_ERROR.VALIDATION_ERROR",
+            "detail" : "Missing required icon file. The bundle does not contain an app icon for iPad of exactly '152x152' pixels, in .png format for iOS versions >= 10.0. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface.",
+            "id" : "b5442c52-61fc-4a05-a436-63708fdcbc7f",
+            "status" : "409",
+            "title" : "Validation failed"
+          }
+        }
+      ],
+      "user-info" : {
+        "NSLocalizedDescription" : "Validation failed",
+        "NSLocalizedFailureReason" : "Missing required icon file. The bundle does not contain an app icon for iPad of exactly '152x152' pixels, in .png format for iOS versions >= 10.0. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface. (ID: b5442c52-61fc-4a05-a436-63708fdcbc7f)",
+        "NSUnderlyingError" : "Error Domain=IrisAPI Code=-19241 \"Validation failed\" UserInfo={status=409, detail=Missing required icon file. The bundle does not contain an app icon for iPad of exactly '152x152' pixels, in .png format for iOS versions >= 10.0. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface., id=b5442c52-61fc-4a05-a436-63708fdcbc7f, code=STATE_ERROR.VALIDATION_ERROR, title=Validation failed, NSLocalizedFailureReason=Missing required icon file. The bundle does not contain an app icon for iPad of exactly '152x152' pixels, in .png format for iOS versions >= 10.0. To support older operating systems, the icon may be required in the bundle outside of an asset catalog. Make sure the Info.plist file includes appropriate entries referencing the file. See https://developer.apple.com/documentation/bundleresources/information_property_list/user_interface., NSLocalizedDescription=Validation failed}",
+        "iris-code" : "STATE_ERROR.VALIDATION_ERROR"
+      }
+    },
+    {
+      "code" : 409,
+      "message" : "Validation failed",
+      "underlying-errors" : [
+        {
+          "code" : -19241,
+          "message" : "Validation failed",
+          "underlying-errors" : [
+
+          ],
+          "user-info" : {
+            "NSLocalizedDescription" : "Validation failed",
+            "NSLocalizedFailureReason" : "Missing app icon. Include a large app icon as a 1024 by 1024 pixel PNG for the 'Any Appearance' image well in the asset catalog of apps built for iOS or iPadOS. Without this icon, apps can't be submitted for review. For details, visit: https://developer.apple.com/documentation/xcode/configuring-your-app-icon.",
+            "code" : "STATE_ERROR.VALIDATION_ERROR",
+            "detail" : "Missing app icon. Include a large app icon as a 1024 by 1024 pixel PNG for the 'Any Appearance' image well in the asset catalog of apps built for iOS or iPadOS. Without this icon, apps can't be submitted for review. For details, visit: https://developer.apple.com/documentation/xcode/configuring-your-app-icon.",
+            "id" : "353844c1-3b50-4cd9-a6bc-ee74fadbebe8",
+            "status" : "409",
+            "title" : "Validation failed"
+          }
+        }
+      ],
+      "user-info" : {
+        "NSLocalizedDescription" : "Validation failed",
+        "NSLocalizedFailureReason" : "Missing app icon. Include a large app icon as a 1024 by 1024 pixel PNG for the 'Any Appearance' image well in the asset catalog of apps built for iOS or iPadOS. Without this icon, apps can't be submitted for review. For details, visit: https://developer.apple.com/documentation/xcode/configuring-your-app-icon. (ID: 353844c1-3b50-4cd9-a6bc-ee74fadbebe8)",
+        "NSUnderlyingError" : "Error Domain=IrisAPI Code=-19241 \"Validation failed\" UserInfo={status=409, detail=Missing app icon. Include a large app icon as a 1024 by 1024 pixel PNG for the 'Any Appearance' image well in the asset catalog of apps built for iOS or iPadOS. Without this icon, apps can't be submitted for review. For details, visit: https://developer.apple.com/documentation/xcode/configuring-your-app-icon., id=353844c1-3b50-4cd9-a6bc-ee74fadbebe8, code=STATE_ERROR.VALIDATION_ERROR, title=Validation failed, NSLocalizedFailureReason=Missing app icon. Include a large app icon as a 1024 by 1024 pixel PNG for the 'Any Appearance' image well in the asset catalog of apps built for iOS or iPadOS. Without this icon, apps can't be submitted for review. For details, visit: https://developer.apple.com/documentation/xcode/configuring-your-app-icon., NSLocalizedDescription=Validation failed}",
+        "iris-code" : "STATE_ERROR.VALIDATION_ERROR"
+      }
+    }
+  ],
+  "tool-path" : "/Applications/Xcode-26.2.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources",
+  "tool-version" : "26.10.1 (171001)"
+}
+
+Failed to upload archive at "/Users/builder/clone/build/ios/ipa/App.ipa":
+Validation failed
+Validation failed
+Validation failed
+Failed to publish /Users/builder/clone/build/ios/ipa/App.ipa
+
+Failed to publish App.ipa to App Store Connect.
+
+Build failed :|
+
+
+Publishing failed :|
+Failed to publish App.ipa to App Store Connect.

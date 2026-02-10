@@ -51,22 +51,21 @@ workflows:
       - name: Set app icon
         script: |
           ICON_SET="ios/App/App/Assets.xcassets/AppIcon.appiconset"
+          rm -rf "$ICON_SET"
           mkdir -p "$ICON_SET"
-          rm -f "$ICON_SET"/*.png "$ICON_SET/Contents.json"
           
-          SIZES="20 29 40 58 60 76 80 87 120 152 167 180 1024"
-          for SIZE in $SIZES; do
-            sips -z $SIZE $SIZE ios-app-icon.png --out "$ICON_SET/AppIcon-${SIZE}x${SIZE}.png"
-          done
+          cp ios-icons/*.png "$ICON_SET/"
+          cp ios-icons/Contents.json "$ICON_SET/"
           
-          cat > "$ICON_SET/Contents.json" <<'EOF'
-{"images":[{"filename":"AppIcon-40x40.png","idiom":"universal","platform":"ios","size":"20x20","scale":"2x"},{"filename":"AppIcon-60x60.png","idiom":"universal","platform":"ios","size":"20x20","scale":"3x"},{"filename":"AppIcon-58x58.png","idiom":"universal","platform":"ios","size":"29x29","scale":"2x"},{"filename":"AppIcon-87x87.png","idiom":"universal","platform":"ios","size":"29x29","scale":"3x"},{"filename":"AppIcon-80x80.png","idiom":"universal","platform":"ios","size":"40x40","scale":"2x"},{"filename":"AppIcon-120x120.png","idiom":"universal","platform":"ios","size":"40x40","scale":"3x"},{"filename":"AppIcon-120x120.png","idiom":"universal","platform":"ios","size":"60x60","scale":"2x"},{"filename":"AppIcon-180x180.png","idiom":"universal","platform":"ios","size":"60x60","scale":"3x"},{"filename":"AppIcon-20x20.png","idiom":"ipad","platform":"ios","size":"20x20","scale":"1x"},{"filename":"AppIcon-40x40.png","idiom":"ipad","platform":"ios","size":"20x20","scale":"2x"},{"filename":"AppIcon-29x29.png","idiom":"ipad","platform":"ios","size":"29x29","scale":"1x"},{"filename":"AppIcon-58x58.png","idiom":"ipad","platform":"ios","size":"29x29","scale":"2x"},{"filename":"AppIcon-40x40.png","idiom":"ipad","platform":"ios","size":"40x40","scale":"1x"},{"filename":"AppIcon-80x80.png","idiom":"ipad","platform":"ios","size":"40x40","scale":"2x"},{"filename":"AppIcon-76x76.png","idiom":"ipad","platform":"ios","size":"76x76","scale":"1x"},{"filename":"AppIcon-152x152.png","idiom":"ipad","platform":"ios","size":"76x76","scale":"2x"},{"filename":"AppIcon-167x167.png","idiom":"ipad","platform":"ios","size":"83.5x83.5","scale":"2x"},{"filename":"AppIcon-1024x1024.png","idiom":"ios-marketing","platform":"ios","size":"1024x1024","scale":"1x"}],"info":{"author":"xcode","version":1}}
-EOF
-          
-          echo "=== App icon setup ==="
+          echo "=== Verifying icon files ==="
           ls -la "$ICON_SET/"
-          echo "=== Contents.json ==="
-          cat "$ICON_SET/Contents.json" | python3 -m json.tool
+          echo "=== Verifying Contents.json ==="
+          cat "$ICON_SET/Contents.json"
+          echo ""
+          echo "=== Verifying specific iPad icons ==="
+          file "$ICON_SET/AppIcon-152x152.png"
+          file "$ICON_SET/AppIcon-167x167.png"
+          file "$ICON_SET/AppIcon-1024x1024.png"
       
       - name: Install CocoaPods dependencies
         script: |
