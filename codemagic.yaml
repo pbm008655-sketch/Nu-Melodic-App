@@ -300,15 +300,28 @@ workflows:
       - name: Increment build number
         script: |
           cd ios/App
-          PLIST_PATH="App/Info.plist"
-          # Use Codemagic's auto-incrementing build number to guarantee uniqueness
-          # Fall back to timestamp if BUILD_NUMBER isn't available
           NEW_BUILD=${BUILD_NUMBER:-$(date +%s)}
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $NEW_BUILD" "$PLIST_PATH"
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.${NEW_BUILD}" "$PLIST_PATH"
+          
+          # Update Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $NEW_BUILD" "App/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.${NEW_BUILD}" "App/Info.plist"
+          
+          # Also update the Xcode project build settings (this is what Xcode actually uses)
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $NEW_BUILD/g" "App.xcodeproj/project.pbxproj"
+          sed -i '' "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = 1.0.$NEW_BUILD/g" "App.xcodeproj/project.pbxproj"
+          
+          # Use agvtool as well for good measure
+          cd App.xcodeproj/..
+          xcrun agvtool new-version -all $NEW_BUILD 2>/dev/null || true
+          xcrun agvtool new-marketing-version "1.0.$NEW_BUILD" 2>/dev/null || true
+          
           echo "Set build number to $NEW_BUILD"
-          echo "CFBundleVersion: $(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' $PLIST_PATH)"
-          echo "CFBundleShortVersionString: $(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' $PLIST_PATH)"
+          echo "Verifying Info.plist:"
+          /usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "App/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "App/Info.plist"
+          echo "Verifying project.pbxproj:"
+          grep "CURRENT_PROJECT_VERSION" "App.xcodeproj/project.pbxproj" | head -5
+          grep "MARKETING_VERSION" "App.xcodeproj/project.pbxproj" | head -5
 
       - name: Build ipa for distribution
         script: |
