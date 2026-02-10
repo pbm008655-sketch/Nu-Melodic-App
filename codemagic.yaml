@@ -188,28 +188,43 @@ workflows:
           
       - name: Revoke old certificates
         script: |
-          app-store-connect list-certificates \
+          echo "Listing all distribution certificates..."
+          CERT_LIST=$(app-store-connect list-certificates \
             --type DISTRIBUTION IOS_DISTRIBUTION \
             --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
             --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
             --private-key "$APP_STORE_CONNECT_PRIVATE_KEY" \
-            --json 2>/dev/null | python3 -c "
+            --json 2>&1) || true
+          echo "Certificate list output: $CERT_LIST"
+          
+          echo "$CERT_LIST" | python3 -c "
           import sys, json
+          data = sys.stdin.read().strip()
           try:
-              certs = json.load(sys.stdin)
-              for cert in certs:
-                  print(cert.get('id', ''))
-          except:
-              pass
-          " | while read cert_id; do
-            if [ -n "$cert_id" ]; then
+              certs = json.loads(data)
+              if isinstance(certs, list):
+                  for cert in certs:
+                      cert_id = cert.get('id', '')
+                      if cert_id:
+                          print(cert_id)
+          except Exception as e:
+              print(f'Parse error: {e}', file=sys.stderr)
+          " > /tmp/cert_ids.txt 2>&1 || true
+          
+          echo "Found certificate IDs:"
+          cat /tmp/cert_ids.txt
+          
+          while IFS= read -r cert_id; do
+            if [ -n "$cert_id" ] && [[ ! "$cert_id" == *"error"* ]]; then
               echo "Revoking certificate: $cert_id"
               app-store-connect delete-certificate "$cert_id" \
                 --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
                 --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
                 --private-key "$APP_STORE_CONNECT_PRIVATE_KEY" 2>&1 || true
             fi
-          done
+          done < /tmp/cert_ids.txt
+          
+          echo "Certificate cleanup complete"
       
       - name: Fetch signing files
         script: |
