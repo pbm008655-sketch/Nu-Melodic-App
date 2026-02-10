@@ -3,11 +3,8 @@ import { usePlayer } from "@/hooks/use-player";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
 import { globalAudio } from "@/lib/global-audio";
-import { Heart, Repeat, Shuffle, SkipBack, SkipForward, Pause, Play, Volume2, Volume1, VolumeX, ListMusic, Crown } from "lucide-react";
-import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Link } from "wouter";
+import { Heart, Repeat, Shuffle, SkipBack, SkipForward, Pause, Play, Volume2, Volume1, VolumeX, ListMusic } from "lucide-react";
 
 export default function Player() {
   const { 
@@ -25,34 +22,17 @@ export default function Player() {
   } = usePlayer();
   
   const { toast } = useToast();
-  const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [prevVolume, setPrevVolume] = useState(1);
-  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
-  
-  // Preview settings
-  const PREVIEW_DURATION = 30; // 30 seconds for non-premium users
-  const isPreviewMode = !user?.isPremium;
-  
   useEffect(() => {
     const audio = globalAudio.getAudio();
     
-    // Configure audio element
     audio.volume = volume;
     
-    // Set up event listeners
     const onTimeUpdate = () => {
-      const currentTime = audio.currentTime;
-      setCurrentTime(currentTime);
-      
-      // Check if non-premium user has reached preview limit
-      if (isPreviewMode && currentTime >= PREVIEW_DURATION) {
-        audio.pause();
-        setShowPreviewDialog(true);
-        // Don't call togglePlay here to avoid state conflicts
-      }
+      setCurrentTime(audio.currentTime);
     };
     
     const onLoadedMetadata = () => setDuration(audio.duration);
@@ -62,13 +42,12 @@ export default function Player() {
     audio.addEventListener('loadedmetadata', onLoadedMetadata);
     audio.addEventListener('ended', onEnded);
     
-    // Clean up
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.removeEventListener('loadedmetadata', onLoadedMetadata);
       audio.removeEventListener('ended', onEnded);
     };
-  }, [nextTrack, volume, isPreviewMode]);
+  }, [nextTrack, volume]);
   
   // Load new track
   useEffect(() => {
@@ -128,13 +107,6 @@ export default function Player() {
   const handleSeek = (value: number[]) => {
     const audio = globalAudio.getAudio();
     const seekTime = value[0];
-    
-    // Prevent non-premium users from seeking beyond preview limit
-    if (isPreviewMode && seekTime > PREVIEW_DURATION) {
-      setShowPreviewDialog(true);
-      return;
-    }
-    
     audio.currentTime = seekTime;
     setCurrentTime(seekTime);
   };
@@ -257,30 +229,15 @@ export default function Player() {
             <div className="flex-1 mx-3 relative">
               <Slider
                 value={[currentTime]}
-                max={isPreviewMode ? Math.min(duration, PREVIEW_DURATION) : duration}
+                max={duration}
                 step={1}
                 onValueChange={handleSeek}
                 className="cursor-pointer"
               />
-              {/* Preview mode indicator on progress bar */}
-              {isPreviewMode && duration > PREVIEW_DURATION && (
-                <div 
-                  className="absolute top-1/2 -translate-y-1/2 w-0.5 h-4 bg-yellow-500 pointer-events-none"
-                  style={{ left: `${(PREVIEW_DURATION / duration) * 100}%` }}
-                  title="Preview limit"
-                />
-              )}
             </div>
             <span className="text-zinc-400 text-xs w-10">
-              {isPreviewMode ? formatTime(Math.min(duration, PREVIEW_DURATION)) : formatTime(duration)}
+              {formatTime(duration)}
             </span>
-            {/* Preview mode badge */}
-            {isPreviewMode && (
-              <div className="ml-2 flex items-center gap-1 px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded-full text-xs">
-                <Crown className="h-3 w-3" />
-                <span>Preview</span>
-              </div>
-            )}
           </div>
         </div>
         
@@ -356,36 +313,6 @@ export default function Player() {
         </div>
       </div>
       
-      {/* Preview Limit Dialog */}
-      <AlertDialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Crown className="h-5 w-5 text-yellow-500" />
-              Preview Time Ended
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              You've reached the 30-second preview limit for this track. Subscribe to unlock unlimited listening and access to the full music library.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogAction asChild>
-              <Link href="/subscriptions" className="w-full sm:w-auto">
-                <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-                  <Crown className="h-4 w-4 mr-2" />
-                  Subscribe Now
-                </Button>
-              </Link>
-            </AlertDialogAction>
-            <AlertDialogAction 
-              onClick={() => setShowPreviewDialog(false)}
-              className="w-full sm:w-auto"
-            >
-              Continue Browsing
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

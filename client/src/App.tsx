@@ -19,8 +19,6 @@ import AdminPage from "./pages/admin-page";
 import ForgotPasswordPage from "./pages/forgot-password-page";
 import ResetPasswordPage from "./pages/reset-password-page";
 
-import CheckoutPage from "./pages/checkout-page";
-import SubscriptionSuccessPage from "./pages/subscription-success-page";
 import AdminUploadTool from "./pages/admin-upload-tool";
 import UploadTestPage from "./pages/upload-test-page";
 import ChunkedUploaderPage from "./pages/chunked-uploader-page";
@@ -42,7 +40,7 @@ function Router() {
       <ProtectedRoute path="/album/:id" component={AlbumPage} />
       <ProtectedRoute path="/playlist/:id" component={PlaylistPage} />
       <ProtectedRoute path="/favorites" component={FavoritesPage} />
-      <ProtectedRoute path="/subscriptions" component={SubscriptionsPage} />
+      <ProtectedRoute path="/account" component={SubscriptionsPage} />
       <ProtectedRoute path="/analytics" component={AnalyticsDashboardPage} />
       <ProtectedRoute path="/admin" component={AdminPage} />
       <ProtectedRoute path="/admin-upload" component={AdminUploadTool} />
@@ -51,8 +49,6 @@ function Router() {
 
       <ProtectedRoute path="/upload-test" component={UploadTestPage} />
       <ProtectedRoute path="/chunked-upload" component={ChunkedUploaderPage} />
-      <ProtectedRoute path="/checkout" component={CheckoutPage} />
-      <ProtectedRoute path="/subscription-success" component={SubscriptionSuccessPage} />
       <Route component={NotFound} />
     </Switch>
   );

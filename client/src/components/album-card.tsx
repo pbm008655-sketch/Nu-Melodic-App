@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { Play, Pause, Crown } from "lucide-react";
+import { Play, Pause } from "lucide-react";
 import { Album } from "@shared/schema";
 import { usePlayer } from "@/hooks/use-player";
 import { useQuery } from "@tanstack/react-query";
 import { Track } from "@shared/schema";
-import { useAuth } from "@/hooks/use-auth";
 
 interface AlbumCardProps {
   album: Album;
@@ -32,9 +31,6 @@ export function AlbumCard({ album, variant = "default" }: AlbumCardProps) {
     playAlbum,
     togglePlay
   } = usePlayer();
-  const { user } = useAuth();
-  
-  const isPreviewMode = !user?.isPremium;
   
   // Process album data to use customAlbum properties if available
   useEffect(() => {
@@ -133,12 +129,6 @@ export function AlbumCard({ album, variant = "default" }: AlbumCardProps) {
             <h3 className="font-medium text-white truncate">{displayAlbum.title}</h3>
             <p className="text-zinc-400 text-sm truncate">{displayAlbum.artist}</p>
           </div>
-          {isPreviewMode && (
-            <div className="flex items-center gap-1 px-2 py-1 bg-yellow-500/20 text-yellow-500 rounded-full text-xs ml-2">
-              <Crown className="h-3 w-3" />
-              <span>Preview</span>
-            </div>
-          )}
         </div>
       </a>
     </Link>

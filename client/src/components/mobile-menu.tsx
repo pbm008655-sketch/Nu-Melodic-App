@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { X, Home, Heart, Crown, Menu, LogOut } from "lucide-react";
+import { X, Home, Heart, Settings, Menu, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { Playlist } from "@shared/schema";
@@ -95,10 +95,10 @@ export default function MobileMenu() {
                   </Link>
                 </li>
                 <li className="pt-6 border-t border-zinc-800">
-                  <Link href="/subscriptions">
-                    <div className={`flex items-center text-lg ${isActive("/subscriptions") ? "text-primary" : "text-primary"} cursor-pointer`}>
-                      <Crown className="w-5 h-5 mr-3" />
-                      <span>{user?.isPremium ? "Manage Subscription" : "Upgrade to Premium"}</span>
+                  <Link href="/account">
+                    <div className={`flex items-center text-lg ${isActive("/account") ? "text-primary" : "text-zinc-300"} cursor-pointer`}>
+                      <Settings className="w-5 h-5 mr-3" />
+                      <span>Account Settings</span>
                     </div>
                   </Link>
                 </li>

@@ -9,7 +9,7 @@ import { AlbumCard } from "@/components/album-card";
 import { TrackListItem } from "@/components/track-list-item";
 import { useAuth } from "@/hooks/use-auth";
 import { usePlayer } from "@/hooks/use-player";
-import { ChevronLeft, ChevronRight, Home, Play, Pause, Crown, Shuffle, PlayCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home, Play, Pause, Shuffle, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -17,8 +17,6 @@ export default function HomePage() {
   const { user } = useAuth();
   const { currentTrack, isPlaying, togglePlay, playAlbum, playAll, playRandom } = usePlayer();
   
-  const isPreviewMode = !user?.isPremium;
-
   const { 
     data: featuredAlbums,
     isLoading: isLoadingFeatured
@@ -48,27 +46,6 @@ export default function HomePage() {
         
         <div className="flex-1 overflow-y-auto pb-24">
           <MobileMenu />
-
-          {/* Preview Mode Banner */}
-          {isPreviewMode && (
-            <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/30 mx-4 my-4 p-4 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Crown className="h-5 w-5 text-yellow-500" />
-                  <div>
-                    <h3 className="text-yellow-100 font-medium">Preview Mode Active</h3>
-                    <p className="text-yellow-200/80 text-sm">You can listen to 30-second previews of all tracks. Subscribe for unlimited access.</p>
-                  </div>
-                </div>
-                <Link href="/subscriptions">
-                  <Button className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white">
-                    <Crown className="h-4 w-4 mr-2" />
-                    Subscribe
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          )}
 
           {/* Header with gradient */}
           <div className="bg-gradient-to-b from-zinc-800 to-zinc-950 p-4 md:p-8">
@@ -155,25 +132,6 @@ export default function HomePage() {
                       </Button>
                     </div>
                   </div>
-                </div>
-              </section>
-            )}
-
-            {/* Subscription Banner */}
-            {!user?.isPremium && (
-              <section className="mb-8">
-                <div className="bg-gradient-to-r from-blue-900 to-zinc-900 rounded-xl p-4 md:p-6 flex flex-col md:flex-row justify-between items-center">
-                  <div className="mb-4 md:mb-0 text-center md:text-left">
-                    <h3 className="text-xl font-heading font-bold mb-2">Upgrade to Premium</h3>
-                    <p className="text-zinc-300">Get unlimited skips, no ads, and exclusive content</p>
-                  </div>
-                  <Link href="/subscriptions">
-                    <a>
-                      <Button className="bg-white text-black hover:bg-zinc-200">
-                        <Crown className="h-4 w-4 mr-2" /> Try Free for 1 Month
-                      </Button>
-                    </a>
-                  </Link>
                 </div>
               </section>
             )}

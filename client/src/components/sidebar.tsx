@@ -241,9 +241,9 @@ export default function Sidebar() {
           </div>
         )}
         
-        <Link href="/subscriptions">
-          <div className={`text-sm ${isActive("/subscriptions") ? "text-primary font-medium" : "text-zinc-300 hover:text-white"} transition-colors cursor-pointer block`}>
-            {user?.isPremium ? "Manage Subscription" : "Upgrade to Premium"}
+        <Link href="/account">
+          <div className={`text-sm ${isActive("/account") ? "text-primary font-medium" : "text-zinc-300 hover:text-white"} transition-colors cursor-pointer block`}>
+            Account Settings
           </div>
         </Link>
         
