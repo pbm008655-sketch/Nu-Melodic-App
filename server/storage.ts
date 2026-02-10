@@ -64,6 +64,7 @@ export interface IStorage {
   createPasswordResetToken(data: { userId: number; token: string; expiresAt: Date }): Promise<PasswordResetToken>;
   getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
   deletePasswordResetToken(token: string): Promise<void>;
+  deleteUser(userId: number): Promise<void>;
   
   sessionStore: any; // Type for session store
 }
@@ -712,6 +713,10 @@ export class MemStorage implements IStorage {
   async deletePasswordResetToken(token: string): Promise<void> {
     this.passwordResetTokens.delete(token);
   }
+
+  async deleteUser(userId: number): Promise<void> {
+    this.users.delete(userId);
+  }
 }
 
 // Database storage implementation
@@ -1229,6 +1234,18 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(passwordResetTokens)
       .where(eq(passwordResetTokens.token, token));
+  }
+
+  async deleteUser(userId: number): Promise<void> {
+    await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+    await db.delete(trackPlays).where(eq(trackPlays.userId, userId));
+    await db.delete(userFavorites).where(eq(userFavorites.userId, userId));
+    const userPlaylists = await db.select().from(playlists).where(eq(playlists.userId, userId));
+    for (const playlist of userPlaylists) {
+      await db.delete(playlistTracks).where(eq(playlistTracks.playlistId, playlist.id));
+    }
+    await db.delete(playlists).where(eq(playlists.userId, userId));
+    await db.delete(users).where(eq(users.id, userId));
   }
 }
 

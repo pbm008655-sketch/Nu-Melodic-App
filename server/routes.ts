@@ -2023,6 +2023,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/account", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    try {
+      const userId = req.user!.id;
+      req.logout((err) => {
+        if (err) console.error("Logout error during account deletion:", err);
+      });
+      await storage.deleteUser(userId);
+      res.json({ message: "Account deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting account:", error);
+      res.status(500).json({ error: "Failed to delete account" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
