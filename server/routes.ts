@@ -2029,9 +2029,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     try {
       const userId = req.user!.id;
-      req.logout((err) => {
-        if (err) console.error("Logout error during account deletion:", err);
+      await new Promise<void>((resolve, reject) => {
+        req.logout((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
+      if (req.session) {
+        req.session.destroy((err) => {
+          if (err) console.error("Session destroy error:", err);
+        });
+      }
       await storage.deleteUser(userId);
       res.json({ message: "Account deleted successfully" });
     } catch (error: any) {
