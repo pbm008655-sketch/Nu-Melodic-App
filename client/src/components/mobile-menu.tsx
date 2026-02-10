@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { X, Home, Heart, Settings, Menu, LogOut } from "lucide-react";
+import { X, Home, Heart, Menu, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { Playlist } from "@shared/schema";
@@ -91,14 +91,6 @@ export default function MobileMenu() {
                     <div className={`flex items-center text-lg ${isActive("/favorites") ? "text-primary" : "text-white"} cursor-pointer`}>
                       <Heart className="w-5 h-5 mr-3" />
                       <span>Your Favourites</span>
-                    </div>
-                  </Link>
-                </li>
-                <li className="pt-6 border-t border-zinc-800">
-                  <Link href="/account">
-                    <div className={`flex items-center text-lg ${isActive("/account") ? "text-primary" : "text-zinc-300"} cursor-pointer`}>
-                      <Settings className="w-5 h-5 mr-3" />
-                      <span>Account Settings</span>
                     </div>
                   </Link>
                 </li>

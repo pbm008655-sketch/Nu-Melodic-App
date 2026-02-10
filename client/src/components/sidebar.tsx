@@ -241,12 +241,6 @@ export default function Sidebar() {
           </div>
         )}
         
-        <Link href="/account">
-          <div className={`text-sm ${isActive("/account") ? "text-primary font-medium" : "text-zinc-300 hover:text-white"} transition-colors cursor-pointer block`}>
-            Account Settings
-          </div>
-        </Link>
-        
         <div className="flex gap-3 text-xs text-zinc-500 mt-2">
           <Link href="/privacy-policy">
             <span className="hover:text-zinc-300 cursor-pointer" data-testid="link-sidebar-privacy">Privacy</span>
