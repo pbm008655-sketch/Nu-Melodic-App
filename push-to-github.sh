@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "Pushing latest code to GitHub..."
-TOKEN="$GITHUB_PERSONAL_ACCESS_TOKEN_NEW"
+TOKEN="$GITHUB_PERSONAL_ACCESS_TOKEN_NEW2"
 
 # Create a temporary askpass helper
 # When git asks for Username, return the token
