@@ -7,19 +7,20 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+const isNativeApp = typeof (window as any).Capacitor !== 'undefined';
+
 export default function InstallPWAPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
 
-  const isNativeApp = typeof (window as any).Capacitor !== 'undefined';
-  if (isNativeApp) return null;
-
   useEffect(() => {
+    if (isNativeApp) return;
+
     const isIOSDevice = /iPhone|iPad|iPod/.test(navigator.userAgent);
     const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches;
-    
+
     setIsIOS(isIOSDevice);
     setIsStandalone(isInStandaloneMode);
 
@@ -30,7 +31,7 @@ export default function InstallPWAPrompt() {
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      
+
       const hasSeenPrompt = localStorage.getItem('pwa-install-prompt-dismissed');
       if (!hasSeenPrompt) {
         setShowPrompt(true);
@@ -43,6 +44,8 @@ export default function InstallPWAPrompt() {
       window.removeEventListener('beforeinstallprompt', handler);
     };
   }, []);
+
+  if (isNativeApp) return null;
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
